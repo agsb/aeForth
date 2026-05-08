@@ -73,7 +73,7 @@ def_word ":", "colon", hash_colon, it_exit
 
 # make a header
 
-create:
+header:
 
 # copy last into (here)
         
@@ -110,7 +110,7 @@ def_word ";", "semis", hash_semis, it_colon
 
         sw fst, STAT (usr)
 
-finish:
+footer:
 # compound words must ends with exit
         
         la fst, is_exit
@@ -190,9 +190,7 @@ def_word "0#", "zeroq", hash_zeroq, it_plus
 
         li fst, TRUE
         
-        sw fst, 0 (spt)
-
-        j next
+        j keep1
 
 #---------------------------------------------------------------------
 # beware variables order
@@ -288,7 +286,7 @@ def_word ";$", "docode", hash_DOCODE, it_rshift
         # end with  jalr s1, 0 (ra)
         # to return here, with s1 (is IP) to next cell 
         # eg. : THIS OVER ;$ $ 4B1DCAFE DROP ; 
-        # \ execute after OVER then returns to DROP
+        # after OVER execute 4B1DCAFE then returns to DROP
 
         j next
 
@@ -316,11 +314,11 @@ def_word "$", "hex", hash_HEX, it_byes
 # ( w -- ) #; @
 def_word ".", "dot", hash_DOT, it_hex
 
-        call pull2
+        lw fst, 0 (spt)
 
         call tohex
 
-        j keep1
+        j drop1
         
 #---------------------------------------------------------------------
 

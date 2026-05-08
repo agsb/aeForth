@@ -83,67 +83,35 @@
 
 # this version uses direct access R, S, I, U, in registers.S
 
-# data stack store
-.equ SPTR, 0 * CELL
+# state flag
+.equ STAT, 0 * CELL
 
-# return stack store
-.equ RPTR, 1 * CELL 
+# last link cell in heap dictionary linked list
+.equ LAST, 1 * CELL
 
 # next free cell in heap dictionary, aka dp
 .equ HEAP, 2 * CELL
 
-# last link cell in heap dictionary linked list
-.equ LAST, 3 * CELL
-
-# state flag
-.equ STAT, 4 * CELL
-
 # last heap while compiling
-.equ PEEK, 5 * CELL
+.equ PEEK, 3 * CELL
 
 # last free cell for heap dictionary  
-.equ CEIL, 6 * CELL
+.equ CEIL, 4 * CELL
 
-#---------------------------------------------------------------------
-# reserved internals
+# base for number conversion  
+.equ BASE, 5 * CELL
 
-#---------------------------------------------------------------------
-# not initialized
-
-# first absolute free cell, DICTIONARY__INIT 
-.equ HEAD, 7 * CELL
-
-# last absolute free cell, RAM_LIMIT
-.equ TAIL, 8 * CELL
-
-#---------------------------------------------------------------------
-# for counters
-
-# counter of words executed by next
-.equ BEAT, 9 * CELL
-
-# counter of primitives executed 
-.equ TICK, 10 * CELL
-
-# counter of compiled executed 
-.equ TACK, 11 * CELL
-
-#---------------------------------------------------------------------
 # scratch temporary 
 
-.equ TEMP1, 12 * CELL
+.equ HEAD, 6 * CELL
 
-.equ TEMP2, 13 * CELL
-
-.equ TEMP3, 14 * CELL
-
-.equ TEMP4, 15 * CELL
+.equ TAIL, 7 * CELL
 
 # user parameter stack: sp rp last heap state base
 # internal: faux head tail beat tick tack
 # temporay: temp1, temp2, temp3, temp4
 
-.equ params, 16
+.equ params, 8
 
 # user stack
 
@@ -166,8 +134,5 @@
 
 # enable native POSTPONE (STATE=2) 
 # .equ postpone, YES
-
-# enable counters of words executed
-# .equ beatme, YES
 
 

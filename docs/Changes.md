@@ -26,6 +26,27 @@
 
 ## Done
 
+07/05/2026
+
+    rewrite using MilliForth-Riscv as reference
+
+    Sp, Rp, Ip, Up, Tos are registers
+
+    using TOS to minimize push and pull.
+
+    Stacks accessed direct by registers
+
+    pull:
+        lw tos, 0 (spt)
+        addi spt, spt, CELL
+    
+    push:
+        addi spt, spt, -1 * CELL
+        sw tos, 0 (spt)
+
+    copy:
+        mv snd, tos 
+
 12/04/2026
 
     First commit, using as reference MilliForth-Riscv
