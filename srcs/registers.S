@@ -23,8 +23,27 @@
 # using pre-processor CPP (GNU GCC)
 # for alias register names 
 # beware about changes
-# a0,a1,a2,a3,a7 used by ecalls in _putc, _getc, _fcntl, etc
-# a4,a5,a6 are generics ecall safe
+#
+# sp not used
+#
+# jalr/jal using ra
+#
+# s0,s1,a0,a1,a2,a3,a4,a5 (x8-x15) used for compact instruction
+#
+# a0,a1,a2,a3,a7 used by ecalls in _putc, _getc, _exit, etc
+#
+# a0,a1,a2 used only with no ecalls
+#
+# a4,a5,a6 used as ecall safe
+#
+# t0,t1,t2 used as counters
+#
+# t3,t4,t5,t6 used as holders for a0,a1,a2,a3 for ecalls
+#
+# a3 used as joker :)
+#
+# this version uses direct access R, S, I, U, in registers.S
+#
 #---------------------------------------------------------------------
 /*
 
@@ -42,12 +61,32 @@
 
 */
 
+#---------------------------------------------------------------------
+# this version uses direct access U, I, S, R in registers.
+
 # forth user struct pointer, constant 
 #define usr s0
 
 # forth instruction pointer, preserved
 #define ipt s1
 
+# forth data stack pointer, direct
+#define spt s2 
+
+# forth return stack pointer, direct
+#define rpt s3 
+        
+#---------------------------------------------------------------------
+# used to keep ra, preseved
+#define rak s9
+
+# forth end of native code, constant
+#define nib s10
+
+# forth external loop of native code, constant
+#define bow s11
+
+#---------------------------------------------------------------------
 # hash value
 #define hsh a0
 
@@ -73,4 +112,6 @@
 
 # generic
 #define ops a7
+
+#---------------------------------------------------------------------
 

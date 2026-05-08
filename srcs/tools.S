@@ -21,16 +21,31 @@
 
 #----------------------------------------------------------------------
 #
-#       debug primitives 
+#       tools primitives 
 #
 #----------------------------------------------------------------------
+
+#---------------------------------------------------------------------
+# Riscv does not have automatic, and hidden, SP push/pull
+# for nested calls, use pushra and pullra
+#
+
+.macro pushra
+        addi sp, sp, -4   
+        sw ra, 0(sp)    
+.endm
+
+.macro pullra
+        lw ra, 0(sp)    
+        addi sp, sp, +4   
+.endm
 
 #---------------------------------------------------------------------
 #
 # djb2 hash cleared of bit 31
 #
 
-.equ hash_tdot, 0x005966C5
+.equ hash_twodot, 0x005966C5
 .equ hash_splist, 0x005965D3
 .equ hash_rplist, 0x005965D2
 
@@ -41,11 +56,11 @@
 
 #---------------------------------------------------------------------
 
-.equ init_debug, last_next
+.equ init_tools, last_next
 
 #---------------------------------------------------------------------
 # ( -- ) ae list of data stack
-def_word "%S", "splist", hash_splist, init_debug
+def_word "%S", "splist", hash_splist, init_tools
 
         call stackS
 
@@ -86,7 +101,7 @@ def_word "SEE", "sees", hash_SEE, it_words
         j next
 
 #----------------------------------------------------------------------
-# ( u -- u ) print tos in hexadecimal
+# ( u -- u ) print all in hexadecimal
 def_word "SHOW", "show", hash_SHOW, it_sees
 
         call shows
@@ -99,7 +114,7 @@ def_word "SHOW", "show", hash_SHOW, it_sees
 
 #----------------------------------------------------------------------
 # ( u -- u ) print tos in hexadecimal
-def_word "..", "tdot", hash_tdot, it_show
+def_word "..", "twodot", hash_twodot, it_show
 
         call pull2
 
@@ -111,13 +126,12 @@ def_word "..", "tdot", hash_tdot, it_show
 
 #---------------------------------------------------------------------
 
-.set last_next, it_tdot
+.set last_next, it_twodot
 
 #---------------------------------------------------------------------
 #
 # Note: 
-#       nested user calls must save ra, 
-#       relies in pushra and pullra
+#       nested calls must save ra, 
 #
 #---------------------------------------------------------------------
 
@@ -170,30 +184,26 @@ wordf:
         
         lw a5, LAST (usr)
         
-        la a6, h_here
-
-        blt a5, a6, returns
-
         lw a6, HEAP (usr)
         
 # init of compiled dictionary
 
-        la s7, h_here 
+        la s7, h_where 
 
         putchar '\n'
 
 100:
 # verify end of compiled dictionary
 
-        blt a5, zero, returns
+        # end of compiled dictionary
 
         blt a5, s7, returns
 
-        add s8, zero, a5
+        mv  s8, a5
 
         call wordt
 
-        add a6, zero, s8
+        mv a6, s8
 
         lw a5, 0 (a6)
 
@@ -208,9 +218,9 @@ wordu:
 
         lw a5, LAST (usr)
 
-        la a6, h_here
+        la a6, h_where
 
-        blt a5, a6, returns
+        ble a5, a6, returns
 
         lw a6, HEAP (usr)
 
@@ -241,7 +251,7 @@ wordt:
 
         addi a5, a5, CELL
 
-        bne a5, a6, 100b
+        blt a5, a6, 100b
 
         putchar '\n'
 
@@ -260,7 +270,7 @@ stackS:
         putchar 'S'
 
         lw a5, SPTR (usr)
-        la a6, sp0
+        la a6, _sp0
 
         call stackp
 
@@ -277,7 +287,7 @@ stackR:
         putchar 'R'
 
         lw a5, RPTR (usr)
-        la a6, rp0
+        la a6, _rp0
         
         call stackp
 
@@ -391,9 +401,9 @@ shows:
         mhex fst
         putchar ' '
        
-       putchar 'D'
+       putchar 'F'
         putchar ' '
-        lw fst, HEAD (usr)
+        lw fst, FAUX (usr)
         mhex fst
         putchar ' '
        
@@ -413,112 +423,6 @@ shows:
        
         j returns
 
-#----------------------------------------------------------------------
-# code a ASCII $0-F(Z) hexadecimal in a value
-#  
-number:
-
-        pushra
-
-        call saves
-
-        add wrd, zero, zero
-        add lnk, zero, 8
-100:
-        lw fst, 0 (idx)
-        beq fst, trd, 200f
-        call digit
-        slli wrd, wrd, 4
-        or wrd, wrd, fst
-        addi lnk, lnk, -1
-        bne lnk, zero, 100b
-200:
-        j returns
-
-digit:
-        #; any valid digit, 0-9 and A-Z, do not care 
-        addi fst, fst, -48
-        blt fst, zero, 200f
-        addi snd, zero, 'Z'
-        bgt fst, snd, 200f
-        addi snd, zero, 10
-        blt fst, snd, 100f
-        addi fst, fst, 7 
-100:
-# is_okey
-        ret
-
-200:
-# is_error
-        add fst, zero, zero
-        ret
-
-#---------------------------------------------------------------------
-# code a 32-bit word in ASCII hexadecimal
-#
-
-puthexy:
-
-        pushra
-
-        add  s2, zero, a3
-        
-        addi s5, zero, 58
-
-        addi a3, zero, ' '
-        
-        call _putc
-
-        srli s3, s2, 24
-        call 100f
-        
-        srli s3, s2, 16
-        call 100f
-        
-        srli s3, s2, 8
-        call 100f
-        
-        srli s3, s2, 0
-        call 100f
-
-        add  a3, zero, s2
-
-        pullra
-
-        ret
-
-100:
-
-        pushra 
-
-        andi s3, s3, 0xFF
-        
-        srli s4, s3, 4
-        call 200f
-        
-        srli s4, s3, 0
-        call 200f
-
-        pullra
-
-        ret
-
-200:
-        pushra
-
-        andi s4, s4, 0x0F
-        ori  s4, s4, 48
-        blt  s4, s5, 300f
-        addi s4, s4, 7
-300:
-        add a3, zero, s4
-
-        call _putc
-        
-        pullra
-
-        ret
-
 #---------------------------------------------------------------------
 # code a 32-bit word in ASCII hexadecimal
 #
@@ -527,11 +431,11 @@ to2hex:
 puthex:
         pushra
 
-        add  snd, zero, fst
+        mv t2, fst
         
-        addi trd, zero, 58
+        li t1, 58
 
-        addi t0, zero, 32
+        li t0, 32
 
         # rolls 
 100:
@@ -539,13 +443,13 @@ puthex:
 
         addi t0, t0, -4
 
-        srl  fst, snd, t0
+        srl  fst, t2, t0
 
         andi fst, fst, 15
 
         ori  fst, fst, 48
         
-        blt  fst, trd, 200f
+        blt  fst, t1, 200f
         
         addi fst, fst, 7
 
