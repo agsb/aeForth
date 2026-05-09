@@ -36,9 +36,9 @@
 #
 # a4,a5,a6 used as ecall safe
 #
-# t0,t1,t2 used as counters
+# t0,t1,t2 used as execution counters of beats, primitives, compileds
 #
-# t3,t4,t5,t6 used as holders for a0,a1,a2,a3 for ecalls
+# t3,t4,t5,t6 used as holders for a0,a1,a2,a3 for ecalls, if needs
 #
 # a3 used as joker :)
 #
@@ -63,22 +63,31 @@
 
 #---------------------------------------------------------------------
 # this version uses direct access U, I, S, R in registers.
+# still not optimized
 
-# forth user struct pointer, constant 
+# forth user struct pointer, constant U
 #define usr s0
 
-# forth instruction pointer, preserved
+# forth instruction pointer, preserved I
 #define ipt s1
 
-# forth data stack pointer, direct
+# forth data stack pointer, direct S
 #define spt s2 
 
-# forth return stack pointer, direct
+# forth return stack pointer, direct R
 #define rpt s3 
         
+# forth TOS value
+#define tos s4
+
 #---------------------------------------------------------------------
+#
 # used to keep ra, preseved
 #define rak s9
+
+#---------------------------------------------------------------------
+# just for absolute address
+#
 
 # forth end of native code, constant
 #define nib s10
@@ -96,22 +105,24 @@
 # word pointer
 #define wrd a2
 
+#---------------------------------------------------------------------
 # generic
 #define fst a3
 
 # generic
 #define snd a4
 
-# index 
-#define idx a5
+# generic 
+#define trd a5
 
+#---------------------------------------------------------------------
 # not for compressed code
 
 # generic
-#define trd a6
+#define spc a6
 
 # generic
-#define ops a7
+#define ecc a7
 
 #---------------------------------------------------------------------
 

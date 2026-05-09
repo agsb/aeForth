@@ -25,6 +25,57 @@
 # 
 #---------------------------------------------------------------------
 
+.macro push stack, register, index
+        addi \stack, \stack, (index + 1) * CELL
+        sw \register, 0 ( \stack )
+.endm
+
+.macro pull stack, register, index
+        lw \register, 0 ( \stack )
+        addi \stack, \stack, -1 * (index + 1) * CELL
+.endm
+
+#---------------------------------------------------------------------
+
+.macro look stack, register, index
+        lw \register, 0 ( \stack )
+.endm
+
+.macro post stack, register, index
+        sw \register, (index) * CELL ( \stack )
+.endm
+
+#---------------------------------------------------------------------
+# lazy macros
+#
+#       fst is the TOS, not in stack @!#$#%#
+#       snd is the first CELL, trd is the second CELL, in data stack
+#
+.macro spusht 
+        addi spt, spt, -1 * CELL
+        sw tos, 0 ( spt )
+.endm
+
+.macro spullt 
+        lw tos, 0 ( spt )
+        addi spt, spt, +1 * CELL
+.endm
+
+.macro spulls
+        lw snd, 0 ( spt )
+        addi spt, spt, +1 * CELL
+.endm
+
+.macro rpusht
+        addi rpt, rpt, -1 * CELL
+        sw tos, 0 ( rpt )
+.endm
+
+.macro rpullt
+        lw tos, 0 ( rpt )
+        addi rpt, rpt, +1 * CELL
+.endm
+
 #---------------------------------------------------------------------
 #
 #  djb2 hash cleared of bit 31
@@ -87,7 +138,7 @@ header:
 
 # copy hash into (here)
 
-        mv fst, idx
+        mv fst, trd
 
 docomma:
 
@@ -121,104 +172,97 @@ footer:
 # ( -- c ) 
 def_word "KEY", "key", hash_KEY, it_semis 
 
+        spusht
+
         call _getc
 
-        j push1
+        mv tos, fst
+
+        j next
 
 #---------------------------------------------------------------------
 # ( c -- ) 
 def_word "EMIT", "emit", hash_EMIT, it_key
         
-        lw fst, 0 (spt)
+        mv fst, tos
 
         call _putc
-        
-drop1:
-        addi spt, spt, CELL
 
+        spullt
+        
         j next
 
 #---------------------------------------------------------------------
 # ( a w -- ),  [a] = w
 def_word "!", "store", hash_store, it_emit
         
-        call pull2
+        spulls
 
-        sw snd, 0 (fst)
+        sw snd, 0 (tos)
 
-        j drop1
+        spullt
+
+        j next
 
 #---------------------------------------------------------------------
 # ( a -- w ), w = [a]
 def_word "@", "fetch", hash_fetch, it_store
         
-        lw fst, 0 (spt)
+        lw tos, 0 (tos)
         
-        lw fst, 0 (fst)
-        
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w), NOT(w1 AND w2)
 def_word "NAND", "nand", hash_NAND, it_fetch
 
-        call pull2
+        spulls
 
-        and fst, snd, fst
+        and tos, snd, tos
         
-        not fst, fst
+        not tos, tos
 
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w), w = w1 + w2  
 def_word "+", "plus", hash_plus, it_nand
         
-        call pull2
+        spulls
 
-        add fst, snd, fst
+        add tos, snd, tos
 
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( 0 -- FALSE) | ( n -- TRUE), not zero at top ?
 def_word "0#", "zeroq", hash_zeroq, it_plus
 
-        lw fst, 0 (spt)
-        
-        beq fst, zero, next
+        beq tos, zero, isfalse
 
-        li fst, TRUE
-        
-        j keep1
+istrue:
+        li tos, TRUE
+
+        j next
+
+isfalse:
+        li tos, FALSE
+
+        j next
 
 #---------------------------------------------------------------------
 # beware variables order
 # ( -- _user ) return an reference to _user structure
 def_word "U@", "userat", hash_USERAT, it_zeroq
         
-        mv fst, usr 
+        mv fst, usr
 
-push1:
-        
-        addi spt, spt, -1 * CELL
+copyit:
+        spusht
 
-keep1:
-        sw fst, 0 (spt)
+        mv tos, fst 
 
         j next
-
-#---------------------------------------------------------------------
-
-pull2:
-        
-        lw fst, 0 (spt)
-        
-        addi spt, spt, CELL
-
-        lw snd, 0 (spt)
-
-        ret
 
 #---------------------------------------------------------------------
 
@@ -252,27 +296,27 @@ by_over:
 
         lui fst, 0x80000
         
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w1<<w2 ) #; shift left
 def_word "LSHIFT", "lshift", hash_LSHIFT, it_nan
 
-        call pull2
+        spulls
         
-        sll fst, snd, fst
+        sll tos, snd, tos
         
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w1>>w2 ) #; shift right
 def_word "RSHIFT", "rshift", hash_RSHIFT, it_lshift
 
-        call pull2
+        spulls
         
-        srl fst, snd, fst
+        srl tos, snd, tos
         
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( -- ) execute a jump and link
@@ -282,11 +326,9 @@ def_word ";$", "docode", hash_DOCODE, it_rshift
 
         jalr ra, 0 (ipt)
         
-        # at there, keep ra, do anything, keep ra,
+        # at there, save ra, do whatever, load ra,
         # end with  jalr s1, 0 (ra)
-        # to return here, with s1 (is IP) to next cell 
-        # eg. : THIS OVER ;$ $ 4B1DCAFE DROP ; 
-        # after OVER execute 4B1DCAFE then returns to DROP
+        # s1 is ipt :)
 
         j next
 
@@ -303,22 +345,28 @@ def_word "BYE", "byes", hash_BYE, it_aborts
         j _exit
 
 #---------------------------------------------------------------------
-# ( w -- ) #; @
+# ( w -- ) #; load next token as a 32-bit hexadecimal value to TOS
 def_word "$", "hex", hash_HEX, it_byes
+
+        spusht
 
         call number
 
-        j push1
+        mv tos, fst
+        
+        j next
         
 #---------------------------------------------------------------------
-# ( w -- ) #; @
+# ( w -- ) #; display the 32-bit hexadecimal value at TOS
 def_word ".", "dot", hash_DOT, it_hex
 
-        lw fst, 0 (spt)
+        mv fst, tos
 
         call tohex
 
-        j drop1
+        spullt
+
+        j next
         
 #---------------------------------------------------------------------
 
@@ -332,22 +380,22 @@ tohex:
 
         save_ra
 
-        mv t2, fst
+        mv snd, fst
         
-        li t1, 58
+        li trd, 58
 
-        li t0, 32
+        li spc, 32
 
         # rolls 
 100:
-        beq t0, zero, 300f
+        beqz spc, 300f
 
-        addi t0, t0, -4
+        addi spc, spc, -4
 
-        srl  fst, t2, t0
+        srl  fst, snd, spc
         andi fst, fst, 15
         ori  fst, fst, 48
-        blt  fst, t1, 200f
+        blt  fst, trd, 200f
         addi fst, fst, 7
 200:
         call _putc
@@ -369,7 +417,7 @@ number:
 
         # clear result
 
-        li idx, 0
+        li trd, 0
 
         # load NaN
 
@@ -377,12 +425,12 @@ number:
 
         # load word separator, BL is space      
 
-        li trd, BL
+        li spc, BL
 
         # skip spaces 
 nskip:
         call _getc
-        bleu fst, trd, nskip
+        bleu fst, spc, nskip
 
 ndigit:
 
@@ -390,20 +438,20 @@ ndigit:
 
         beq fst, snd, nodigit
 
-        slli idx, idx, 4
+        slli trd, trd, 4
 
-        add idx, idx, fst
+        add trd, trd, fst
         
         # scan spaces 
 nscan:
         call _getc
-        bltu fst, trd, nscan
+        bltu fst, spc, nscan
 
-        bne fst, trd, ndigit
+        bne fst, spc, ndigit
 
 isdigit:
 
-        mv fst, idx 
+        mv fst, trd 
 
 nodigit:
 
@@ -431,6 +479,8 @@ digit:
         bgt fst, hsh, 400f
 
 200:
+        #; fst [ 0 .. 16 ]
+        
         # lw hst, BASE (usr)
         # bgt fst, hst, 400f
 
@@ -442,29 +492,6 @@ digit:
         lui fst, 0x80000
 
         ret
-
-#---------------------------------------------------------------------
-
-/*
-#---------------------------------------------------------------------
- 
-  Copyright 2025 Alvaro Gomes Sobral Barcellos <@agsb>
- 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 2 of the License, or
-  (at your option) any later version.
- 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU General Public License for more details.
- 
-  You should have received a copy of the GNU General Public License
-  along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-#----------------------------------------------------------------------
-*/
 
 #---------------------------------------------------------------------
 #       
@@ -497,7 +524,6 @@ digit:
 
 .equ hash_INVERSE, 0x2D6AA2B5 
 .equ hash_NEGATE, 0x26B37A79  
-
 
 .equ hash_DUP, 0x0B87BC84 
 .equ hash_DROP, 0x7C7F5C2C 
@@ -560,90 +586,67 @@ digit:
 #---------------------------------------------------------------------
 #
 
-/*look0:
-
-        lw fst, 0 (spt)
-
-        ret
-
-keep1:
-        sw fst, 0 (spt)
-
-        j next
-
-drop1:
-        addi spt, spt, CELL
-
-        j next
-*/
-
 #---------------------------------------------------------------------
 # ( w1 -- w2 ) #; align to cell, word is 4 bytes
 def_word "ALIGN", "align", hash_ALIGN, init_primitives
 
-        lw fst, 0 (spt)
+        addi tos, tos, 3
 
-        addi fst, fst, 3
+        andi tos, tos, ~3
 
-        andi fst, fst, ~3
-
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 -- w2 ) #; INVERSE w
 def_word "INVERSE", "nots", hash_INVERSE, it_align
 
-        lw fst, 0 (spt)
+        # xori tos, tos, -1
+        not tos, tos
 
-        # xori fst, fst, -1
-        not fst, fst
-
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 -- w2 ) #; NEGATE w, arithmetic inverse
 def_word "NEGATE", "negs", hash_NEGATE, it_nots
 
-        lw fst, 0 (spt)
+        # sub tos, zero, tos
+        neg tos, tos
 
-        # sub fst, zero, fst
-        neg fst, fst
-
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w -- w w ) #; duplicate tos
 def_word "DUP", "dups", hash_DUP, it_negs
 
-        lw fst, 0 (spt)
+        spusht
 
-        j push1
+        j next
 
 #---------------------------------------------------------------------
 # ( w -- ) #; drop tos
 def_word "DROP", "drop", hash_DROP, it_dups
 
-        j drop1
+        spullt
+
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w1 w2 w1 ) #; over tos
 def_word "OVER", "over", hash_OVER, it_drop
 
-        lw fst, CELL (spt)
+        lw tos, CELL (spt)
 
-        j push1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w2 w1 ) #; over tos
 def_word "SWAP", "swap", hash_SWAP, it_over
 
-        lw fst, 0 (spt)
+        lw snd, 0 (spt)
 
-        lw snd, CELL (spt)
+        sw tos, 0 (spt)
 
-        sw snd, 0 (spt)
-
-        sw fst, CELL (spt)
+        mv tos, snd
 
         j next
 
@@ -651,17 +654,15 @@ def_word "SWAP", "swap", hash_SWAP, it_over
 # ( w1 w2 w3 -- w2 w3 w1 ) #; rot tos
 def_word "ROT", "rot", hash_ROT, it_swap
 
-        lw fst, 0 (idx)
+        lw snd, 0 (spt)
 
-        lw snd, CELL (idx)
+        lw trd, CELL (spt)
         
-        lw trd, 2 * CELL (idx)
+        sw tos, CELL (spt)
 
-        sw trd, 0 (idx)
+        sw trd, 0 (spt)
 
-        sw fst, CELL (idx)
-
-        sw snd, 2 * CELL (idx)
+        mv tos, snd
 
         j next
 
@@ -669,23 +670,19 @@ def_word "ROT", "rot", hash_ROT, it_swap
  # ( a -- w ), w = [a], one byte
  def_word "C@", "cfetch", hash_CFETCH, it_rot
 
-        lw fst, 0 (spt)
+        lb tos, 0 (tos)
 
-        lb fst, 0 (fst)
-
-        j keep1
+        j next
 
  #---------------------------------------------------------------------
  # ( a w -- ),  [a] = w, one byte
  def_word "C!", "cstore", hash_CSTORE, it_cfetch
 
-        lw fst, 0 (spt)
+        spulls
 
-        lw snd, CELL (spt)
+        sb snd, 0 (tos)
 
-        sb snd, 0 (fst)
-
-        addi spt, spt, 2 * CELL
+        spullt
 
         j next
 
@@ -693,67 +690,59 @@ def_word "ROT", "rot", hash_ROT, it_swap
 # ( w1 w2 -- w3 ) #; w1 - w2
 def_word "-", "minus", hash_MINUS, it_cstore
 
-        call pull2
+        spulls
 
-        sub fst, snd, fst
+        sub tos, snd, tos
 
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w3 ) #; w1 AND w2
 def_word "AND", "and", hash_AND, it_minus
 
-        call pull2
+        spulls
 
-        and fst, snd, fst
+        and tos, snd, tos
 
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w3 ) #; w1 OR w2 
 def_word "OR", "or", hash_OR, it_and
 
-        call pull2
+        spulls
 
-        or fst, snd, fst
+        or tos, snd, tos
 
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w3 ) #; w1 OR w2 
 def_word "XOR", "xor", hash_XOR, it_or
 
-        call pull2
+        spulls
 
-        xor fst, snd, fst
+        xor tos, snd, tos
 
-        j keep1
+        j next
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w3 ) #; w1 = w2 
 def_word "=", "equ", hash_EQU, it_xor
 
-        call pull2
+        spulls
 
-        bne fst, snd, isfalse
+        beq snd, tos, istrue
 
-istrue:
-        li fst, TRUE
-
-        j keep1
-
-isfalse:
-        li fst, FALSE
-
-        j keep1
+        j isfalse
 
 #---------------------------------------------------------------------
 # ( w1 w2 -- w3 ) #; w1 < w2 
 def_word "<", "less", hash_LESS, it_equ
 
-        call pull2
+        spulls
 
-        blt snd, fst, istrue
+        blt snd, tos, istrue
 
         j isfalse
 
@@ -761,9 +750,9 @@ def_word "<", "less", hash_LESS, it_equ
 # ( w1 w2 -- w3 ) #; w1 < w2 unsigned
 def_word "U<", "uless", hash_ULESS, it_less     
 
-        call pull2
+        spulls
 
-        bltu snd, fst, istrue
+        bltu snd, tos, istrue
 
         j isfalse
 
@@ -771,9 +760,9 @@ def_word "U<", "uless", hash_ULESS, it_less
 # ( w1 w2 -- w3 ) #; w1 < w2 greater than zero
 def_word "0>", "gtzero", hash_GTZERO, it_uless     
 
-        call pull2
+        spulls
 
-        bgt fst, zero, istrue
+        bgt tos, zero, istrue
 
         j isfalse
 
@@ -781,38 +770,41 @@ def_word "0>", "gtzero", hash_GTZERO, it_uless
 # ( -- w ) #; the value is at second cell
 def_word "R@", "rat", hash_RAT, it_gtzero
 
-rlook0:
+        spusht
 
-        lw fst, CELL (rpt)
+        lw tos, CELL (rpt)
 
-        j push1
+        j next
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; the value is at second cell
 def_word "R>", "rto", hash_RTO, it_rat
 
-rpull1:
-        # load value, 2nd
+        # save tos
 
-        lw fst, CELL (rpt)
+        spusht
 
         # load return, 1st
 
         lw snd, 0 (rpt)
 
-        # save return, 1st 
+        # load value, 2nd
 
-        addi idx, idx, CELL
+        lw tos, CELL (rpt)
+
+        # update index
+
+        addi rpt, rpt, CELL
+
+        # save return, 1st 
 
         sw snd, 0 (rpt)
 
-        j push1
+        j next
 
 #---------------------------------------------------------------------
 # ( w --  ; -- w ) #; the value is at second cell
 def_word ">R", "tor", hash_TOR, it_rto
-
-        call pull2
 
         # load return, 1st
 
@@ -820,13 +812,19 @@ def_word ">R", "tor", hash_TOR, it_rto
 
         # save value
 
-        sw fst, 0 (rpt) 
+        sw tos, 0 (rpt) 
 
-        # save return
+        # update index
 
         addi rpt, rpt, -1 * CELL
         
+        # save return
+
         sw snd, 0 (rpt)
+
+        # load tos
+
+        spullt
 
         j next
 
@@ -834,17 +832,19 @@ def_word ">R", "tor", hash_TOR, it_rto
 # ( -- w ; w -- ) #; @
 def_word "RP@", "rpat", hash_RPAT, it_tor
 
-        mv fst, rpt
+        spusht
 
-        j push1
+        mv tos, rpt
+
+        j next
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; @
 def_word "RP!", "rpto", hash_RPTO, it_rpat
 
-        call pull2
+        mv rpt, tos
 
-        mv rpt, fst
+        spullt
 
         j next
 
@@ -852,17 +852,19 @@ def_word "RP!", "rpto", hash_RPTO, it_rpat
 # ( -- w ; w -- ) #; @
 def_word "SP@", "spat", hash_SPAT, it_rpto
 
-        lw fst, spt
+        spusht
 
-        j push1
+        mv tos, spt
+
+        j next
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; @
 def_word "SP!", "spto", hash_SPTO, it_spat
 
-        call pull2
+        mv spt, tos
 
-        mv spt, fst
+        spullt
 
         j next
 
@@ -886,31 +888,37 @@ branch:
 # ( -- ; -- ) #; branch if zero
 def_word "0BRANCH", "zbranch", hash_ZBRANCH, it_branch
         
-        call pull2
+        mv fst, tos
+        
+        spullt
 
         beq fst, zero, branch
 
-        j drop1
+        j next
 
 #---------------------------------------------------------------------
 # ( -- ; -- ) #; branch if greater than zero
 def_word "GBRANCH", "gbranch", hash_GBRANCH, it_zbranch
         
-        call pull2
+        mv fst, tos
+
+        spullt
 
         bgt fst, zero, branch
 
-        j drop1
+        j next
 
 #---------------------------------------------------------------------
 # ( -- w ) #; 
 def_word "LIT", "lit", hash_LIT, it_gbranch
 
-        lw fst, 0 (ipt)
+        spusht
+
+        lw tos, 0 (ipt)
 
         addi ipt, ipt, CELL
 
-        j push1
+        j next
 
 #---------------------------------------------------------------------
 # ( -- TRUE ) #; push 0xFFFFFFFF 
@@ -918,7 +926,7 @@ def_word "TRUE", "true", hash_TRUE, it_lit
         
         li fst, TRUE 
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( -- FALSE ) #; push 0x00000000
@@ -926,7 +934,7 @@ def_word "FALSE", "false", hash_FALSE, it_true
 
         li fst, FALSE 
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( -- 4 ) #; push 0x00000004
@@ -934,7 +942,7 @@ def_word "CELL", "cell", hash_CELL, it_false
 
         li fst, CELL
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; constant
@@ -942,7 +950,7 @@ def_word "RP0", "rpzo", hash_RPZO, it_cell
 
         la fst, _rp0
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; constant
@@ -950,7 +958,7 @@ def_word "SP0", "spzo", hash_SPZO, it_rpzo
 
         la fst, _sp0
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; @
@@ -958,7 +966,7 @@ def_word "STATE", "state", hash_STATE, it_spzo
 
         lw fst, STAT (usr)
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
 # ( -- w ; w -- ) #; @ last in dictionary
@@ -966,58 +974,58 @@ def_word "LAST", "last", hash_LAST, it_state
 
         lw fst, LAST (usr)
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
-# ( -- w ; w -- ) #; @ heap in memory
+# ( -- w ; w -- ) #; next unused cell of memory
 def_word "HEAP", "heap", hash_HEAP, it_last
 
         lw fst, HEAP (usr)
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
-# ( -- w ; w -- ) #; @ start of memory for use
+# ( -- w ; w -- ) #; last HEAP before compiling
 def_word "PEEK", "peek", hash_PEEK, it_heap
 
         lw fst, PEEK (usr)
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
-# ( -- w ; w -- ) #; @ start of memory for use
+# ( -- w ; w -- ) #; last unused cell of memory
 def_word "CEIL", "ceil", hash_CEIL, it_peek
 
         lw fst, CEIL (usr)
 
-        j push1
+        j copyit
 
 #---------------------------------------------------------------------
-# ( w1 w2 -- w3 w4 ) double multiply,  
+# ( w1 w2 -- w3 w4 ) double multiply, w1 * w2  
 def_word "M*", "bymul", hash_BYMUL, it_ceil
         
-        lw fst, 0 (spt)
-        lw snd, CELL (spt)
+        lw snd, 0 (spt)
 
-        mulh trd, fst, snd
-        mul snd, fst, snd
+        mulh fst, snd, tos
+        mul snd, snd, tos
 
 push2:
-        sw snd, CELL (spt)
-        sw fst, 0 (spt)
+        sw snd, 0 (spt)
+        
+        mv tos, fst
+
 	j next
 
 #---------------------------------------------------------------------
-# ( w1 w2 -- w3 w4 ) divide
+# ( w1 w2 -- w3 w4 ) double divide, w1/w2
 def_word "/MOD", "bymod", hash_BYMOD, it_bymul
         
-        lw fst, 0 (spt)
-        lw snd, CELL (spt)
+	beqz tos, by_zero
 
-	beqz snd, by_zero
+        lw snd, 0 (spt)
 
-        div trd, fst, snd
-        rem snd, fst, snd
+        div fst, snd, tos
+        rem snd, snd, tos
 
 	j push2
 
@@ -1025,9 +1033,12 @@ def_word "/MOD", "bymod", hash_BYMOD, it_bymul
 # ( w -- ) #; @
 def_word "PERFORM", "perform", hash_PERFORM, it_bymod
 
-        call pull2
+        mv fst, tos
 
-        # same note of ;$ return with 'jalr ipt, (ra)' goes to j next
+        spullt
+
+        # same note of ;$ 
+
         jalr ra, 0 (fst)
 
         j next
@@ -1037,100 +1048,4 @@ def_word "PERFORM", "perform", hash_PERFORM, it_bymod
 .set last_next, it_perform
 
 #---------------------------------------------------------------------
-
-/*
-#---------------------------------------------------------------------
-# extras already defined or not used
-#---------------------------------------------------------------------
-
-#---------------------------------------------------------------------
-# ( -- w ; w -- ) #; @ start of memory for use
-def_word "HEAD", "head", hash_HEAD, it_ceil
-
-        la fst, h_where
-
-        j push1
-
-#---------------------------------------------------------------------
-# ( -- w ; w -- ) #; @ end of memory for use
-def_word "TAIL", "tail", hash_TAIL, it_head
-
-        la fst, h_there
-
-        j push1
-
-#---------------------------------------------------------------------
-# ( w -- w*2 ) #; shift left
-def_word "2*", "twomul", hash_TWOMUL, it_bymod
-
-        call look0
-        
-        slli fst, fst, 1
-        
-        j keep1
-
-#---------------------------------------------------------------------
-# ( w -- w/2 ) #; shift right
-def_word "2/", "twodiv", hash_TWODIV, it_twomul
-
-        call look0
-        
-        srli fst, fst, 1
-        
-        j keep1
-
-
-#---------------------------------------------------------------------
-# ( w1 w2 -- w1<<w2 ) #; shift left
-def_word "LSHIFT", "lshift", hash_LSHIFT, it_twodiv
-
-        call pull2
-        
-        sll fst, snd, fst
-        
-        j keep1
-
-#---------------------------------------------------------------------
-# ( w1 w2 -- w1>>w2 ) #; shift right
-def_word "RSHIFT", "rshift", hash_RSHIFT, it_lshift
-
-        call pull2
-        
-        srl fst, snd, fst
-        
-        j keep1
-
-#---------------------------------------------------------------------
-# ( w1 w2 w3 -- w3 w1 w2 ) #; rot tos
-def_word "-ROT", "nrot", hash_NROT, it_rot
-
-        call look0
-
-        lw snd, CELL (idx)
-        
-        lw trd, 2 * CELL (idx)
-
-        sw snd, 0 (idx)
-
-        sw trd, CELL (idx)
-
-        sw fst, 2 * CELL (idx)
-
-        j next
-
-#---------------------------------------------------------------------
-# ( w -- ) #; @
-def_word "+!", "plusto", hash_PLUSTO, it_perform
-
-        call pull2
-
-        lw idx, 0 (fst)
-
-        add snd, snd, idx
-
-        sw snd, 0 (fst)
-
-        j drop1
-        
-*/
 

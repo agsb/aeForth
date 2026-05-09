@@ -275,7 +275,7 @@ warp:
 
 #---------------------------------------------------------------------         
 # search for a hash in dictionary linked list 
-# idx have the hash of the word
+# trd have the hash of the word
 #
 find:
 
@@ -312,7 +312,7 @@ find:
 
         # compare trd equ hash
         
-        bne idx, wrd, 100b
+        bne trd, wrd, 100b
 
         # points to code or list, aka xt
 
@@ -370,53 +370,53 @@ execute:
 .equ DJB2, 5381
 .equ SFHT, 5
 #---------------------------------------------------------------------
-# return the hash of token in idx 
+# return the hash of token in trd 
 # do not change the registers !
 token:
         save_ra
 
         # prepare for hash
 
-        lui idx, %hi(DJB2)
-        addi idx, idx, %lo(DJB2)
+        lui trd, %hi(DJB2)
+        addi trd, trd, %lo(DJB2)
 
         # load word separator, BL is space
 
-        li trd, BL
+        li spc, BL
 
         # skip spaces
 skip:
         call _getc
 
-        bleu fst, trd, skip
+        bleu fst, spc, skip
         
         # djb2 hash function
 hash:        
 
-        mv snd, idx
+        mv snd, trd
 
-        slli idx, idx, SFHT
+        slli trd, trd, SFHT
         
-        add idx, idx, snd
+        add trd, trd, snd
         
-        xor idx, idx, fst
+        xor trd, trd, fst
         
         # scan spaces
 scan:
         call _getc
 
-        # andi fst, fst, 127
+        andi fst, fst, 127
 
-        bltu fst, trd, scan
+        bltu fst, spc, scan
 
-        bne fst, trd, hash
+        bne fst, spc, hash
 
         # clear hash high bit 
 mask:
 
-        slli idx, idx, ONE
+        slli trd, trd, ONE
 
-        srli idx, idx, ONE
+        srli trd, trd, ONE
 
         load_ra
 
@@ -425,13 +425,13 @@ mask:
 #---------------------------------------------------------------------
 comma:
 
-        lw idx, HEAP (usr)
+        lw trd, HEAP (usr)
       
-        sw fst, 0 (idx)
+        sw fst, 0 (trd)
       
-        addi idx, idx, CELL
+        addi trd, trd, CELL
       
-        sw idx, HEAP (usr)
+        sw trd, HEAP (usr)
 
         ret
 
@@ -509,11 +509,7 @@ move:
 
 #----------------------------------------------------------------------
 
-#include "minimals.S"
-
-#----------------------------------------------------------------------
-
-#include "primitives.S"
+#include "dictionary.S"
 
 #----------------------------------------------------------------------
 .ifdef tools
