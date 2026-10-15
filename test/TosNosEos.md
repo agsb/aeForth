@@ -8,7 +8,9 @@
 
 #define sp s0
 
-#define dp s1
+#define rp s1
+
+#define nib s2
 
 #define ip a4
 
@@ -20,13 +22,14 @@
 
 # ---------------------------------------------------------
 
+.align 2
+
 # word, label, hash
 .macro def_native label hash 
 it_\label:
-    .align 2
-    .word 999b - 8
+    .word 9999b - 8
     .word \hash
-999:
+9999:
 is_\label:
 .endm
 
@@ -36,13 +39,20 @@ is_\label:
 
 .macro push rg ps 
  	addi \ps, \ps, -1 * CELL
-	sw \rg, 0 (sp)
+	sw \rg, 0 (\ps)
 .endm
 
 .macro pull rg ps
 	lw \rg, 0 (\ps)
  	addi \ps, \ps, 1 * CELL
 .endm
+
+# ---------------------------------------------------------
+
+.equ FALSE, 0
+.equ TRUE, -1
+.equ NaN, 0x80000000
+.equ CELL, 4
 
 # ---------------------------------------------------------
 
@@ -70,29 +80,38 @@ is_\label:
 .equ hash_XOR, 0x0B883040 #; ( XOR ) 
 .equ hash_NAN, 0x0B87D404 #; ( NAN ) 
 .equ hash_ZEQ, 0x0B88288B #; ( ZEQ ) 
+.equ hash_TRUE, 0x7C879BF3 #; ( TRUE )
+.equ hash_FALSE, 0x0C3C6778 #; ( FALSE )
+.equ hash_NAN, 0x0B87D404 #; ( NAN )
 
 
 # ---------------------------------------------------------
 
-999:
-    .word 0x0
+# fake header as end of dictionary
+	.word FALSE
+	.word TRUE
+9999:
+
+# ---------------------------------------------------------
 
 def_native "EXIT" hash_EXIT 
 # keep ip
 unnest:
 	pull ip rp
 next:
-	pull nos, ip
+	pull nos ip
 pick:
-	bge nos, LIMIT, nest
+	bge nos, nib, nest
 jump:
-	jarl ra, 0 (nos)
+	jalr ra, 0 (nos)
 	j next
 nest:
 	push ip rp 
 move:
 	mv ip, nos
 	j next
+
+# ---------------------------------------------------------
 
 def_native "BRANCH" hash_BRANCH 
 branch:
@@ -104,7 +123,7 @@ def_native "ZBRANCH" hash_ZBRANCH
 	mv pos, tos
 	pull tos sp
 	beqz pos, branch
-	add ip, ip, CELL
+	addi ip, ip, CELL
 end_native
 
 def_native "TOR" hash_TOR 
@@ -114,11 +133,11 @@ end_native
 
 def_native "RTO" hash_RTO 
 	push tos sp
-	pull ros rp
+	pull tos rp
 end_native
 
 def_native "RAT" hash_RAT 
-	push tos
+	push tos sp
 	lw tos, 0 (rp)
 end_native
 
@@ -193,26 +212,33 @@ end_native
 
 def_native "ORR" hash_ORR 
 	pull nos sp
-	orr tos, tos, nos
+	or tos, tos, nos
 end_native
 
 def_native "XOR" hash_XOR 
 	pull nos sp
-	eor tos, tos, nos
-end_native
-
-def_native "NAN" hash_NAN 
-	push tos sp
-	lu tos, #0x8000000
+	xor tos, tos, nos
 end_native
 
 def_native "ZEQ" hash_ZEQ 
 	beqz tos, isfalse
+	j istrue
+end_native
+
+def_native "NAN" hash_NAN 
+	push tos sp
+	lui tos, 0x8000
+end_native
+
+def_native "TRUE" hash_TRUE
+	push tos sp
 istrue:
-	addi tos, zero, -1
-	j isit	
+	addi tos, zero, TRUE
+end_native
+
+def_native "FALSE" hash_TRUE
+	push tos sp
 isfalse:
-	addi tos, zero, zero	
-isit:
+	addi tos, zero, FALSE	
 end_native
 
