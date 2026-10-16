@@ -14,10 +14,17 @@ in cases of:
 
 ## what
 
-    | word | no | TOS | TOS and NOS |
-    | --- | --- | --- | --- |
-    | drop | 1  | 2 | 3 |
-    | dup  | 
+| word | no | TOS | TOS and NOS | action | 
+| --- | --- | --- | --- | --- |
+| drop | 1 / 0  | 2 / 1 | 3 / 2 | ( w -- ) |
+| dup  | 3 / 1 | 2 / 0 | 3 / 1 | ( w -- w w ) |
+| swap | 4 / 1 | 3 / 0 | 3 / 0 | ( w1 w2 -- w2 w1 ) |
+|  |  |  |  |  | 
+| test | 3 / 0 | 4 / 1 | 5 / 2 | test value at top of stack |
+| one  | 3 / 2 | 1 / 0 | 1 / 0| one parameter operations |
+| two  | 5 / 2 | 3 / 0 | 3 / 0| two parameter operations |
+|  |  |  |  |  | 
+|  |  |  |  |  |    
 ## How do
 
     sp++ is addi sp, sp, +4; 
