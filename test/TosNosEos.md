@@ -17,6 +17,9 @@ the indice is number of operations for a common used word.
 | over | 3 | 4 | 5 | (w1 w2 -- w1 w2 w1 ) |
 | swap | 4 | 3 | 3 | ( w1 w2 -- w2 w1 ) |
 |  |  |  |  |  | 
+| @ | 3 | 1 | 1 | ( w1 -- w2 ) |
+| ! | 4 | 3 | 3 | ( w1 w2 -- ) |
+|  |  |  |  |  | 
 | >R | 4 | 4 | 5 | ( w -- ; -- w ) |
 | R> | 4 | 4 | 5 | ( -- w ; w -- ) |
 | R@ | 3 | 3 | 4 | ( -- w ; w -- w ) 
@@ -25,7 +28,7 @@ the indice is number of operations for a common used word.
 | one  | 3 | 1 | 1 | one parameter operations, (negate, inverse, etc) |
 | two  | 5 | 3 | 3 | two parameter operations (and, shift, plus, etc) |
 |  |  |  |  |  | 
-| total | 33 | 28 | 36 | |
+| total | 40 | 32 | 40 | |
 
 Overall use a dedicated register as TOS is the better option
 
@@ -59,6 +62,18 @@ to do a SWAP
     1.lw A, 0(sp); lw B, 4(sp); sw B, 0(sp); sw A, 4(sp) 
     2.lw A, 0(sp); sw T, 0(sp); mv T, A;
     3.mv A, N; mv N, T; mv T, A;
+
+to do a @
+
+    1. lw A, 0(sp); lw A, 0(A); sw A, 0(sp);
+    2. lw T, 0(T);
+    3. lw T, 0(T);
+
+to do a !
+
+    1. lw A, 0(sp); sp++; lw B, 0(sp); sp++; sw B, 0(A);
+    2. lw A, 0(sp); sp++; sw A, 0(T); lw T, 0 (sp); sp++;
+    3. sw N, 0(T); lw T, 0(sp); sp++; lw N, 0(sp); sp++;
 
 to do a >R
 
