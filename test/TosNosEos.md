@@ -21,7 +21,7 @@ the indice is number of operations for a common used word.
 | R> | 4 | 4 | 5 | ( -- w ; w -- ) |
 | R@ | 3 | 3 | 4 | ( -- w ; w -- w ) 
 |  |  |  |  |  | 
-| test | 3 | 4 | 5 | test value at top of stack, (beqz, bltz, etc) |
+| test | 3 | 4 | 5 | test and drop the value at top of stack, (beqz, bltz, etc) |
 | one  | 3 | 1 | 1 | one parameter operations, (negate, inverse, etc) |
 | two  | 5 | 3 | 3 | two parameter operations (and, shift, plus, etc) |
 |  |  |  |  |  | 
