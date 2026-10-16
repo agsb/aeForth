@@ -33,6 +33,8 @@ Overall use a dedicated register as TOS is the better option
 
     sp++ is addi sp, sp, +4; 
     sp-- is addi sp, sp, -4;
+    pull is lw R, 0 (P); sp++;
+    push is sp--; sw R, 0 (P);
    
 to do a DROP;
 
