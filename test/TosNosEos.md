@@ -11,7 +11,6 @@ in cases of:
     2. a TOS and no NOS 
     3. a TOS and a NOS 
 
-
 ## what
 
 | word | no | TOS | TOS and NOS | action | 
@@ -20,6 +19,10 @@ in cases of:
 | dup  | 3 / 1 | 2 / 0 | 3 / 1 | ( w -- w w ) |
 | over | 3 / 0 | 4 / 1 | 5 / 2 | (w1 w2 -- w1 w2 w1 ) |
 | swap | 4 / 1 | 3 / 0 | 3 / 0 | ( w1 w2 -- w2 w1 ) |
+|  |  |  |  |  | 
+| >R | 4 / 0 | 4 / 0 | 5 / 1 | ( w -- ; -- w ) |
+| R> | 4 / 0 | 4 / 0 | 5 / 1 | ( -- w ; w -- ) |
+| R@ | 3 / 0 | 3 / 0 | 4 / 1 | ( -- w ; w -- w ) 
 |  |  |  |  |  | 
 | test | 3 / 0 | 4 / 1 | 5 / 2 | test value at top of stack |
 | one  | 3 / 2 | 1 / 0 | 1 / 0| one parameter operations |
@@ -55,6 +58,24 @@ to do a SWAP
     2.lw A, 0(sp); sw T, 0(sp); mv T, A;
     3.mv A, N; mv N, T; mv T, A;
 
+to do a >R
+
+    1. lw A, 0(sp); sp++; rp--; sw A, 0(rp);
+    2. rp--; sw T, 0(rp); lw T, 0(sp); sp++;
+    3. rp--; sw T, 0(rp); mv T, N; lw N, 0(sp); sp++;
+
+to do a R>
+
+    1. lw A, 0(rp); rp++; sp--; sw A, 0(sp);
+    2. sp--; sw T 0(sp); lw T, 0(rp); rp++; 
+    3. sp--; sw N, 0(sp); mv N, T; lw T, 0(rp); rp++;
+
+to do a R@
+
+    1. lw A, 0(rp); sp--; sw A, 0(sp);
+    2. sp--; sw T, 0(sp); lw T, 0(rp);  
+    3. sp--; sw N, 0(sp); mv N, T; lw N, 0(rp); 
+    
 to do a top of stack test 
 
     1. lw A, 0(sp); sp++; test(A); 
