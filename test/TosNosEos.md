@@ -24,9 +24,9 @@ in cases of:
 | R> | 4 / 0 | 4 / 0 | 5 / 1 | ( -- w ; w -- ) |
 | R@ | 3 / 0 | 3 / 0 | 4 / 1 | ( -- w ; w -- w ) 
 |  |  |  |  |  | 
-| test | 3 / 0 | 4 / 1 | 5 / 2 | test value at top of stack |
-| one  | 3 / 2 | 1 / 0 | 1 / 0| one parameter operations |
-| two  | 5 / 2 | 3 / 0 | 3 / 0| two parameter operations |
+| test | 3 / 0 | 4 / 1 | 5 / 2 | test value at top of stack, (beqz, bltz, etc) |
+| one  | 3 / 2 | 1 / 0 | 1 / 0 | one parameter operations, (negate, inverse, etc) |
+| two  | 5 / 2 | 3 / 0 | 3 / 0 | two parameter operations (and, shift, plus, etc) |
 |  |  |  |  |  | 
 |  |  |  |  |  |    
 ## How do
