@@ -6,29 +6,29 @@ The pointers IP; SP; RP are keeped in registers;
     but what about TOS and NOS ?
 
 Consider registers T and N as dedicated and A and B as temporary;
-in cases of: 
-    1. no TOS and no NOS  
-    2. a TOS and no NOS 
-    3. a TOS and a NOS 
+first indice is number of operations
 
 ## what
 
 | word | no | TOS | TOS and NOS | action | 
 | --- | --- | --- | --- | --- |
-| drop | 1 / 0  | 2 / 1 | 3 / 2 | ( w -- ) |
-| dup  | 3 / 1 | 2 / 0 | 3 / 1 | ( w -- w w ) |
-| over | 3 / 0 | 4 / 1 | 5 / 2 | (w1 w2 -- w1 w2 w1 ) |
-| swap | 4 / 1 | 3 / 0 | 3 / 0 | ( w1 w2 -- w2 w1 ) |
+| drop | 1 | 2 | 3 | ( w -- ) |
+| dup  | 3 | 2 | 3 | ( w -- w w ) |
+| over | 3 | 4 | 5 | (w1 w2 -- w1 w2 w1 ) |
+| swap | 4 | 3 | 3 | ( w1 w2 -- w2 w1 ) |
 |  |  |  |  |  | 
-| >R | 4 / 0 | 4 / 0 | 5 / 1 | ( w -- ; -- w ) |
-| R> | 4 / 0 | 4 / 0 | 5 / 1 | ( -- w ; w -- ) |
-| R@ | 3 / 0 | 3 / 0 | 4 / 1 | ( -- w ; w -- w ) 
+| >R | 4 | 4 | 5 | ( w -- ; -- w ) |
+| R> | 4 | 4 | 5 | ( -- w ; w -- ) |
+| R@ | 3 | 3 | 4 | ( -- w ; w -- w ) 
 |  |  |  |  |  | 
-| test | 3 / 0 | 4 / 1 | 5 / 2 | test value at top of stack, (beqz, bltz, etc) |
-| one  | 3 / 2 | 1 / 0 | 1 / 0 | one parameter operations, (negate, inverse, etc) |
-| two  | 5 / 2 | 3 / 0 | 3 / 0 | two parameter operations (and, shift, plus, etc) |
+| test | 3 | 4 | 5 | test value at top of stack, (beqz, bltz, etc) |
+| one  | 3 | 1 | 1 | one parameter operations, (negate, inverse, etc) |
+| two  | 5 | 3 | 3 | two parameter operations (and, shift, plus, etc) |
 |  |  |  |  |  | 
-|  |  |  |  |  |    
+| total | 33 | 28 | 36 | |
+
+Overall use a dedicated register as TOS is the better option
+
 ## How do
 
     sp++ is addi sp, sp, +4; 
