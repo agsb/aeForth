@@ -2,13 +2,13 @@
 
 Comparing the RISCV code for use dedicated registers
 
-The pointers IP; SP; RP are keeped in registers; 
+The pointers IP, SP, RP are better keeped in dedicated registers 
     but what about TOS and NOS ?
 
-Consider registers T and N as dedicated and A and B as temporary;
-first indice is number of operations
+In next table, consider registers T and N as dedicated and A and B as temporary,
+the indice is number of operations for a common used word.
 
-## what
+## What
 
 | word | no | TOS | TOS and NOS | action | 
 | --- | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ first indice is number of operations
 
 Overall use a dedicated register as TOS is the better option
 
-## How do
+## How
 
     sp++ is addi sp, sp, +4; 
     sp-- is addi sp, sp, -4;
