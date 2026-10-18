@@ -18,6 +18,8 @@ Only use a IMMEDIATE flag, at MSBit (31) of hash, also is NaN.
 
 There are a file with more core words to use.
 
+** Use the tos2 directory **
+
 ## For use
 
     **cat t0.f t1.f t2.f - | sh doit.sh | tee output**
