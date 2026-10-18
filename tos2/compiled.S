@@ -129,35 +129,53 @@ def_native "next" hash_NEXT
 
 # ( -- ) ; aka figforth semicolon
 def_native "colon" hash_COLON
-	# save here, is_panic if semis not follow elsewhere
-	.word is_heap, is_fetch, is_pike, is_store
+	# save here, panic if semis not follow elsewhere
+	.word heap, fetch, pike, store
 	# stat is 'compile' == 1
-	.word is_one, is_state, is_store
+	.word one, state, store
 	# make a header
-	.word is_header
-	.word is_exit
+	.word header
+	.word exit
 
 # ( -- ) ; aka figforth semicolon, is IMMEDIATE
 def_native "semis" hash_SEMIS 
-	# load last, is_panic if colon not lead elsewhere
-	.word is_pike, is_fetch, is_last, is_store
+	# load last, panic if colon not lead elsewhere
+	.word pike, fetch, last, store
 	# stat is 'execute' == 0
-	.word is_nil, is_state, is_store
+	.word nil, state, store
 	# make a footer
-	.word is_docon, is_exit, is_comma
-	.word is_exit
+	.word docon, exit, comma
+	.word exit
 
 # ( -- ) ; aka figforth semicolon
 def_native "header" hash_HEADER
-	.word is_last, is_fetch, is_comma
-	.word is_token, is_comma
-	.word is_exit
+	.word last, fetch, comma
+	.word token, comma
+	.word exit
 
-# ( -- ) ; aka figforth semicolon
+# ( c w -- h )
+def_native "djb2" hash_DJB2
+	.word dup, dup, plus, 
+	.word dup, plus, dup, plus, 
+	.word dup, plus, dup, plus, 
+	.word plus, xor
+	.exit
+
+# ( -- h ) 
 def_native "token" hash_TOKEN
-	.word docon, 5381
-	.word docon, BL
-	.word key, over, over, equ, zbranch  
+	# skip spaces
+	.word dolit, BL
+	.word begin, key, over, over, equ, inverse, until
+	# prepare
+	.word dolit, 5381, tor
+	.word begin
+	.word rto, djb2, tor
+	.word key, over, over, equ
+	.word inverse, until
+	.word drop, drop
+	.word nan, inverse, rto, and
+	.word exit
+
 #----------------------------------------------------------------------
 # djb2 hash function
 # classic djb2 hash algorithm, with XOR, adapted from cdb_hash
