@@ -166,12 +166,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .align 2
 
 # label 9999 must be exclusive :)
+# ht_ header, with link and hash
+# xt_ native code or list of references
+#
 .macro def_native label hash 
-it_\label:
+ht_\label:
     .word 9999b - 8
     .word \hash
 9999:
-is_\label:
+xt_\label:
 .endm
 
 # gcc handles big long jumps by relaxation :)
@@ -196,7 +199,7 @@ is_\label:
 .equ FALSE, 0x00000000
 .equ TRUE,  0xFFFFFFFF
 .equ NAN,   0x80000000
-.equ CELL, 4
+.equ CELL,  0x04
 
 #----------------------------------------------------------------------
 
@@ -209,9 +212,6 @@ is_\label:
 .equ hash_GBRANCH, 0x689E2DB6 #; ( GBRANCH )
 .equ hash_DOVAR, 0x0C682A6B #; ( DOVAR )
 .equ hash_DOCON, 0x0C67F9AC #; ( DOCON )
-
-#.equ hash_DOLIT, 0x0C67DE7F #; ( DOLIT )
-#.equ hash_LIT, 0x0B87DB14 #; ( LIT )
 
 # moves pointers
 .equ hash_RPAT, 0x7C88A9B2 #; ( RP@ ) 
@@ -256,8 +256,8 @@ is_\label:
 .equ hash_EQU, 0x0002B598  #; ( = )
 .equ hash_LESS, 0x0002B599 #; ( < ) 
 .equ hash_ULESS, 0x005973CC #; (U< ) 
-.equ hash_GREATHER, 0x2D802BBF #; ( > )
 .equ hash_GTZERO, 0x0059680B #; ( 0> )
+.equ hash_GREATHER, 0x2D802BBF #; ( > )
 
 # address
 .equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
@@ -339,7 +339,7 @@ end_native
 def_native "gbranch" hash_GBRANCH 
 	mv nos, tos
 	pull tos sp
-	blt zero, nos, branch
+	bgt nos, zero, branch
 	addi ip, ip, CELL
 end_native
 
@@ -696,11 +696,6 @@ def_native "emit" hash_EMIT
 	pull tos sp
 end_native
 
-
-#---------------------------------------------------------------------
-
-#include "compiles.S"
-
 #---------------------------------------------------------------------
 9999:
 .set def_native_last, 9999b
@@ -712,3 +707,4 @@ end_native
 9999:
 .set def_compiled_last, 9999b
 #---------------------------------------------------------------------
+
