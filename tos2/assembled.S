@@ -454,8 +454,8 @@ by_over:
 	lui tos, 0x8000
 end_native
 
-# ( -- 0) #; ( 1 ) #;  
-def_word "zero" hash_NIL
+# ( -- 0) #; ( 0 ) #;  
+def_word "nil" hash_NIL
 	push tos sp
 	lui tos, 0x0
 end_native
@@ -466,7 +466,7 @@ def_word "one" hash_ONE
 	lui tos, 0x1
 end_native
 
-# ( -- 2) #; ( 1 ) #;  
+# ( -- 2) #; ( 2 ) #;  
 def_word "two" hash_TWO
 	push tos sp
 	lui tos, 0x2

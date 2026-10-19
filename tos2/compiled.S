@@ -1,285 +1,383 @@
-/*
-;----------------------------------------------------------------------
-; Copyright (c) 2026, Alvaro Gomes Sobral Barcellos
-; All rights reserved.
+/* 
+;---------------------------------------------------------------------- 
+; Copyright (c) 2026, Alvaro Gomes Sobral Barcellos 
+; All rights reserved. 
 ; 
-; Redistribution and use in source and binary forms, with or without
-; modification, are permitted provided that the following conditions
-; are met:
+; Redistribution and use in source and binary forms, with or without 
+; modification, are permitted provided that the following conditions 
+; are met: 
 ; 
 ; 1. Redistributions of source code must retain the above copyright 
-;    notice, this list of conditions and the following disclaimer.
-;
-; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer. 
+; 
+; 2. Redistributions in binary form must reproduce the above copyright 
 ;    notice, this list of conditions and the following disclaimer in 
 ;    the documentation and/or other materials provided with the 
-;    distribution.
+;    distribution. 
 ; 
-; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
 ; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
 ; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
 ; FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-; COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-; INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-; BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, 
+; COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+; INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+; BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES 
 ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
 ; CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
 ; LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
 ; ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-; POSSIBILITY OF SUCH DAMAGE.
-;----------------------------------------------------------------------
-*/
-
-/*
+; POSSIBILITY OF SUCH DAMAGE. 
+;---------------------------------------------------------------------- 
+*/ 
+ 
+/* 
 Copyright 2026 Alvaro Gomes Sobral Barcellos 
+ 
+This program is free software: you can redistribute it and/or modify 
+it under the terms of the GNU General Public License as published by 
+the Free Software Foundation, either version 2 of the License, or 
+(at your option) any later version. 
+ 
+This program is distributed in the hope that it will be useful, 
+but WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+GNU General Public License for more details. 
+ 
+You should have received a copy of the GNU General Public License 
+along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+*/ 
+ 
+ 
+#---------------------------------------------------------------------- 
+# AEFORTH2 pre-compiled words 
+#---------------------------------------------------------------------- 
+ 
+.equ hash_LIT, 0x0B87DB14 #; ( LIT ) 
+.equ hash_HERE, 0x7C857F9F #; ( HERE ) 
+.equ hash_ALLOT, 0x0C53195F #; ( ALLOT ) 
+.equ hash_COMMA, 0x0002B589 #; ( , ) 
+.equ hash_TICK, 0x0002B582 #; ( ' ) 
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-(at your option) any later version.
+.equ hash_BEGIN, 0x0C8280A2 #; ( BEGIN ) 
+.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
+.equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
+.equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
+.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
+.equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
+.equ hash_AFT, 0x0B87B636 #; ( AFT ) 
+.equ hash_IF, 0x0059732A #; ( IF ) 
+.equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
+.equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
+.equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
+.equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
+.equ hash_CASE, 0x7C81C251 #; ( CASE )
+.equ hash_OF, 0x0059736C #; ( OF )
+.equ hash_ENDOF, 0x0DD0C22E #; ( END-OF )
+.equ hash_ENDCASE, 0x4507B893 #; ( END-CASE )
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+.equ hash_DO, 0x0059724E #; ( DO ) 
+.equ hash_LOOP, 0x7C836539 #; ( LOOP ) 
+.equ hash_PLOOP, 0x06344572 #; ( +LOOP )
+.equ hash_I, 0x0002B5EC #; ( I ) 
+.equ hash_J, 0x0002B5EF #; ( J ) 
+.equ hash_LEAVE, 0x0CF13D9E #; ( LEAVE ) 
+.equ hash_FOR, 0x0B87B3DE #; ( FOR ) 
+.equ hash_NEXT, 0x7C826702 #; ( NEXT ) 
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+.equ hash_COLON, 0x0002B59F #; ( : ) 
+.equ hash_SEMIS, 0x0002B59E #; ( ; ) 
+.equ hash_HEADER, 0x33DCB49A #; ( HEADER ) 
+.equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
+.equ hash_TOKEN, 0x0D8960FE #; ( TOKEN ) 
+.equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
+.equ hash_POSTPONE, 0x7A137C29 #; ( POSTPONE ) 
+.equ hash_ABORT, 0x0C4FFEAF #; ( ABORT )
 
 
-#----------------------------------------------------------------------
-# AEFORTH2 pre-compiled words
-#----------------------------------------------------------------------
-
-# ( -- w ) ;# ( LIT )
-def_word "lit" hash_LIT
-	.word 'docon
-	.word 'exit
-
-# ( -- a ) ;# ( HERE )
-def_word "here" hash_HERE
-	.word ''heap, ''fetch
-	.word 'exit
-
-# ( u -- ) ;# ( ALLOT )
-def_word "allot" hash_ALLOT
-	.word 'here, 'plus, 'heap, 'store
-	.word 'exit
-
-# ( w -- ) ;# ( COMMA )
-def_word "comma" hash_COMMA
-	.word 'here, 'store, 'cell, 'allot
-	.word 'exit
-
-# ( -- a ) ;# ( BEGIN )
-def_word "begin" hash_BEGIN
-	.word 'here
-	.word 'exit
-
-# ( a -- ) ;# ( BACK )
-def_word "back" hash_BACK
-	.word 'here, 'minus, 'comma
-	.word 'exit
-
-# ( a -- ) ;# ( AGAIN )
-def_word "again" hash_AGAIN
-	.word 'lit, 'branch, 'comma, 'back
-	.word 'exit
-
-# ( a -- ) ;# ( UNTIL )
-def_word "until" hash_UNTIL
-	.word 'lit, 'zbranch, 'comma, 'back
-	.word 'exit
-
-# ( a -- a ) ;# ( ENDIF )
-def_word "endif" hash_ENDIF
-	.word 'here, 'over, 'minus, 'swap, 'store
-	.word 'exit
-
-# ( -- a ) ;# ( MARK )
-def_word "mark" hash_MARK
-	.word 'here, 'nil, 'comma
-	.word 'exit
-
-# ( -- a ) ;# ( AFT )
-def_word "aft" hash_AAFT
-	.word 'here
-	.word 'exit
-
-# ( -- ) ;# ( IF )
-def_word "if" hash_IF
-	.word 'lit, 'zbranch, 'comma, 'mark
-	.word 'exit
-
-# ( -- ) ;# ( ELSE )
-def_word "else" hash_ELSE
-	.word 'lit, 'branch, 'comma, 'mark, 'swap, 'endif
-	.word 'exit
-
-# ( -- ) ;# ( THEN )
-def_word "then" hash_THEN
-	.word 'endif
-	.word 'exit
-
-# ( -- ) ;# ( WHILE )
-def_word "while" hash_WHILE
-	.word 'lit, 'zbranch, 'comma, 'mark
-	.word 'exit
-
-# ( -- ) ;# ( REPEAT )
-def_word "repeat" hash_REPEAT
-	.word 'swap, 'lit, 'branch, 'comma, 'back, 'endif
-	.word 'exit
-
-# ( w1 w2 -- ; -- w2 w1 ) ;# ( DO )
-def_word "do" hash_DO
-	.word 'lit, 'swap, 'comma, 
-	.word 'here 
-	.word 'lit, 'tor, 'comma 
-	.word 'lit, 'tor, 'comma
-	.word 'exit
-
-# ( -- ; w2 w1 -- w2 w1 ) ;# ( LOOP )
-def_word "loop" hash_LOOP
-	.word 'lit, 'rto, 'comma
-	.word 'lit, 'lit, 'comma 
-	.word 'lit, '1, 'comma
-	.word 'lit, 'plus, 'comma
-	.word 'lit, 'rto, 'comma
-	.word 'lit, 'over, 'comma
-	.word 'lit, 'over, 'comma
-	.word 'lit, 'equ, 'comma
-	.word 'lit, 'zbranch, 'comma
-	.word 'here, 'minus, 'comma
-	.word 'lit, 'drop, 'comma
-	.word 'lit, 'drop, 'comma
-	.word 'exit
-
-# ( w -- ; w2 w1 -- w2 w1 ) ;# ( +LOOP )
-def_word "ploop" hash_LOOP
-	.word 'lit, 'rto, 'comma
-	.word 'lit, 'plus, 'comma
-	.word 'lit, 'rto, 'comma
-	.word 'lit, 'over, 'comma
-	.word 'lit, 'over, 'comma
-	.word 'lit, 'equ, 'comma
-	.word 'lit, 'zbranch, 'comma
-	.word 'here, 'minus, 'comma
-	.word 'lit, 'drop, 'comma
-	.word 'lit, 'drop, 'comma
-	.word 'exit
-
-# ( -- w1 ; w2 w1 -- w2 w1 ) ;# ( I )
-def_word "i" hash_I
-	.word 'lit, 'rat, 'comma
-	.word 'exit
-
-# ( -- w3 ; w4 w3 w2 w1 -- w4 w3 w2 w1 ) ;# ( J )
-def_word "j" hash_J
- ' ' '	.word 'lit, 'rto, 'comma
- ' ' '	.word 'lit, 'rto, 'comma
- ' ' '	.word 'lit, 'rat, 'comma
-	.word 'lit, 'swap, 'comma
- ' ' '	.word 'lit, 'tor, 'comma
-	.word 'lit, 'swap, 'comma
- ' ' '	.word 'lit, 'tor, 'comma
-	.word 'exit
-
-# ( -- ; w2 w1 -- ) ;# ( LEAVE )
-def_word "leave" hash_LEAVE
- ' ' '	.word 'lit, 'rto, 'comma
-	.word 'lit, 'drop, 'comma
- ' ' '	.word 'lit, 'rto, 'comma
-	.word 'lit, 'drop, 'comma
-	.word 'exit
-	
-# ( w -- ; -- w ) ;# ( FOR )
-def_word "for" hash_FOR
-	.word 'here 
-	.word 'lit, 'tor, 'comma 
-	.word 'exit
-
-# ( -- ; w -- w ) ;# ( NEXT )
-def_word "next" hash_NEXT
-	.word 'lit, 'rto, 'comma
-	.word 'lit, '1, 'comma
-	.word 'lit, 'minus, 'comma
-	.word 'lit, 'dup, 'comma
-	.word 'lit, 'gbranch, 'comma
-	.word 'here, 'minus, 'comma
-	.word 'lit, 'drop, 'comma
-	.word 'exit
-
-# ( -- ) #; ( : ) aka figforth semicolon
-def_word "colon" hash_COLON
-	# save here, panic if semis not follow elsewhere
-	.word 'heap, 'fetch, 'pike, 'store
-	# stat is 'compile' == 1
-	.word 'one, 'state, 'store
-	# make a header
-	.word 'header
-	.word 'exit
-
-# ( -- ) #; ( ; ) aka figforth semicolon, is IMMEDIATE
-def_word "semis" hash_SEMIS 
-	# load last, panic if colon not lead elsewhere
-	.word 'pike, 'fetch, 'last, 'store
-	# stat is 'execute' == 0
-	.word 'nil, 'state, 'store
-	# make a footer
-	.word 'lit, 'exit, 'comma
-	.word 'exit
-
-# ( -- ) #; ( HEADER ) makes a header with next word
-def_word "header" hash_HEADER
-	.word 'last, 'fetch, 'comma
-	.word 'token, 'comma
-	.word 'exit
-
-# classic djb2 hash algorithm, with XOR, adapted from cdb_hash
-# ( c w -- w ) #; ( DJB2 )
-def_word "djb2" hash_DJB2
-	.word 'dup, 'dup, 'plus, 
-	.word 'dup, 'plus, 'dup, 'plus, 
-	.word 'dup, 'plus, 'dup, 'plus, 
-	.word 'plus, 'xor
-	.exit
-
-# crude token consumes a word between spaces
+#---------------------------------------------------------------------- 
+ 
+# ( -- w ) ;# ( LIT ) 
+def_word "lit" hash_LIT 
+	.word xt_docon 
+	.word xt_exit 
+ 
+# ( -- a ) ;# ( HERE ) 
+def_word "here" hash_HERE 
+	.word xt_heap, xt_fetch 
+	.word xt_exit 
+ 
+# ( u -- ) ;# ( ALLOT ) 
+def_word "allot" hash_ALLOT 
+	.word xt_here, xt_plus, xt_heap, xt_store 
+	.word xt_exit 
+ 
+# ( w -- ) ;# ( COMMA ) 
+def_word "comma" hash_COMMA 
+	.word xt_here, xt_store, xt_cell, xt_allot 
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+ 
+# ( -- a ) ;# ( BEGIN ) 
+def_word "begin" hash_BEGIN IMMEDIATE 
+	.word xt_here 
+	.word xt_exit 
+ 
+# ( a -- ) ;# ( BACK ) 
+def_word "back" hash_BACK IMMEDIATE 
+	.word xt_here, xt_minus, xt_comma 
+	.word xt_exit 
+ 
+# ( a -- ) ;# ( AGAIN ) 
+def_word "again" hash_AGAIN IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma, xt_back 
+	.word xt_exit 
+ 
+# ( a -- ) ;# ( UNTIL ) 
+def_word "until" hash_UNTIL IMMEDIATE 
+	.word xt_lit, xt_zbranch, xt_comma, xt_back 
+	.word xt_exit 
+ 
+# ( a -- a ) ;# ( ENDIF ) 
+def_word "endif" hash_ENDIF IMMEDIATE 
+	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
+	.word xt_exit 
+ 
+# ( -- a ) ;# ( MARK ) 
+def_word "mark" hash_MARK IMMEDIATE 
+	.word xt_here, xt_nil, xt_comma 
+	.word xt_exit 
+ 
+# ( -- a ) ;# ( AFT ) 
+def_word "aft" hash_AFT IMMEDIATE 
+	.word xt_here 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( IF ) 
+def_word "if" hash_IF IMMEDIATE 
+	.word xt_lit, xt_zbranch, xt_comma, xt_mark 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( ELSE ) 
+def_word "else" hash_ELSE IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma, xt_mark, xt_swap, xt_endif 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( THEN ) 
+def_word "then" hash_THEN IMMEDIATE 
+	.word xt_endif 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( WHILE ) 
+def_word "while" hash_WHILE IMMEDIATE 
+	.word xt_lit, xt_zbranch, xt_comma, xt_mark 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( REPEAT ) 
+def_word "repeat" hash_REPEAT IMMEDIATE 
+	.word xt_swap, xt_lit, xt_branch, xt_comma, xt_back, xt_endif 
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+ 
+# ( w1 w2 -- ; -- w2 w1 ) ;# ( DO ) 
+def_word "do" hash_DO IMMEDIATE 
+	.word xt_lit, xt_swap, xt_comma 
+	.word xt_here 
+	.word xt_lit, xt_tor, xt_comma 
+	.word xt_lit, xt_tor, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ; w2 w1 -- w2 w1 ) ;# ( LOOP ) 
+def_word "loop" hash_LOOP IMMEDIATE 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_lit, xt_comma 
+	.word xt_lit, 01, xt_comma 
+	.word xt_lit, xt_plus, xt_comma 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_equ, xt_comma 
+	.word xt_lit, xt_zbranch, xt_comma 
+	.word xt_here, xt_minus, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_exit 
+ 
+# ( w -- ; w2 w1 -- w2 w1 ) ;# ( +LOOP ) 
+def_word "ploop" hash_LOOP IMMEDIATE 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_plus, xt_comma 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_equ, xt_comma 
+	.word xt_lit, xt_zbranch, xt_comma 
+	.word xt_here, xt_minus, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_exit 
+ 
+# ( -- w1 ; w2 w1 -- w2 w1 ) ;# ( I ) 
+def_word "i" hash_I IMMEDIATE 
+	.word xt_lit, xt_rat, xt_comma 
+	.word xt_exit 
+ 
+# ( -- w3 ; w4 w3 w2 w1 -- w4 w3 w2 w1 ) ;# ( J ) 
+def_word "j" hash_J IMMEDIATE 
+ 	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_rat, xt_comma 
+	.word xt_lit, xt_swap, xt_comma 
+	.word xt_lit, xt_tor, xt_comma 
+	.word xt_lit, xt_swap, xt_comma 
+	.word xt_lit, xt_tor, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ; w2 w1 -- ) ;# ( LEAVE ) 
+def_word "leave" hash_LEAVE IMMEDIATE 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_exit 
+	 
+# ( w -- ; -- w ) ;# ( FOR ) 
+def_word "for" hash_FOR IMMEDIATE 
+	.word xt_here 
+	.word xt_lit, xt_tor, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ; w -- w ) ;# ( NEXT ) 
+def_word "next" hash_NEXT IMMEDIATE 
+	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, 01, xt_comma 
+	.word xt_lit, xt_minus, xt_comma 
+	.word xt_lit, xt_dup, xt_comma 
+	.word xt_lit, xt_gbranch, xt_comma 
+	.word xt_here, xt_minus, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+ 
+# ( -- ) #; ( CASE ) 
+def_word "case" hash_CASE IMMEDIATE 
+	.word xt_nil 
+	.word xt_exit 
+ 
+def_word "of" hash_OF IMMEDIATE 
+	.word xt_one, xt_plus, xt_tor 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_equ, xt_comma 
+	.word xt_lit, xt_zbranch, xt_comma 
+	.word xt_here, xt_nil, xt_comma 
+	.word xt_drop, xt_rto 
+	.word xt_exit 
+ 
+def_word "endof" hash_ENDOF IMMEDIATE 
+        .word xt_lit, xt_branch, xt_comma 
+	.word xt_here, xt_nil, xt_comma 
+	.word xt_swap, xt_dup, xt_here 
+	.word xt_swap, xt_minus, xt_swap, xt_store 
+	.word xt_exit 
+ 
+def_word "endcase" hash_ENDCASE IMMEDIATE 
+        .word xt_lit, xt_drop, xt_comma 
+	.word xt_dup, xt_nil, xt_equ 
+	.word xt_if, xt_drop, xt_exit 
+	.word xt_then, xt_nil 
+	.word xt_do, xt_dup 
+	.word xt_here, xt_swap, xt_minus, xt_swap, xt_store 
+	.word xt_loop 
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+ 
+# ( -- ) #; ( : ) aka figforth semicolon 
+def_word "colon" hash_COLON 
+	# save here, panic if semis not follow elsewhere 
+	.word xt_heap, xt_fetch, xt_pike, xt_store 
+	# stat is xt_compilext_ == 1 
+	.word xt_one, xt_state, xt_store 
+	# make a header 
+	.word xt_header 
+	.word xt_exit 
+ 
+# ( -- ) #; ( ; ) aka figforth semicolon, is IMMEDIATE 
+def_word "semis" hash_SEMIS IMMEDIATE 
+	# load last, panic if colon not lead elsewhere 
+	.word xt_pike, xt_fetch, xt_latest, xt_store 
+	# stat is xt_executext_ == 0 
+	.word xt_nil, xt_state, xt_store 
+	# make a footer 
+	.word xt_lit, xt_exit, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) #; ( HEADER ) makes a header with next word 
+def_word "header" hash_HEADER 
+	.word xt_latest, xt_fetch, xt_comma 
+	.word xt_token, xt_comma 
+	.word xt_exit 
+ 
+# classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
+# ( c w -- w ) #; ( DJB2 ) 
+def_word "djb2" hash_DJB2 
+	.word xt_dup, xt_dup, xt_plus 
+	.word xt_dup, xt_plus, xt_dup, xt_plus 
+	.word xt_dup, xt_plus, xt_dup, xt_plus 
+	.word xt_plus, xt_xor 
+	.word xt_exit 
+ 
+# crude token consumes a word between spaces 
 # return the hash of a token 
-# ( -- h ) #; ( TOKEN )
-def_word "token" hash_TOKEN
-	# skip spaces
-	.word 'lit, 'BL
-	.word 'begin, 'key, 'over, 'over, 'equ, 'inverse, 'until
-	# prepare
-	.word 'lit, '5381, 'tor
-	# scan spaces and do hash
-	.word 'begin
-	.word 'rto, 'djb2, 'tor
-	.word 'key, 'over, 'over, 'equ
-	.word 'inverse, 'until
-	.word 'drop, 'drop
-        # clear hash high bit
-	.word 'nan, 'inverse, 'rto, 'and
-	.word 'exit
-
-# ( h -- h ) #; ( FIND )
-def_word "find" hash_FIND
-	.word 'latest 
-	# find the hash
-	.word 'begin, 'over, 'over 
-	.word 'cell, 'plus, 'fetch, 'equ 
-	.word 'while, 'fetch, 'repeat
-	# discard hash, keep last link
-	.word 'zzzz 
-	.word 'cell, 'plus, 'dup, 'fetch, 'nan, 'and 
-	.word 'if, 'lit, '1, 'else, 'lit, '-1, 'then
-	.word 'then
-	.word 'exit
-
-
-
-#----------------------------------------------------------------------
-
+# ( -- h ) #; ( TOKEN ) 
+def_word "token" hash_TOKEN 
+	# skip spaces 
+	.word xt_lit, BL 
+	.word xt_begin, xt_key, xt_over, xt_over, xt_equ, xt_inverse, xt_until 
+	# prepare 
+	.word xt_lit, 5381, xt_tor 
+	# scan spaces and do hash 
+	.word xt_begin 
+	.word xt_rto, xt_djb2, xt_tor 
+	.word xt_key, xt_over, xt_over, xt_equ 
+	.word xt_inverse, xt_until 
+	.word xt_drop, xt_drop 
+        # clear hash high bit 
+	.word xt_nan, xt_inverse, xt_rto, xt_and 
+	.word xt_exit 
+ 
+# ( h -- h ) #; ( FIND ) 
+def_word "find" hash_FIND 
+	.word xt_latest 
+	# find the hash 
+	.word xt_begin, xt_over, xt_over 
+	.word xt_cell, xt_plus, xt_fetch, xt_equ 
+	.word xt_while, xt_fetch, xt_repeat 
+	# discard hash, keep last link 
+	.word xt_zzzz 
+	.word xt_cell, xt_plus, xt_dup, xt_fetch, xt_nan, xt_and 
+	.word xt_if, xt_lit, 1, xt_else, xt_lit, -1, xt_then 
+	.word xt_then 
+	.word xt_exit 
+ 
+# ( -- h ) #; ( ' ) tick 
+def_word "tick" hash_TICK IMMEDIATE 
+	.word xt_token, xt_find 
+	.word xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
+	.word xt_else, xt_abort 
+	.word xt_then 
+	.word xt_exit 
+ 
+# ( -- ) #; ( POSTPONE ) 
+def_word "postpone" hash_POSTPONE IMMEDIATE 
+	.word xt_tick, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) #; ( ABORT ) 
+def_word "abort" hash_ABORT  
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+ 

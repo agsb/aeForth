@@ -162,6 +162,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ params, 16
 
 #----------------------------------------------------------------------
+# essential
+#
+.equ FALSE, 0x00000000
+.equ TRUE,  0xFFFFFFFF
+.equ NAN,   0x80000000
+
+.equ IMMEDIATE, NAN
+
+#----------------------------------------------------------------------
 
 .align 2
 
@@ -169,10 +178,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ht_ header, with link and hash
 # xt_ native code or list of references
 #
-.macro def_word label hash 
+.macro def_word label:req hash:req flag=0x0 
 ht_\label:
     .word 9999b - 8
-    .word \hash
+    .word (\hash | \flag)
 9999:
 xt_\label:
 .endm
@@ -193,13 +202,6 @@ xt_\label:
 	lw \rg, 0 (\ps)
  	addi \ps, \ps, 1 * CELL
 .endm
-
-#----------------------------------------------------------------------
-# essential
-#
-.equ FALSE, 0x00000000
-.equ TRUE,  0xFFFFFFFF
-.equ NAN,   0x80000000
 
 # ---------------------------------------------------------
 # A fake header start of dictionary linked list

@@ -1,6 +1,0 @@
-compiled.S: Assembler messages:
-compiled.S:137: Warning: zero assumed for missing expression
-compiled.S:243: Warning: zero assumed for missing expression
-compiled.S:244: Warning: zero assumed for missing expression
-compiled.S:245: Warning: zero assumed for missing expression
-compiled.S:247: Error: unknown pseudo-op: `.exit'
