@@ -156,6 +156,20 @@ def_native "loop" hash_LOOP
 	.word lit, drop, comma
 	.word exit
 
+# ( w -- ; w2 w1 -- w2 w1 ) ;# ( +LOOP )
+def_native "ploop" hash_LOOP
+	.word lit, rto, comma
+	.word lit, plus, comma
+	.word lit, rto, comma
+	.word lit, over, comma
+	.word lit, over, comma
+	.word lit, equ, comma
+	.word lit, zbranch, comma
+	.word here, minus, comma
+	.word lit, drop, comma
+	.word lit, drop, comma
+	.word exit
+
 # ( -- w1 ; w2 w1 -- w2 w1 ) ;# ( I )
 def_native "i" hash_I
 	.word lit, rat, comma
