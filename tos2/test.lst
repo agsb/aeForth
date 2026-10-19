@@ -1,0 +1,2532 @@
+GAS LISTING /tmp/ccZTBZvh.s 			page 1
+
+
+   1              	# 0 "test.S"
+   2              	# 0 "<built-in>"
+   3              	# 0 "<command-line>"
+   4              	# 1 "/usr/riscv64-linux-gnu/include/stdc-predef.h" 1 3
+   5              	# 0 "<command-line>" 2
+   6              	# 1 "test.S"
+   7              	# 51 "test.S"
+   8              	# aeForth with MITC,
+   9              	
+  10              	# Using
+  11              	# Minimal Indirect Thread Code
+  12              	# ip, sp, rp, tos, in dedicated registers
+  13              	# nos, trd, fth as generic registers
+  14              	# words in uppercase
+  15              	
+  16              	# s0, s1, a0, a2, a3, a7 used in ecalls
+  17              	
+  18              	# s0, s1, a0, a2, a3, a4, a5 used in 16 bits opcodes
+  19              	
+  20              	
+  21              	#----------------------------------------------------------------------
+  22              	
+  23              	
+  24              	
+  25              	# -st -nd -rd -th
+  26              	
+  27              	# forth parameter stack pointer, reserved
+  28              	
+  29              	
+  30              	# forth return stack pointer, reserved
+  31              	
+  32              	
+  33              	# forth instruction pointer, reserved
+  34              	
+  35              	
+  36              	# forth top of stack, reserved, for easy
+  37              	
+  38              	
+  39              	# forth second on stack, not reserved
+  40              	
+  41              	
+  42              	# forth third on stack, not reserved
+  43              	
+  44              	
+  45              	# a0, a1, a2, a7 used as scratch, preserved inside ecalls
+  46              	
+  47              	# fixed memory pointers
+  48              	
+  49              	
+  50              	
+  51              	
+  52              	
+  53              	
+  54              	
+  55              	#----------------------------------------------------------------------
+  56              	# generics alias
+  57              	
+GAS LISTING /tmp/ccZTBZvh.s 			page 2
+
+
+  58              	#----------------------------------------------------------------------
+  59              	# max size of dictionary 64k CELLS, depends on host machine
+  60              	
+  61              	.equ RAM_LIMIT, 0x40000
+  62              	
+  63              	# as FORTH 1983
+  64              	
+  65              	.equ FALSE, 0
+  66              	
+  67              	.equ TRUE, -1
+  68              	
+  69              	# states
+  70              	
+  71              	.equ EXECUTE, 0
+  72              	
+  73              	.equ COMPILE, 1
+  74              	
+  75              	# usefull
+  76              	
+  77              	.equ CELL, 4 # sizeof a CELL
+  78              	
+  79              	.equ BL, 32 # word delimiter is blank space
+  80              	
+  81              	.equ QU, 34 # string delimiter is double quote, quotation mark
+  82              	
+  83              	# highlander, immediate flag, unique NaN
+  84              	
+  85              	# -2147483648
+  86              	.equ FLAG_IMM, 0x80000000
+  87              	
+  88              	# +2147483647
+  89              	.equ MASK_IMM, 0x7FFFFFFF
+  90              	
+  91              	# user parameter stack s0 s1 last heap state base
+  92              	
+  93              	# data stack index
+  94              	.equ SPTR, 0 * CELL
+  95              	
+  96              	# return stack index
+  97              	.equ RPTR, 1 * CELL
+  98              	
+  99              	# last link cell in heap dictionary linked list
+ 100              	.equ LAST, 2 * CELL
+ 101              	
+ 102              	# next free cell in heap dictionary, aka dp
+ 103              	.equ HEAP, 3 * CELL
+ 104              	
+ 105              	# last heap
+ 106              	.equ PIKE, 4 * CELL
+ 107              	
+ 108              	# state flag
+ 109              	.equ STAT, 5 * CELL
+ 110              	
+ 111              	# base radix for numbers, for future use
+ 112              	.equ BASE, 6 * CELL
+ 113              	
+ 114              	# temporary scratch as array of CELLS
+GAS LISTING /tmp/ccZTBZvh.s 			page 3
+
+
+ 115              	.equ TEMP, 7 * CELL
+ 116              	
+ 117              	# allow some cells for extras
+ 118              	
+ 119              	.equ params, 16
+ 120              	
+ 121              	#----------------------------------------------------------------------
+ 122              	
+ 123 ???? 0100     	.align 2
+ 124              	
+ 125              	# label 9999 must be exclusive :)
+ 126              	# ht_ header, with link and hash
+ 127              	# xt_ native code or list of references
+ 128              	
+ 129              	.macro def_word label hash
+ 130              	ht_\label:
+ 131              	    .word 9999b - 8
+ 132              	    .word \hash
+ 133              	9999:
+ 134              	xt_\label:
+ 135              	.endm
+ 136              	
+ 137              	# gcc handles big long jumps by relaxation :)
+ 138              	.macro end_native
+ 139              	    j next
+ 140              	.endm
+ 141              	
+ 142              	# generic push into memory
+ 143              	.macro push rg ps
+ 144              	  addi \ps, \ps, -1 * CELL
+ 145              	 sw \rg, 0 (\ps)
+ 146              	.endm
+ 147              	
+ 148              	# generic pull from memory
+ 149              	.macro pull rg ps
+ 150              	 lw \rg, 0 (\ps)
+ 151              	  addi \ps, \ps, 1 * CELL
+ 152              	.endm
+ 153              	
+ 154              	#----------------------------------------------------------------------
+ 155              	# essential
+ 156              	
+ 157              	.equ FALSE, 0x00000000
+ 158              	.equ TRUE, 0xFFFFFFFF
+ 159              	.equ NAN, 0x80000000
+ 160              	
+ 161              	# ---------------------------------------------------------
+ 162              	# A fake header start of dictionary linked list
+ 163              	
+ 164 ???? 00000000 	 .word FALSE
+ 165 ???? FFFFFFFF 	 .word TRUE
+ 166              	9999:
+ 167              	
+ 168              	#----------------------------------------------------------------------
+ 169              	
+ 170              	# 1 "assembled.S" 1
+ 171              	# 50 "assembled.S"
+GAS LISTING /tmp/ccZTBZvh.s 			page 4
+
+
+ 172              	#----------------------------------------------------------------------
+ 173              	# AEFORTH2 assembly code for RISCV
+ 174              	#----------------------------------------------------------------------
+ 175              	
+ 176              	# DJB2 hash for UPPERCASE Forth words inside ( )
+ 177              	
+ 178              	# changes a3
+ 179              	.equ hash_EXIT, 0x7C7CC745 #; ( EXIT )
+ 180              	.equ hash_BRANCH, 0x1E6C4191 #; ( BRANCH )
+ 181              	.equ hash_ZBRANCH, 0x7D28616B #; ( ZBRANCH )
+ 182              	.equ hash_GBRANCH, 0x689E2DB6 #; ( GBRANCH )
+ 183              	.equ hash_DOVAR, 0x0C682A6B #; ( DOVAR )
+ 184              	.equ hash_DOCON, 0x0C67F9AC #; ( DOCON )
+ 185              	
+ 186              	# moves pointers
+ 187              	.equ hash_RPAT, 0x7C88A9B2 #; ( RP@ )
+ 188              	.equ hash_SPAT, 0x7C8A4E93 #; ( SP@ )
+ 189              	.equ hash_RPTO, 0x7C88ABDC #; ( RP! )
+ 190              	.equ hash_SPTO, 0x7C8A507D #; ( SP! )
+ 191              	
+ 192              	# moves return stack
+ 193              	.equ hash_TOR, 0x0B88004C #; ( >R )
+ 194              	.equ hash_RTO, 0x0B8804AC #; ( R> )
+ 195              	.equ hash_RAT, 0x0B880702 #; ( R@ )
+ 196              	
+ 197              	# moves data stack
+ 198              	.equ hash_DROP, 0x7C7F5C2C #; ( DROP )
+ 199              	.equ hash_DUP, 0x0B87BC84 #; ( DUP )
+ 200              	.equ hash_OVER, 0x7C84398B #; ( OVER )
+ 201              	.equ hash_SWAP, 0x7C8A3910 #; ( SWAP )
+ 202              	.equ hash_ROT, 0x0B8807CC #; ( ROT )
+ 203              	
+ 204              	# memory
+ 205              	.equ hash_FETCH, 0x0C3E96F9 #; ( @ )
+ 206              	.equ hash_STORE, 0x0DD22B7A #; ( ! )
+ 207              	.equ hash_CFETCH, 0x2376B3FA #; ( C@ )
+ 208              	.equ hash_CSTORE, 0x252B26F9 #; ( C! )
+ 209              	
+ 210              	# arithmetic
+ 211              	.equ hash_PLUS, 0x7C8A057F #; ( + )
+ 212              	.equ hash_MINUS, 0x0002B588 #; ( - )
+ 213              	.equ hash_BYMUL, 0x005972C2 #; ( M* )
+ 214              	.equ hash_BYMOD, 0x7C4D1C6C #; ( /MOD )
+ 215              	
+ 216              	# logics
+ 217              	.equ hash_AND, 0x0B87B72E #; ( AND )
+ 218              	.equ hash_ORR, 0x0B87E22A #; ( OR )
+ 219              	.equ hash_XOR, 0x0B883040 #; ( XOR )
+ 220              	.equ hash_LSHIFT, 0x2C5784C9 #; ( LSHIFT )
+ 221              	.equ hash_RSHIFT, 0x416E6B97 #; ( RSHIFT )
+ 222              	.equ hash_INVERSE, 0x2D6AA2B5 #; ( INVERSE )
+ 223              	.equ hash_NEGATE, 0x26B37A79 #; ( NEGATE )
+ 224              	
+ 225              	# comparation
+ 226              	.equ hash_EQU, 0x0002B598 #; ( = )
+ 227              	.equ hash_LESS, 0x0002B599 #; ( < )
+ 228              	.equ hash_ULESS, 0x005973CC #; (U< )
+GAS LISTING /tmp/ccZTBZvh.s 			page 5
+
+
+ 229              	.equ hash_GTZERO, 0x0059680B #; ( 0> )
+ 230              	.equ hash_GREATHER, 0x2D802BBF #; ( > )
+ 231              	
+ 232              	# address
+ 233              	.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
+ 234              	.equ hash_EXECUTE, 0x69224E1A #; ( EXECUTE )
+ 235              	.equ hash_PERFORM, 0x15EEB854 #; ( PERFORM )
+ 236              	
+ 237              	# constants
+ 238              	.equ hash_TRUE, 0x7C879BF3 #; ( TRUE )
+ 239              	.equ hash_FALSE, 0x0C3C6778 #; ( FALSE )
+ 240              	.equ hash_NAN, 0x0B87D404 #; ( NAN )
+ 241              	.equ hash_CELL, 0x7C81B0A3 #; ( CELL )
+ 242              	.equ hash_NIL, 0x0002B595 #; ( 0 )
+ 243              	.equ hash_ONE, 0x0002B594 #; ( 1 )
+ 244              	.equ hash_TWO, 0x0002B597 #; ( 2 )
+ 245              	
+ 246              	# variables
+ 247              	.equ hash_SPZ, 0x0B881196 #; ( SP0 )
+ 248              	.equ hash_RPZ, 0x0B880557 #; ( RP0 )
+ 249              	.equ hash_STAT, 0x0DD1F032 #; ( STATE )
+ 250              	.equ hash_HEAP, 0x00597251 #; ( DP )
+ 251              	.equ hash_LAST, 0x2ADAAFBE #; ( LATEST )
+ 252              	.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE )
+ 253              	.equ hash_BASE, 0x7C8025F0 #; ( BASE )
+ 254              	
+ 255              	# dictionary
+ 256              	.equ hash_COLON, 0x0002B59F #; ( : )
+ 257              	.equ hash_SEMIS, 0x0002B59E #; ( ; )
+ 258              	#.equ hash_NAMET, 0x07669CB8 #; ( :NAME )
+ 259              	
+ 260              	# system ecalls
+ 261              	.equ hash_BYE, 0x0B87C61B #; ( BYE )
+ 262              	.equ hash_KEY, 0x0B87F112 #; ( KEY )
+ 263              	.equ hash_EMIT, 0x7C7C87D0 #; ( EMIT )
+ 264              	
+ 265              	# ---------------------------------------------------------
+ 266              	# A fake header as end of dictionary linked list
+ 267 ???? 00000000 	 .word FALSE
+ 268 ???? FFFFFFFF 	 .word TRUE
+ 269              	9999:
+ 270              	
+ 271              	#----------------------------------------------------------------------
+ 272              	
+ 273              	# ( -- ) #; ( EXIT )
+ 274              	def_word "exit" hash_EXIT
+ 274              	> ht_exit:
+ 274 ???? 00000000 	>  .word 9999b-8
+ 274 ???? 45C77C7C 	>  .word hash_EXIT
+ 274              	> 9999:
+ 274              	> xt_exit:
+ 275              	
+ 276              	# aka EXIT
+ 277              	unnest:
+ 278              	 pull a3 s1
+ 278 ???? 9440     	>  lw a3,0(s1)
+ 278 ???? 9104     	>  addi s1,s1,1*CELL
+GAS LISTING /tmp/ccZTBZvh.s 			page 6
+
+
+ 279              	next:
+ 280              	 pull a5 a3
+ 280 ???? 9C42     	>  lw a5,0(a3)
+ 280 ???? 9106     	>  addi a3,a3,1*CELL
+ 281              	pick:
+ 282 ???? 63D54701 	 bge a5, s4, nest
+ 283              	jump:
+ 284 ???? E7800700 	 jalr ra, 0 (a5)
+ 285 ???? D5BF     	 j next
+ 286              	# aka DOCOL
+ 287              	nest:
+ 288              	 push a3 s1
+ 288 ???? F114     	>  addi s1,s1,-1*CELL
+ 288 ???? 94C0     	>  sw a3,0(s1)
+ 289              	move:
+ 290 ???? BE86     	 mv a3, a5
+ 291 ???? F5B7     	 j next
+ 292              	
+ 293              	# ( -- ) #; ( BRANCH )
+ 294              	def_word "branch" hash_BRANCH
+ 294              	> ht_branch:
+ 294 ???? 00000000 	>  .word 9999b-8
+ 294 ???? 91416C1E 	>  .word hash_BRANCH
+ 294              	> 9999:
+ 294              	> xt_branch:
+ 295              	branch:
+ 296 ???? 9C42     	 lw a5, 0 (a3)
+ 297 ???? BE96     	 add a3, a3, a5
+ 298              	end_native
+ 298 ???? F9BF     	>  j next
+ 299              	
+ 300              	# ( w -- ) #; ( ZBRANCH )
+ 301              	def_word "zbranch" hash_ZBRANCH
+ 301              	> ht_zbranch:
+ 301 ???? 00000000 	>  .word 9999b-8
+ 301 ???? 6B61287D 	>  .word hash_ZBRANCH
+ 301              	> 9999:
+ 301              	> xt_zbranch:
+ 302 ???? BA87     	 mv a5, a4
+ 303              	 pull a4 s0
+ 303 ???? 1840     	>  lw a4,0(s0)
+ 303 ???? 1104     	>  addi s0,s0,1*CELL
+ 304 ???? F5D7     	 beqz a5, branch
+ 305 ???? 9106     	 addi a3, a3, CELL
+ 306              	end_native
+ 306 ???? E9B7     	>  j next
+ 307              	
+ 308              	# ( w -- ) #; ( GBRANCH )
+ 309              	def_word "gbranch" hash_GBRANCH
+ 309              	> ht_gbranch:
+ 309 ???? 00000000 	>  .word 9999b-8
+ 309 ???? B62D9E68 	>  .word hash_GBRANCH
+ 309              	> 9999:
+ 309              	> xt_gbranch:
+ 310 ???? BA87     	 mv a5, a4
+ 311              	 pull a4 s0
+ 311 ???? 1840     	>  lw a4,0(s0)
+GAS LISTING /tmp/ccZTBZvh.s 			page 7
+
+
+ 311 ???? 1104     	>  addi s0,s0,1*CELL
+ 312 ???? E34CF0FC 	 bgt a5, zero, branch
+ 313 ???? 9106     	 addi a3, a3, CELL
+ 314              	end_native
+ 314 ???? 55BF     	>  j next
+ 315              	
+ 316              	# ( -- w ) #; ( DOCON ), also is LIT
+ 317              	def_word "docon" hash_DOCON
+ 317              	> ht_docon:
+ 317 ???? 00000000 	>  .word 9999b-8
+ 317 ???? ACF9670C 	>  .word hash_DOCON
+ 317              	> 9999:
+ 317              	> xt_docon:
+ 318              	 push a4 s0
+ 318 ???? 7114     	>  addi s0,s0,-1*CELL
+ 318 ???? 18C0     	>  sw a4,0(s0)
+ 319 ???? 9842     	 lw a4, 0 (a3)
+ 320 ???? 9106     	 addi a3, a3, CELL
+ 321              	end_native
+ 321 ???? 4DB7     	>  j next
+ 322              	
+ 323              	# ( -- w ) #; ( DOVAR )
+ 324              	def_word "dovar" hash_DOVAR
+ 324              	> ht_dovar:
+ 324 ???? 00000000 	>  .word 9999b-8
+ 324 ???? 6B2A680C 	>  .word hash_DOVAR
+ 324              	> 9999:
+ 324              	> xt_dovar:
+ 325              	 push a4 s0
+ 325 ???? 7114     	>  addi s0,s0,-1*CELL
+ 325 ???? 18C0     	>  sw a4,0(s0)
+ 326 ???? 3687     	 mv a4, a3
+ 327 ???? 9106     	 addi a3, a3, CELL
+ 328              	end_native
+ 328 ???? 41BF     	>  j next
+ 329              	
+ 330              	#----------------------------------------------------------------------
+ 331              	
+ 332              	# ( w -- ; -- w ) #; ( >R )
+ 333              	def_word "tor" hash_TOR
+ 333              	> ht_tor:
+ 333 ???? 00000000 	>  .word 9999b-8
+ 333 ???? 4C00880B 	>  .word hash_TOR
+ 333              	> 9999:
+ 333              	> xt_tor:
+ 334              	 push a4 s1
+ 334 ???? F114     	>  addi s1,s1,-1*CELL
+ 334 ???? 98C0     	>  sw a4,0(s1)
+ 335              	 pull a4 s0
+ 335 ???? 1840     	>  lw a4,0(s0)
+ 335 ???? 1104     	>  addi s0,s0,1*CELL
+ 336              	end_native
+ 336 ???? BDBF     	>  j next
+ 337              	
+ 338              	# ( -- w ; w -- ) #; ( R> )
+ 339              	def_word "rto" hash_RTO
+ 339              	> ht_rto:
+GAS LISTING /tmp/ccZTBZvh.s 			page 8
+
+
+ 339 ???? 00000000 	>  .word 9999b-8
+ 339 ???? AC04880B 	>  .word hash_RTO
+ 339              	> 9999:
+ 339              	> xt_rto:
+ 340              	 push a4 s0
+ 340 ???? 7114     	>  addi s0,s0,-1*CELL
+ 340 ???? 18C0     	>  sw a4,0(s0)
+ 341              	 pull a4 s1
+ 341 ???? 9840     	>  lw a4,0(s1)
+ 341 ???? 9104     	>  addi s1,s1,1*CELL
+ 342              	end_native
+ 342 ???? B5B7     	>  j next
+ 343              	
+ 344              	# ( -- w ; w -- w ) #; ( R@ )
+ 345              	def_word "rat" hash_RAT
+ 345              	> ht_rat:
+ 345 ???? 00000000 	>  .word 9999b-8
+ 345 ???? 0207880B 	>  .word hash_RAT
+ 345              	> 9999:
+ 345              	> xt_rat:
+ 346              	 push a4 s0
+ 346 ???? 7114     	>  addi s0,s0,-1*CELL
+ 346 ???? 18C0     	>  sw a4,0(s0)
+ 347 ???? 9840     	 lw a4, 0 (s1)
+ 348              	end_native
+ 348 ???? B1BF     	>  j next
+ 349              	
+ 350              	# ( -- s1 ) #; ( RP@ )
+ 351              	def_word "rpat" hash_RPAT
+ 351              	> ht_rpat:
+ 351 ???? 00000000 	>  .word 9999b-8
+ 351 ???? B2A9887C 	>  .word hash_RPAT
+ 351              	> 9999:
+ 351              	> xt_rpat:
+ 352              	 push a4 s0
+ 352 ???? 7114     	>  addi s0,s0,-1*CELL
+ 352 ???? 18C0     	>  sw a4,0(s0)
+ 353 ???? 2687     	 mv a4, s1
+ 354              	end_native
+ 354 ???? B1B7     	>  j next
+ 355              	
+ 356              	# ( -- s0 ) #; ( SP@ )
+ 357              	def_word "spat" hash_SPAT
+ 357              	> ht_spat:
+ 357 ???? 00000000 	>  .word 9999b-8
+ 357 ???? 934E8A7C 	>  .word hash_SPAT
+ 357              	> 9999:
+ 357              	> xt_spat:
+ 358              	 push a4 s0
+ 358 ???? 7114     	>  addi s0,s0,-1*CELL
+ 358 ???? 18C0     	>  sw a4,0(s0)
+ 359 ???? 2287     	 mv a4, s0
+ 360              	end_native
+ 360 ???? 35BF     	>  j next
+ 361              	
+ 362              	# ( s1 -- ) #; ( RP! )
+ 363              	def_word "rpto" hash_RPTO
+GAS LISTING /tmp/ccZTBZvh.s 			page 9
+
+
+ 363              	> ht_rpto:
+ 363 ???? 00000000 	>  .word 9999b-8
+ 363 ???? DCAB887C 	>  .word hash_RPTO
+ 363              	> 9999:
+ 363              	> xt_rpto:
+ 364 ???? BA84     	 mv s1, a4
+ 365              	 pull a4 s0
+ 365 ???? 1840     	>  lw a4,0(s0)
+ 365 ???? 1104     	>  addi s0,s0,1*CELL
+ 366              	end_native
+ 366 ???? 35B7     	>  j next
+ 367              	
+ 368              	# ( s0 -- ) #; ( SP! )
+ 369              	def_word "spto" hash_SPTO
+ 369              	> ht_spto:
+ 369 ???? 00000000 	>  .word 9999b-8
+ 369 ???? 7D508A7C 	>  .word hash_SPTO
+ 369              	> 9999:
+ 369              	> xt_spto:
+ 370 ???? 3A84     	 mv s0, a4
+ 371              	 pull a4 s0
+ 371 ???? 1840     	>  lw a4,0(s0)
+ 371 ???? 1104     	>  addi s0,s0,1*CELL
+ 372              	end_native
+ 372 ???? 31BF     	>  j next
+ 373              	
+ 374              	# ( w -- ) #; ( DROP )
+ 375              	def_word "drop" hash_DROP
+ 375              	> ht_drop:
+ 375 ???? 00000000 	>  .word 9999b-8
+ 375 ???? 2C5C7F7C 	>  .word hash_DROP
+ 375              	> 9999:
+ 375              	> xt_drop:
+ 376              	 pull a4 s0
+ 376 ???? 1840     	>  lw a4,0(s0)
+ 376 ???? 1104     	>  addi s0,s0,1*CELL
+ 377              	end_native
+ 377 ???? 39B7     	>  j next
+ 378              	
+ 379              	# ( w -- w w ) #; ( DUP )
+ 380              	def_word "dup" hash_DUP
+ 380              	> ht_dup:
+ 380 ???? 00000000 	>  .word 9999b-8
+ 380 ???? 84BC870B 	>  .word hash_DUP
+ 380              	> 9999:
+ 380              	> xt_dup:
+ 381              	 push a4 s0
+ 381 ???? 7114     	>  addi s0,s0,-1*CELL
+ 381 ???? 18C0     	>  sw a4,0(s0)
+ 382              	end_native
+ 382 ???? 01B7     	>  j next
+ 383              	
+ 384              	# ( w1 w2 -- w1 w2 w1 ) #; ( OVER )
+ 385              	def_word "over" hash_OVER
+ 385              	> ht_over:
+ 385 ???? 00000000 	>  .word 9999b-8
+ 385 ???? 8B39847C 	>  .word hash_OVER
+GAS LISTING /tmp/ccZTBZvh.s 			page 10
+
+
+ 385              	> 9999:
+ 385              	> xt_over:
+ 386              	 push a4 s0
+ 386 ???? 7114     	>  addi s0,s0,-1*CELL
+ 386 ???? 18C0     	>  sw a4,0(s0)
+ 387 ???? 5840     	 lw a4, CELL (s0)
+ 388              	end_native
+ 388 ???? C5BD     	>  j next
+ 389              	
+ 390              	# ( w1 w2 -- w2 w1 ) #; ( SWAP )
+ 391              	def_word "swap" hash_SWAP
+ 391              	> ht_swap:
+ 391 ???? 00000000 	>  .word 9999b-8
+ 391 ???? 10398A7C 	>  .word hash_SWAP
+ 391              	> 9999:
+ 391              	> xt_swap:
+ 392 ???? 1C40     	 lw a5, 0 (s0)
+ 393 ???? 18C0     	 sw a4, 0 (s0)
+ 394 ???? 3E87     	 mv a4, a5
+ 395              	end_native
+ 395 ???? C5B5     	>  j next
+ 396              	
+ 397              	# ( w1 w2 W3 -- w3 w1 w2 ) #; ( ROT )
+ 398              	def_word "rot" hash_ROT
+ 398              	> ht_rot:
+ 398 ???? 00000000 	>  .word 9999b-8
+ 398 ???? CC07880B 	>  .word hash_ROT
+ 398              	> 9999:
+ 398              	> xt_rot:
+ 399 ???? 1C40     	 lw a5, 0 (s0)
+ 400 ???? 03284400 	 lw a6, 4 (s0)
+ 401 ???? 23200401 	 sw a6, 0 (s0)
+ 402 ???? 58C0     	 sw a4, 4 (s0)
+ 403 ???? 3E87     	 mv a4, a5
+ 404              	end_native
+ 404 ???? E1B5     	>  j next
+ 405              	
+ 406              	# ( a -- w ) #; ( @ )
+ 407              	def_word "fetch" hash_FETCH
+ 407              	> ht_fetch:
+ 407 ???? 00000000 	>  .word 9999b-8
+ 407 ???? F9963E0C 	>  .word hash_FETCH
+ 407              	> 9999:
+ 407              	> xt_fetch:
+ 408 ???? 1843     	 lw a4, 0 (a4)
+ 409              	end_native
+ 409 ???? 75BD     	>  j next
+ 410              	
+ 411              	# ( w a -- ) #; ( ! )
+ 412              	def_word "store" hash_STORE
+ 412              	> ht_store:
+ 412 ???? 00000000 	>  .word 9999b-8
+ 412 ???? 7A2BD20D 	>  .word hash_STORE
+ 412              	> 9999:
+ 412              	> xt_store:
+ 413              	 pull a5 s0
+ 413 ???? 1C40     	>  lw a5,0(s0)
+GAS LISTING /tmp/ccZTBZvh.s 			page 11
+
+
+ 413 ???? 1104     	>  addi s0,s0,1*CELL
+ 414 ???? 1CC3     	 sw a5, 0 (a4)
+ 415              	 pull a4 s0
+ 415 ???? 1840     	>  lw a4,0(s0)
+ 415 ???? 1104     	>  addi s0,s0,1*CELL
+ 416              	end_native
+ 416 ???? 65B5     	>  j next
+ 417              	
+ 418              	# ( a -- c ) #; ( C@ )
+ 419              	def_word "cfetch" hash_CFETCH
+ 419              	> ht_cfetch:
+ 419 ???? 00000000 	>  .word 9999b-8
+ 419 ???? FAB37623 	>  .word hash_CFETCH
+ 419              	> 9999:
+ 419              	> xt_cfetch:
+ 420 ???? 03070700 	 lb a4, 0 (a4)
+ 421              	end_native
+ 421 ???? 69BD     	>  j next
+ 422              	
+ 423              	# ( c a -- ) #; ( C! )
+ 424              	def_word "cstore" hash_CSTORE
+ 424              	> ht_cstore:
+ 424 ???? 00000000 	>  .word 9999b-8
+ 424 ???? F9262B25 	>  .word hash_CSTORE
+ 424              	> 9999:
+ 424              	> xt_cstore:
+ 425              	 pull a5 s0
+ 425 ???? 1C40     	>  lw a5,0(s0)
+ 425 ???? 1104     	>  addi s0,s0,1*CELL
+ 426 ???? 2300F700 	 sb a5, 0 (a4)
+ 427              	 pull a4 s0
+ 427 ???? 1840     	>  lw a4,0(s0)
+ 427 ???? 1104     	>  addi s0,s0,1*CELL
+ 428              	end_native
+ 428 ???? 51B5     	>  j next
+ 429              	
+ 430              	# ( w1 w2 -- w3 ) #; ( + )
+ 431              	def_word "plus" hash_PLUS
+ 431              	> ht_plus:
+ 431 ???? 00000000 	>  .word 9999b-8
+ 431 ???? 7F058A7C 	>  .word hash_PLUS
+ 431              	> 9999:
+ 431              	> xt_plus:
+ 432              	 pull a5 s0
+ 432 ???? 1C40     	>  lw a5,0(s0)
+ 432 ???? 1104     	>  addi s0,s0,1*CELL
+ 433 ???? 3E97     	 add a4, a5, a4
+ 434              	end_native
+ 434 ???? 95BD     	>  j next
+ 435              	
+ 436              	# ( w1 w2 -- w3 ) #; ( - )
+ 437              	def_word "minus" hash_MINUS
+ 437              	> ht_minus:
+ 437 ???? 00000000 	>  .word 9999b-8
+ 437 ???? 88B50200 	>  .word hash_MINUS
+ 437              	> 9999:
+ 437              	> xt_minus:
+GAS LISTING /tmp/ccZTBZvh.s 			page 12
+
+
+ 438              	 pull a5 s0
+ 438 ???? 1C40     	>  lw a5,0(s0)
+ 438 ???? 1104     	>  addi s0,s0,1*CELL
+ 439 ???? 3E97     	 add a4, a5, a4
+ 440              	end_native
+ 440 ???? 95B5     	>  j next
+ 441              	
+ 442              	# ( w1 w2 -- w3 w4 ) multiply, double result
+ 443              	def_word "bymul", hash_BYMUL
+ 443              	> ht_bymul:
+ 443 ???? 00000000 	>  .word 9999b-8
+ 443 ???? C2725900 	>  .word hash_BYMUL
+ 443              	> 9999:
+ 443              	> xt_bymul:
+ 444              	     pull a5 s0
+ 444 ???? 1C40     	>  lw a5,0(s0)
+ 444 ???? 1104     	>  addi s0,s0,1*CELL
+ 445 ???? 3318F702 	     mulh a6, a4, a5
+ 446 ???? B307F702 	     mul a5, a4, a5
+ 447              	push2:
+ 448              	     push a5 s0
+ 448 ???? 7114     	>  addi s0,s0,-1*CELL
+ 448 ???? 1CC0     	>  sw a5,0(s0)
+ 449 ???? 4287     	     mv a4, a6
+ 450              	end_native
+ 450 ???? A1B5     	>  j next
+ 451              	
+ 452              	# ( w1 w2 -- w3 w4 ) divide, reminder and quontient
+ 453              	def_word "bymod", hash_BYMOD
+ 453              	> ht_bymod:
+ 453 ???? 00000000 	>  .word 9999b-8
+ 453 ???? 6C1C4D7C 	>  .word hash_BYMOD
+ 453              	> 9999:
+ 453              	> xt_bymod:
+ 454              	     pull a5 s0
+ 454 ???? 1C40     	>  lw a5,0(s0)
+ 454 ???? 1104     	>  addi s0,s0,1*CELL
+ 455 ???? 63860712 	     beqz a5, by_zero
+ 456 ???? 3348F702 	     div a6, a4, a5
+ 457 ???? B367F702 	     rem a5, a4, a5
+ 458 ???? C5B7     	     j push2
+ 459              	
+ 460              	# ( w1 w2 -- w3 ) #; ( AND )
+ 461              	def_word "and" hash_AND
+ 461              	> ht_and:
+ 461 ???? 00000000 	>  .word 9999b-8
+ 461 ???? 2EB7870B 	>  .word hash_AND
+ 461              	> 9999:
+ 461              	> xt_and:
+ 462              	 pull a5 s0
+ 462 ???? 1C40     	>  lw a5,0(s0)
+ 462 ???? 1104     	>  addi s0,s0,1*CELL
+ 463 ???? 7D8F     	 and a4, a5, a4
+ 464              	end_native
+ 464 ???? 39BD     	>  j next
+ 465              	
+ 466              	# ( w1 w2 -- w3 ) #; ( OR )
+GAS LISTING /tmp/ccZTBZvh.s 			page 13
+
+
+ 467              	def_word "or" hash_ORR
+ 467              	> ht_or:
+ 467 ???? 00000000 	>  .word 9999b-8
+ 467 ???? 2AE2870B 	>  .word hash_ORR
+ 467              	> 9999:
+ 467              	> xt_or:
+ 468              	 pull a5 s0
+ 468 ???? 1C40     	>  lw a5,0(s0)
+ 468 ???? 1104     	>  addi s0,s0,1*CELL
+ 469 ???? 5D8F     	 or a4, a5, a4
+ 470              	end_native
+ 470 ???? 39B5     	>  j next
+ 471              	
+ 472              	# ( w1 w2 -- w3 ) #; ( XOR )
+ 473              	def_word "xor" hash_XOR
+ 473              	> ht_xor:
+ 473 ???? 00000000 	>  .word 9999b-8
+ 473 ???? 4030880B 	>  .word hash_XOR
+ 473              	> 9999:
+ 473              	> xt_xor:
+ 474              	 pull a5 s0
+ 474 ???? 1C40     	>  lw a5,0(s0)
+ 474 ???? 1104     	>  addi s0,s0,1*CELL
+ 475 ???? 3D8F     	 xor a4, a5, a4
+ 476              	end_native
+ 476 ???? FDBB     	>  j next
+ 477              	
+ 478              	# ( w1 w2 -- w1<<w2 ) #; ( LSHIFT ) shift left some bits
+ 479              	def_word "lshift", hash_LSHIFT
+ 479              	> ht_lshift:
+ 479 ???? 00000000 	>  .word 9999b-8
+ 479 ???? C984572C 	>  .word hash_LSHIFT
+ 479              	> 9999:
+ 479              	> xt_lshift:
+ 480              	         pull a5 s0
+ 480 ???? 1C40     	>  lw a5,0(s0)
+ 480 ???? 1104     	>  addi s0,s0,1*CELL
+ 481 ???? 3397E700 	         sll a4, a5, a4
+ 482              	end_native
+ 482 ???? F5B3     	>  j next
+ 483              	
+ 484              	# ( w1 w2 -- w1>>w2 ) #; ( RSHIFT ) shift right some bits
+ 485              	def_word "rshift", hash_RSHIFT
+ 485              	> ht_rshift:
+ 485 ???? 00000000 	>  .word 9999b-8
+ 485 ???? 976B6E41 	>  .word hash_RSHIFT
+ 485              	> 9999:
+ 485              	> xt_rshift:
+ 486              	         pull a5 s0
+ 486 ???? 1C40     	>  lw a5,0(s0)
+ 486 ???? 1104     	>  addi s0,s0,1*CELL
+ 487 ???? 33D7E700 	         srl a4, a5, a4
+ 488              	end_native
+ 488 ???? E9BB     	>  j next
+ 489              	
+ 490              	# ( w1 -- w2 ) #; ( ALIGN ) align to cell, word is 4 bytes
+ 491              	def_word "align", hash_ALIGN
+GAS LISTING /tmp/ccZTBZvh.s 			page 14
+
+
+ 491              	> ht_align:
+ 491 ???? 00000000 	>  .word 9999b-8
+ 491 ???? C81C530C 	>  .word hash_ALIGN
+ 491              	> 9999:
+ 491              	> xt_align:
+ 492 ???? 0D07     	        addi a4, a4, (CELL-1)
+ 493 ???? 719B     	        andi a4, a4, ~(CELL-1)
+ 494              	end_native
+ 494 ???? F1B3     	>  j next
+ 495              	
+ 496              	# ( w1 -- w2 ) #; ( INVERSE)
+ 497              	def_word "inverse", hash_INVERSE
+ 497              	> ht_inverse:
+ 497 ???? 00000000 	>  .word 9999b-8
+ 497 ???? B5A26A2D 	>  .word hash_INVERSE
+ 497              	> 9999:
+ 497              	> xt_inverse:
+ 498              	        # xori fst, fst, -1
+ 499 ???? 1347F7FF 	        not a4, a4
+ 500              	end_native
+ 500 ???? 7DBB     	>  j next
+ 501              	
+ 502              	# ( w1 -- w2 ) #; ( NEGATE ), arithmetic inverse
+ 503              	def_word "negate", hash_NEGATE
+ 503              	> ht_negate:
+ 503 ???? 00000000 	>  .word 9999b-8
+ 503 ???? 797AB326 	>  .word hash_NEGATE
+ 503              	> 9999:
+ 503              	> xt_negate:
+ 504              	        # sub fst, zero, fst
+ 505 ???? 3307E040 	        neg a4, a4
+ 506              	end_native
+ 506 ???? 45BB     	>  j next
+ 507              	
+ 508              	# ( w1 -- ; -- w2 ) #; ( EXECUTE ),
+ 509              	def_word "execute", hash_EXECUTE
+ 509              	> ht_execute:
+ 509 ???? 00000000 	>  .word 9999b-8
+ 509 ???? 1A4E2269 	>  .word hash_EXECUTE
+ 509              	> 9999:
+ 509              	> xt_execute:
+ 510              	        # sub fst, zero, fst
+ 511              	        push a4 s1
+ 511 ???? F114     	>  addi s1,s1,-1*CELL
+ 511 ???? 98C0     	>  sw a4,0(s1)
+ 512              	 pull a4 s0
+ 512 ???? 1840     	>  lw a4,0(s0)
+ 512 ???? 1104     	>  addi s0,s0,1*CELL
+ 513              	end_native
+ 513 ???? 79BB     	>  j next
+ 514              	
+ 515              	# ( w -- ) #; #; ( PERFORM ), does a native jump
+ 516              	def_word "perform", hash_PERFORM
+ 516              	> ht_perform:
+ 516 ???? 00000000 	>  .word 9999b-8
+ 516 ???? 54B8EE15 	>  .word hash_PERFORM
+ 516              	> 9999:
+GAS LISTING /tmp/ccZTBZvh.s 			page 15
+
+
+ 516              	> xt_perform:
+ 517 ???? BA87     	 mv a5, a4
+ 518              	 pull a4 s0
+ 518 ???? 1840     	>  lw a4,0(s0)
+ 518 ???? 1104     	>  addi s0,s0,1*CELL
+ 519 ???? E7800700 	        jalr ra, 0 (a5)
+ 520              	end_native
+ 520 ???? 69B3     	>  j next
+ 521              	
+ 522              	#---------------------------------------------------------------------
+ 523              	
+ 524              	# ( w1 w2 -- T|F ) #; ( = )
+ 525              	def_word "equ" hash_EQU
+ 525              	> ht_equ:
+ 525 ???? 00000000 	>  .word 9999b-8
+ 525 ???? 98B50200 	>  .word hash_EQU
+ 525              	> 9999:
+ 525              	> xt_equ:
+ 526              	     pull a5 s0
+ 526 ???? 1C40     	>  lw a5,0(s0)
+ 526 ???? 1104     	>  addi s0,s0,1*CELL
+ 527 ???? 6308F704 	 beq a4, a5, istrue
+ 528 ???? B9A8     	 j isfalse
+ 529              	end_native
+ 529 ???? 9DBB     	>  j next
+ 530              	
+ 531              	# ( w1 w2 -- T|F ) #; ( < ) w1 < w2
+ 532              	def_word "less" hash_LESS
+ 532              	> ht_less:
+ 532 ???? 00000000 	>  .word 9999b-8
+ 532 ???? 99B50200 	>  .word hash_LESS
+ 532              	> 9999:
+ 532              	> xt_less:
+ 533              	    pull a5 s0
+ 533 ???? 1C40     	>  lw a5,0(s0)
+ 533 ???? 1104     	>  addi s0,s0,1*CELL
+ 534 ???? 63CEE702 	 blt a5, a4, istrue
+ 535 ???? A9A0     	 j isfalse
+ 536              	end_native
+ 536 ???? 8DB3     	>  j next
+ 537              	
+ 538              	# ( u1 u2 -- T|F ) #; ( U< ) u1 < u2
+ 539              	def_word "uless" hash_ULESS
+ 539              	> ht_uless:
+ 539 ???? 00000000 	>  .word 9999b-8
+ 539 ???? CC735900 	>  .word hash_ULESS
+ 539              	> 9999:
+ 539              	> xt_uless:
+ 540              	     pull a5 s0
+ 540 ???? 1C40     	>  lw a5,0(s0)
+ 540 ???? 1104     	>  addi s0,s0,1*CELL
+ 541 ???? 63E4E702 	 bltu a5, a4, istrue
+ 542 ???? 1DA8     	 j isfalse
+ 543              	end_native
+ 543 ???? B9B3     	>  j next
+ 544              	
+ 545              	# ( u1 u2 -- T|F ) #; ( 0> ) u1 > u2
+GAS LISTING /tmp/ccZTBZvh.s 			page 16
+
+
+ 546              	def_word "greather" hash_GREATHER
+ 546              	> ht_greather:
+ 546 ???? 00000000 	>  .word 9999b-8
+ 546 ???? BF2B802D 	>  .word hash_GREATHER
+ 546              	> 9999:
+ 546              	> xt_greather:
+ 547              	     pull a5 s0
+ 547 ???? 1C40     	>  lw a5,0(s0)
+ 547 ???? 1104     	>  addi s0,s0,1*CELL
+ 548 ???? 634AF700 	 blt a4, a5, istrue
+ 549 ???? 0DA0     	 j isfalse
+ 550              	end_native
+ 550 ???? 2DBB     	>  j next
+ 551              	
+ 552              	#---------------------------------------------------------------------
+ 553              	# constants
+ 554              	
+ 555              	# ( -- 0xFFFFFFFF ) #; ( TRUE )
+ 556              	def_word "true" hash_TRUE
+ 556              	> ht_true:
+ 556 ???? 00000000 	>  .word 9999b-8
+ 556 ???? F39B877C 	>  .word hash_TRUE
+ 556              	> 9999:
+ 556              	> xt_true:
+ 557              	 push a4 s0
+ 557 ???? 7114     	>  addi s0,s0,-1*CELL
+ 557 ???? 18C0     	>  sw a4,0(s0)
+ 558              	istrue:
+ 559 ???? 1307F0FF 	 addi a4, zero, TRUE
+ 560              	end_native
+ 560 ???? 25B3     	>  j next
+ 561              	
+ 562              	# ( -- 0x00000000 ) #; ( FALSE )
+ 563              	def_word "false" hash_TRUE
+ 563              	> ht_false:
+ 563 ???? 00000000 	>  .word 9999b-8
+ 563 ???? F39B877C 	>  .word hash_TRUE
+ 563              	> 9999:
+ 563              	> xt_false:
+ 564              	 push a4 s0
+ 564 ???? 7114     	>  addi s0,s0,-1*CELL
+ 564 ???? 18C0     	>  sw a4,0(s0)
+ 565              	isfalse:
+ 566 ???? 0147     	 addi a4, zero, FALSE
+ 567              	end_native
+ 567 ???? 21BB     	>  j next
+ 568              	
+ 569              	# ( -- 0x80000000 ) #; ( NAN ) #; return error and flag IMMEDIATE
+ 570              	def_word "nan" hash_NAN
+ 570              	> ht_nan:
+ 570 ???? 00000000 	>  .word 9999b-8
+ 570 ???? 04D4870B 	>  .word hash_NAN
+ 570              	> 9999:
+ 570              	> xt_nan:
+ 571              	by_erro:
+ 572              	by_zero:
+ 573              	by_under:
+GAS LISTING /tmp/ccZTBZvh.s 			page 17
+
+
+ 574              	by_over:
+ 575              	 push a4 s0
+ 575 ???? 7114     	>  addi s0,s0,-1*CELL
+ 575 ???? 18C0     	>  sw a4,0(s0)
+ 576 ???? 37070008 	 lui a4, 0x8000
+ 577              	end_native
+ 577 ???? 19B3     	>  j next
+ 578              	
+ 579              	# ( -- 0) #; ( 1 ) #;
+ 580              	def_word "zero" hash_NIL
+ 580              	> ht_zero:
+ 580 ???? 00000000 	>  .word 9999b-8
+ 580 ???? 95B50200 	>  .word hash_NIL
+ 580              	> 9999:
+ 580              	> xt_zero:
+ 581              	 push a4 s0
+ 581 ???? 7114     	>  addi s0,s0,-1*CELL
+ 581 ???? 18C0     	>  sw a4,0(s0)
+ 582 ???? 37070000 	 lui a4, 0x0
+ 583              	end_native
+ 583 ???? D5B9     	>  j next
+ 584              	
+ 585              	# ( -- 1) #; ( 1 ) #;
+ 586              	def_word "one" hash_ONE
+ 586              	> ht_one:
+ 586 ???? 00000000 	>  .word 9999b-8
+ 586 ???? 94B50200 	>  .word hash_ONE
+ 586              	> 9999:
+ 586              	> xt_one:
+ 587              	 push a4 s0
+ 587 ???? 7114     	>  addi s0,s0,-1*CELL
+ 587 ???? 18C0     	>  sw a4,0(s0)
+ 588 ???? 0567     	 lui a4, 0x1
+ 589              	end_native
+ 589 ???? D5B1     	>  j next
+ 590              	
+ 591              	# ( -- 2) #; ( 1 ) #;
+ 592              	def_word "two" hash_TWO
+ 592              	> ht_two:
+ 592 ???? 00000000 	>  .word 9999b-8
+ 592 ???? 97B50200 	>  .word hash_TWO
+ 592              	> 9999:
+ 592              	> xt_two:
+ 593              	 push a4 s0
+ 593 ???? 7114     	>  addi s0,s0,-1*CELL
+ 593 ???? 18C0     	>  sw a4,0(s0)
+ 594 ???? 0967     	 lui a4, 0x2
+ 595              	end_native
+ 595 ???? D1B9     	>  j next
+ 596              	
+ 597              	# ( -- 4) #; ( CELL ) #; sizeof a CELL, usualy 32 bits
+ 598              	def_word "cell" hash_CELL
+ 598              	> ht_cell:
+ 598 ???? 00000000 	>  .word 9999b-8
+ 598 ???? A3B0817C 	>  .word hash_CELL
+ 598              	> 9999:
+ 598              	> xt_cell:
+GAS LISTING /tmp/ccZTBZvh.s 			page 18
+
+
+ 599              	 push a4 s0
+ 599 ???? 7114     	>  addi s0,s0,-1*CELL
+ 599 ???? 18C0     	>  sw a4,0(s0)
+ 600 ???? 1167     	 lui a4, 0x4
+ 601              	end_native
+ 601 ???? D1B1     	>  j next
+ 602              	
+ 603              	#---------------------------------------------------------------------
+ 604              	# variables
+ 605              	
+ 606              	# ( -- rp0 ) #; ( RPZ )
+ 607              	def_word "rp0" hash_RPZ
+ 607              	> ht_rp0:
+ 607 ???? 00000000 	>  .word 9999b-8
+ 607 ???? 5705880B 	>  .word hash_RPZ
+ 607              	> 9999:
+ 607              	> xt_rp0:
+ 608              	 push a4 s0
+ 608 ???? 7114     	>  addi s0,s0,-1*CELL
+ 608 ???? 18C0     	>  sw a4,0(s0)
+ 609 ???? 03274900 	 lw a4, RPTR ( s2 )
+ 610              	end_native
+ 610 ???? 4DB9     	>  j next
+ 611              	
+ 612              	# ( -- sp0 ) #; ( SPZ )
+ 613              	def_word "sp0" hash_SPZ
+ 613              	> ht_sp0:
+ 613 ???? 00000000 	>  .word 9999b-8
+ 613 ???? 9611880B 	>  .word hash_SPZ
+ 613              	> 9999:
+ 613              	> xt_sp0:
+ 614              	 push a4 s0
+ 614 ???? 7114     	>  addi s0,s0,-1*CELL
+ 614 ???? 18C0     	>  sw a4,0(s0)
+ 615 ???? 03270900 	 lw a4, SPTR ( s2 )
+ 616              	end_native
+ 616 ???? 45B1     	>  j next
+ 617              	
+ 618              	# ( -- state ) #; ( STATE )
+ 619              	def_word "state" hash_STAT
+ 619              	> ht_state:
+ 619 ???? 00000000 	>  .word 9999b-8
+ 619 ???? 32F0D10D 	>  .word hash_STAT
+ 619              	> 9999:
+ 619              	> xt_state:
+ 620              	 push a4 s0
+ 620 ???? 7114     	>  addi s0,s0,-1*CELL
+ 620 ???? 18C0     	>  sw a4,0(s0)
+ 621 ???? 03274901 	 lw a4, STAT ( s2 )
+ 622              	end_native
+ 622 ???? 79B1     	>  j next
+ 623              	
+ 624              	# ( -- last ) #; ( LATEST )
+ 625              	def_word "latest" hash_LAST
+ 625              	> ht_latest:
+ 625 ???? 00000000 	>  .word 9999b-8
+ 625 ???? BEAFDA2A 	>  .word hash_LAST
+GAS LISTING /tmp/ccZTBZvh.s 			page 19
+
+
+ 625              	> 9999:
+ 625              	> xt_latest:
+ 626              	 push a4 s0
+ 626 ???? 7114     	>  addi s0,s0,-1*CELL
+ 626 ???? 18C0     	>  sw a4,0(s0)
+ 627 ???? 03278900 	 lw a4, LAST ( s2 )
+ 628              	end_native
+ 628 ???? B5B9     	>  j next
+ 629              	
+ 630              	# ( -- heap ) #; ( DP )
+ 631              	def_word "heap" hash_HEAP
+ 631              	> ht_heap:
+ 631 ???? 00000000 	>  .word 9999b-8
+ 631 ???? 51725900 	>  .word hash_HEAP
+ 631              	> 9999:
+ 631              	> xt_heap:
+ 632              	 push a4 s0
+ 632 ???? 7114     	>  addi s0,s0,-1*CELL
+ 632 ???? 18C0     	>  sw a4,0(s0)
+ 633 ???? 0327C900 	 lw a4, HEAP ( s2 )
+ 634              	end_native
+ 634 ???? ADB1     	>  j next
+ 635              	
+ 636              	# ( -- pike ) #; ( PIKE )
+ 637              	def_word "pike" hash_PIKE
+ 637              	> ht_pike:
+ 637 ???? 00000000 	>  .word 9999b-8
+ 637 ???? B2128A7C 	>  .word hash_PIKE
+ 637              	> 9999:
+ 637              	> xt_pike:
+ 638              	 push a4 s0
+ 638 ???? 7114     	>  addi s0,s0,-1*CELL
+ 638 ???? 18C0     	>  sw a4,0(s0)
+ 639 ???? 03270901 	 lw a4, PIKE ( s2 )
+ 640              	end_native
+ 640 ???? A1B9     	>  j next
+ 641              	
+ 642              	# ( -- base ) #; ( BASE )
+ 643              	def_word "base" hash_BASE
+ 643              	> ht_base:
+ 643 ???? 00000000 	>  .word 9999b-8
+ 643 ???? F025807C 	>  .word hash_BASE
+ 643              	> 9999:
+ 643              	> xt_base:
+ 644              	 push a4 s0
+ 644 ???? 7114     	>  addi s0,s0,-1*CELL
+ 644 ???? 18C0     	>  sw a4,0(s0)
+ 645 ???? 03278901 	 lw a4, BASE ( s2 )
+ 646              	end_native
+ 646 ???? 99B1     	>  j next
+ 647              	
+ 648              	#---------------------------------------------------------------------
+ 649              	
+ 650              	# 1 "ecalls.S" 1
+ 651              	# 22 "ecalls.S"
+ 652              	#---------------------------------------------------------------------
+ 653              	# 1 ecall stuff, 29/07/2025, vide:
+GAS LISTING /tmp/ccZTBZvh.s 			page 20
+
+
+ 654              	# https:
+ 655              	# https:
+ 656              	
+ 657              	.equ _ZERO, 0
+ 658              	.equ _ONE, 1
+ 659              	
+ 660              	.equ _STDIN, 0
+ 661              	.equ _STDOUT, 1
+ 662              	
+ 663              	.equ _GETC, 63
+ 664              	.equ _PUTC, 64
+ 665              	.equ _EXIT, 93
+ 666              	
+ 667              	.equ _SBRK, 45
+ 668              	.equ _FCNT, 55
+ 669              	.equ _MMAP, 192
+ 670              	
+ 671              	#---------------------------------------------------------------------
+ 672              	
+ 673              	# Note: system ecalls do not use ra
+ 674              	
+ 675              	
+ 676              	.macro esave
+ 677              	 addi s0, s0, -16
+ 678              	 sw a0, 0(s0)
+ 679              	 sw a1, 4(s0)
+ 680              	 sw a2, 8(s0)
+ 681              	 sw a7, 12(s0)
+ 682              	.endm
+ 683              	
+ 684              	.macro eload
+ 685              	 lw a0, 0(s0)
+ 686              	 lw a1, 4(s0)
+ 687              	 lw a2, 8(s0)
+ 688              	 lw a7, 12(s0)
+ 689              	 addi s0, s0, 16
+ 690              	.endm
+ 691              	
+ 692              	#---------------------------------------------------------------------
+ 693              	.section .data
+ 694              	_char:
+ 695 ???? 00000000 	        .word 0x0
+ 696              	
+ 697              	#---------------------------------------------------------------------
+ 698              	.section .text
+ 699              	
+ 700              	# load system call for exit
+ 701              	_exit:
+ 702 ???? 9308D005 	        li a7, _EXIT
+ 703 ???? 0145     	        li a0, _ZERO
+ 704 ???? 73000000 	        ecall
+ 705              	
+ 706              	# load system call for init
+ 707              	_init:
+ 708              	 # doing nothing by now
+ 709 ???? 8280     	        ret
+ 710              	
+GAS LISTING /tmp/ccZTBZvh.s 			page 21
+
+
+ 711              	# 1 ecall for getc
+ 712              	_getc:
+ 713              	 esave
+ 713 ???? 4114     	>  addi s0,s0,-16
+ 713 ???? 08C0     	>  sw a0,0(s0)
+ 713 ???? 4CC0     	>  sw a1,4(s0)
+ 713 ???? 10C4     	>  sw a2,8(s0)
+ 713 ???? 23261401 	>  sw a7,12(s0)
+ 714              	
+ 715 ???? 9308F003 	        li a7, _GETC
+ 716 ???? 0145     	        li a0, _STDIN
+ 717 ???? 97050000 	        la a1, _char
+ 717      83A50500 
+ 718 ???? 0546     	        li a2, _ONE
+ 719 ???? 73000000 	        ecall
+ 720              	
+ 721 ???? 03870500 	        lb a4, 0 (a1)
+ 722              	
+ 723              	        eload
+ 723 ???? 0840     	>  lw a0,0(s0)
+ 723 ???? 4C40     	>  lw a1,4(s0)
+ 723 ???? 1044     	>  lw a2,8(s0)
+ 723 ???? 8328C400 	>  lw a7,12(s0)
+ 723 ???? 4104     	>  addi s0,s0,16
+ 724              	
+ 725              	        #EOF?
+ 726 ???? 71D1     	        beq a0, zero, _exit
+ 727              	
+ 728              	.ifndef echoo
+ 729              	
+ 730 ???? 8280     	        ret
+ 731              	
+ 732              	.endif
+ 733              	
+ 734              	# 1 ecall for putc
+ 735              	_putc:
+ 736              	 esave
+ 736 ???? 4114     	>  addi s0,s0,-16
+ 736 ???? 08C0     	>  sw a0,0(s0)
+ 736 ???? 4CC0     	>  sw a1,4(s0)
+ 736 ???? 10C4     	>  sw a2,8(s0)
+ 736 ???? 23261401 	>  sw a7,12(s0)
+ 737              	
+ 738 ???? 93080004 	        li a7, _PUTC
+ 739 ???? 0545     	        li a0, _STDOUT
+ 740 ???? 97050000 	        la a1, _char
+ 740      83A50500 
+ 741 ???? 0546     	        li a2, _ONE
+ 742              	
+ 743 ???? 2380E500 	        sb a4, 0 (a1)
+ 744              	
+ 745 ???? 73000000 	        ecall
+ 746              	
+ 747              	 eload
+ 747 ???? 0840     	>  lw a0,0(s0)
+ 747 ???? 4C40     	>  lw a1,4(s0)
+ 747 ???? 1044     	>  lw a2,8(s0)
+GAS LISTING /tmp/ccZTBZvh.s 			page 22
+
+
+ 747 ???? 8328C400 	>  lw a7,12(s0)
+ 747 ???? 4104     	>  addi s0,s0,16
+ 748              	
+ 749 ???? 8280     	        ret
+ 750              	
+ 751              	#---------------------------------------------------------------------
+ 752              	# 529 "assembled.S" 2
+ 753              	
+ 754              	# ( -- ) #; ( BYE )
+ 755              	def_word "bye" hash_BYE
+ 755              	> ht_bye:
+ 755 ???? 00000000 	>  .word 9999b-8
+ 755 ???? 1BC6870B 	>  .word hash_BYE
+ 755              	> 9999:
+ 755              	> xt_bye:
+ 756 ???? 97000000 	 call _exit
+ 756      E7800000 
+ 757              	end_native
+ 757 ???? C9B6     	>  j next
+ 758              	
+ 759              	# ( -- c ) #; ( KEY )
+ 760              	def_word "key" hash_KEY
+ 760              	> ht_key:
+ 760 ???? 00000000 	>  .word 9999b-8
+ 760 ???? 12F1870B 	>  .word hash_KEY
+ 760              	> 9999:
+ 760              	> xt_key:
+ 761              	 push a4 s0
+ 761 ???? 7114     	>  addi s0,s0,-1*CELL
+ 761 ???? 18C0     	>  sw a4,0(s0)
+ 762 ???? 97000000 	 call _getc
+ 762      E7800000 
+ 763              	end_native
+ 763 ???? 75B6     	>  j next
+ 764              	
+ 765              	# ( c -- ) #; ( EMIT )
+ 766              	def_word "emit" hash_EMIT
+ 766              	> ht_emit:
+ 766 ???? 00000000 	>  .word 9999b-8
+ 766 ???? D0877C7C 	>  .word hash_EMIT
+ 766              	> 9999:
+ 766              	> xt_emit:
+ 767 ???? 97000000 	 call _putc
+ 767      E7800000 
+ 768              	 pull a4 s0
+ 768 ???? 1840     	>  lw a4,0(s0)
+ 768 ???? 1104     	>  addi s0,s0,1*CELL
+ 769              	end_native
+ 769 ???? 59BE     	>  j next
+ 770              	
+ 771              	#---------------------------------------------------------------------
+ 772              	# 214 "test.S" 2
+ 773              	
+ 774              	#---------------------------------------------------------------------
+ 775              	9999:
+ 776              	.set def_word_last, 9999b
+ 777              	#---------------------------------------------------------------------
+GAS LISTING /tmp/ccZTBZvh.s 			page 23
+
+
+ 778              	
+ 779              	# 1 "compiled.S" 1
+ 780              	# 51 "compiled.S"
+ 781              	#----------------------------------------------------------------------
+ 782              	# AEFORTH2 pre-compiled words
+ 783              	#----------------------------------------------------------------------
+ 784              	
+ 785              	# ( -- w ) ;# ( LIT )
+ 786              	def_word "lit" hash_LIT
+ 786              	> ht_lit:
+ 786 ???? 00000000 	>  .word 9999b-8
+ 786 ???? 00000000 	>  .word hash_LIT
+ 786              	> 9999:
+ 786              	> xt_lit:
+ 787 ???? 00000000 	 .word docon
+ 788 ???? 00000000 	 .word exit
+ 789              	
+ 790              	# ( -- a ) ;# ( HERE )
+ 791              	def_word "here" hash_HERE
+ 791              	> ht_here:
+ 791 ???? 00000000 	>  .word 9999b-8
+ 791 ???? 00000000 	>  .word hash_HERE
+ 791              	> 9999:
+ 791              	> xt_here:
+ 792 ???? 00000000 	 .word heap, fetch
+ 792      00000000 
+ 793 ???? 00000000 	 .word exit
+ 794              	
+ 795              	# ( u -- ) ;# ( ALLOT )
+ 796              	def_word "allot" hash_ALLOT
+ 796              	> ht_allot:
+ 796 ???? 00000000 	>  .word 9999b-8
+ 796 ???? 00000000 	>  .word hash_ALLOT
+ 796              	> 9999:
+ 796              	> xt_allot:
+ 797 ???? 00000000 	 .word here, plus, heap, store
+ 797      00000000 
+ 797      00000000 
+ 797      00000000 
+ 798 ???? 00000000 	 .word exit
+ 799              	
+ 800              	# ( w -- ) ;# ( COMMA )
+ 801              	def_word "comma" hash_COMMA
+ 801              	> ht_comma:
+ 801 ???? 00000000 	>  .word 9999b-8
+ 801 ???? 00000000 	>  .word hash_COMMA
+ 801              	> 9999:
+ 801              	> xt_comma:
+ 802 ???? 00000000 	 .word here, store, cell, allot
+ 802      00000000 
+ 802      00000000 
+ 802      00000000 
+ 803 ???? 00000000 	 .word exit
+ 804              	
+ 805              	# ( -- a ) ;# ( BEGIN )
+ 806              	def_word "begin" hash_BEGIN
+ 806              	> ht_begin:
+GAS LISTING /tmp/ccZTBZvh.s 			page 24
+
+
+ 806 ???? 00000000 	>  .word 9999b-8
+ 806 ???? 00000000 	>  .word hash_BEGIN
+ 806              	> 9999:
+ 806              	> xt_begin:
+ 807 ???? 00000000 	 .word here
+ 808 ???? 00000000 	 .word exit
+ 809              	
+ 810              	# ( a -- ) ;# ( BACK )
+ 811              	def_word "back" hash_BACK
+ 811              	> ht_back:
+ 811 ???? 00000000 	>  .word 9999b-8
+ 811 ???? 00000000 	>  .word hash_BACK
+ 811              	> 9999:
+ 811              	> xt_back:
+ 812 ???? 00000000 	 .word here, minus, comma
+ 812      00000000 
+ 812      00000000 
+ 813 ???? 00000000 	 .word exit
+ 814              	
+ 815              	# ( a -- ) ;# ( AGAIN )
+ 816              	def_word "again" hash_AGAIN
+ 816              	> ht_again:
+ 816 ???? 00000000 	>  .word 9999b-8
+ 816 ???? 00000000 	>  .word hash_AGAIN
+ 816              	> 9999:
+ 816              	> xt_again:
+ 817 ???? 00000000 	 .word lit, branch, comma, back
+ 817      00000000 
+ 817      00000000 
+ 817      00000000 
+ 818 ???? 00000000 	 .word exit
+ 819              	
+ 820              	# ( a -- ) ;# ( UNTIL )
+ 821              	def_word "until" hash_UNTIL
+ 821              	> ht_until:
+ 821 ???? 00000000 	>  .word 9999b-8
+ 821 ???? 00000000 	>  .word hash_UNTIL
+ 821              	> 9999:
+ 821              	> xt_until:
+ 822 ???? 00000000 	 .word lit, zbranch, comma, back
+ 822      00000000 
+ 822      00000000 
+ 822      00000000 
+ 823 ???? 00000000 	 .word exit
+ 824              	
+ 825              	# ( a -- a ) ;# ( ENDIF )
+ 826              	def_word "endif" hash_ENDIF
+ 826              	> ht_endif:
+ 826 ???? 00000000 	>  .word 9999b-8
+ 826 ???? 00000000 	>  .word hash_ENDIF
+ 826              	> 9999:
+ 826              	> xt_endif:
+ 827 ???? 00000000 	 .word here, over, minus, swap, store
+ 827      00000000 
+ 827      00000000 
+ 827      00000000 
+ 827      00000000 
+GAS LISTING /tmp/ccZTBZvh.s 			page 25
+
+
+ 828 ???? 00000000 	 .word exit
+ 829              	
+ 830              	# ( -- a ) ;# ( MARK )
+ 831              	def_word "mark" hash_MARK
+ 831              	> ht_mark:
+ 831 ???? 00000000 	>  .word 9999b-8
+ 831 ???? 00000000 	>  .word hash_MARK
+ 831              	> 9999:
+ 831              	> xt_mark:
+ 832 ???? 00000000 	 .word here, nil, comma
+ 832      00000000 
+ 832      00000000 
+ 833 ???? 00000000 	 .word exit
+ 834              	
+ 835              	# ( -- a ) ;# ( AFT )
+ 836              	def_word "aft" hash_AAFT
+ 836              	> ht_aft:
+ 836 ???? 00000000 	>  .word 9999b-8
+ 836 ???? 00000000 	>  .word hash_AAFT
+ 836              	> 9999:
+ 836              	> xt_aft:
+ 837 ???? 00000000 	 .word here
+ 838 ???? 00000000 	 .word exit
+ 839              	
+ 840              	# ( -- ) ;# ( IF )
+ 841              	def_word "if" hash_IF
+ 841              	> ht_if:
+ 841 ???? 00000000 	>  .word 9999b-8
+ 841 ???? 00000000 	>  .word hash_IF
+ 841              	> 9999:
+ 841              	> xt_if:
+ 842 ???? 00000000 	 .word lit, zbranch, comma, mark
+ 842      00000000 
+ 842      00000000 
+ 842      00000000 
+ 843 ???? 00000000 	 .word exit
+ 844              	
+ 845              	# ( -- ) ;# ( ELSE )
+ 846              	def_word "else" hash_ELSE
+ 846              	> ht_else:
+ 846 ???? 00000000 	>  .word 9999b-8
+ 846 ???? 00000000 	>  .word hash_ELSE
+ 846              	> 9999:
+ 846              	> xt_else:
+ 847 ???? 00000000 	 .word lit, branch, comma, mark, swap, endif
+ 847      00000000 
+ 847      00000000 
+ 847      00000000 
+ 847      00000000 
+ 848 ???? 00000000 	 .word exit
+ 849              	
+ 850              	# ( -- ) ;# ( THEN )
+ 851              	def_word "then" hash_THEN
+ 851              	> ht_then:
+ 851 ???? 00000000 	>  .word 9999b-8
+ 851 ???? 00000000 	>  .word hash_THEN
+ 851              	> 9999:
+GAS LISTING /tmp/ccZTBZvh.s 			page 26
+
+
+ 851              	> xt_then:
+ 852 ???? 00000000 	 .word endif
+ 853 ???? 00000000 	 .word exit
+ 854              	
+ 855              	# ( -- ) ;# ( WHILE )
+ 856              	def_word "while" hash_WHILE
+ 856              	> ht_while:
+ 856 ???? 00000000 	>  .word 9999b-8
+ 856 ???? 00000000 	>  .word hash_WHILE
+ 856              	> 9999:
+ 856              	> xt_while:
+ 857 ???? 00000000 	 .word lit, zbranch, comma, mark
+ 857      00000000 
+ 857      00000000 
+ 857      00000000 
+ 858 ???? 00000000 	 .word exit
+ 859              	
+ 860              	# ( -- ) ;# ( REPEAT )
+ 861              	def_word "repeat" hash_REPEAT
+ 861              	> ht_repeat:
+ 861 ???? 00000000 	>  .word 9999b-8
+ 861 ???? 00000000 	>  .word hash_REPEAT
+ 861              	> 9999:
+ 861              	> xt_repeat:
+ 862 ???? 00000000 	 .word swap, lit, branch, comma, back, endif
+ 862      00000000 
+ 862      00000000 
+ 862      00000000 
+ 862      00000000 
+ 863 ???? 00000000 	 .word exit
+ 864              	
+ 865              	# ( w1 w2 -- ; -- w2 w1 ) ;# ( DO )
+ 866              	def_word "do" hash_DO
+ 866              	> ht_do:
+ 866 ???? 00000000 	>  .word 9999b-8
+ 866 ???? 00000000 	>  .word hash_DO
+ 866              	> 9999:
+ 866              	> xt_do:
+ 867 ???? 00000000 	 .word lit, swap, comma,
+****  Warning: zero assumed for missing expression
+ 867      00000000 
+ 867      00000000 
+ 867      00000000 
+ 868 ???? 00000000 	 .word here
+ 869 ???? 00000000 	 .word lit, tor, comma
+ 869      00000000 
+ 869      00000000 
+ 870 ???? 00000000 	 .word lit, tor, comma
+ 870      00000000 
+ 870      00000000 
+ 871 ???? 00000000 	 .word exit
+ 872              	
+ 873              	# ( -- ; w2 w1 -- w2 w1 ) ;# ( LOOP )
+ 874              	def_word "loop" hash_LOOP
+ 874              	> ht_loop:
+ 874 ???? 00000000 	>  .word 9999b-8
+ 874 ???? 00000000 	>  .word hash_LOOP
+GAS LISTING /tmp/ccZTBZvh.s 			page 27
+
+
+ 874              	> 9999:
+ 874              	> xt_loop:
+ 875 ???? 00000000 	 .word lit, rto, comma
+ 875      00000000 
+ 875      00000000 
+ 876 ???? 00000000 	 .word lit, lit, comma
+ 876      00000000 
+ 876      00000000 
+ 877 ???? 00000000 	 .word lit, 1, comma
+ 877      01000000 
+ 877      00000000 
+ 878 ???? 00000000 	 .word lit, plus, comma
+ 878      00000000 
+ 878      00000000 
+ 879 ???? 00000000 	 .word lit, rto, comma
+ 879      00000000 
+ 879      00000000 
+ 880 ???? 00000000 	 .word lit, over, comma
+ 880      00000000 
+ 880      00000000 
+ 881 ???? 00000000 	 .word lit, over, comma
+ 881      00000000 
+ 881      00000000 
+ 882 ???? 00000000 	 .word lit, equ, comma
+ 882      00000000 
+ 882      00000000 
+ 883 ???? 00000000 	 .word lit, zbranch, comma
+ 883      00000000 
+ 883      00000000 
+ 884 ???? 00000000 	 .word here, minus, comma
+ 884      00000000 
+ 884      00000000 
+ 885 ???? 00000000 	 .word lit, drop, comma
+ 885      00000000 
+ 885      00000000 
+ 886 ???? 00000000 	 .word lit, drop, comma
+ 886      00000000 
+ 886      00000000 
+ 887 ???? 00000000 	 .word exit
+ 888              	
+ 889              	# ( w -- ; w2 w1 -- w2 w1 ) ;# ( +LOOP )
+ 890              	def_word "ploop" hash_LOOP
+ 890              	> ht_ploop:
+ 890 ???? 00000000 	>  .word 9999b-8
+ 890 ???? 00000000 	>  .word hash_LOOP
+ 890              	> 9999:
+ 890              	> xt_ploop:
+ 891 ???? 00000000 	 .word lit, rto, comma
+ 891      00000000 
+ 891      00000000 
+ 892 ???? 00000000 	 .word lit, plus, comma
+ 892      00000000 
+ 892      00000000 
+ 893 ???? 00000000 	 .word lit, rto, comma
+ 893      00000000 
+ 893      00000000 
+ 894 ???? 00000000 	 .word lit, over, comma
+GAS LISTING /tmp/ccZTBZvh.s 			page 28
+
+
+ 894      00000000 
+ 894      00000000 
+ 895 ???? 00000000 	 .word lit, over, comma
+ 895      00000000 
+ 895      00000000 
+ 896 ???? 00000000 	 .word lit, equ, comma
+ 896      00000000 
+ 896      00000000 
+ 897 ???? 00000000 	 .word lit, zbranch, comma
+ 897      00000000 
+ 897      00000000 
+ 898 ???? 00000000 	 .word here, minus, comma
+ 898      00000000 
+ 898      00000000 
+ 899 ???? 00000000 	 .word lit, drop, comma
+ 899      00000000 
+ 899      00000000 
+ 900 ???? 00000000 	 .word lit, drop, comma
+ 900      00000000 
+ 900      00000000 
+ 901 ???? 00000000 	 .word exit
+ 902              	
+ 903              	# ( -- w1 ; w2 w1 -- w2 w1 ) ;# ( I )
+ 904              	def_word "i" hash_I
+ 904              	> ht_i:
+ 904 ???? 00000000 	>  .word 9999b-8
+ 904 ???? 00000000 	>  .word hash_I
+ 904              	> 9999:
+ 904              	> xt_i:
+ 905 ???? 00000000 	 .word lit, rat, comma
+ 905      00000000 
+ 905      00000000 
+ 906 ???? 00000000 	 .word exit
+ 907              	
+ 908              	# ( -- w3 ; w4 w3 w2 w1 -- w4 w3 w2 w1 ) ;# ( J )
+ 909              	def_word "j" hash_J
+ 909              	> ht_j:
+ 909 ???? 00000000 	>  .word 9999b-8
+ 909 ???? 00000000 	>  .word hash_J
+ 909              	> 9999:
+ 909              	> xt_j:
+ 910 ???? 00000000 	    .word lit, rto, comma
+ 910      00000000 
+ 910      00000000 
+ 911 ???? 00000000 	    .word lit, rto, comma
+ 911      00000000 
+ 911      00000000 
+ 912 ???? 00000000 	    .word lit, rat, comma
+ 912      00000000 
+ 912      00000000 
+ 913 ???? 00000000 	 .word lit, swap, comma
+ 913      00000000 
+ 913      00000000 
+ 914 ???? 00000000 	    .word lit, tor, comma
+ 914      00000000 
+ 914      00000000 
+ 915 ???? 00000000 	 .word lit, swap, comma
+GAS LISTING /tmp/ccZTBZvh.s 			page 29
+
+
+ 915      00000000 
+ 915      00000000 
+ 916 ???? 00000000 	    .word lit, tor, comma
+ 916      00000000 
+ 916      00000000 
+ 917 ???? 00000000 	 .word exit
+ 918              	
+ 919              	# ( -- ; w2 w1 -- ) ;# ( LEAVE )
+ 920              	def_word "leave" hash_LEAVE
+ 920              	> ht_leave:
+ 920 ???? 00000000 	>  .word 9999b-8
+ 920 ???? 00000000 	>  .word hash_LEAVE
+ 920              	> 9999:
+ 920              	> xt_leave:
+ 921 ???? 00000000 	    .word lit, rto, comma
+ 921      00000000 
+ 921      00000000 
+ 922 ???? 00000000 	 .word lit, drop, comma
+ 922      00000000 
+ 922      00000000 
+ 923 ???? 00000000 	    .word lit, rto, comma
+ 923      00000000 
+ 923      00000000 
+ 924 ???? 00000000 	 .word lit, drop, comma
+ 924      00000000 
+ 924      00000000 
+ 925 ???? 00000000 	 .word exit
+ 926              	
+ 927              	# ( w -- ; -- w ) ;# ( FOR )
+ 928              	def_word "for" hash_FOR
+ 928              	> ht_for:
+ 928 ???? 00000000 	>  .word 9999b-8
+ 928 ???? 00000000 	>  .word hash_FOR
+ 928              	> 9999:
+ 928              	> xt_for:
+ 929 ???? 00000000 	 .word here
+ 930 ???? 00000000 	 .word lit, tor, comma
+ 930      00000000 
+ 930      00000000 
+ 931 ???? 00000000 	 .word exit
+ 932              	
+ 933              	# ( -- ; w -- w ) ;# ( NEXT )
+ 934              	def_word "next" hash_NEXT
+ 934              	> ht_next:
+ 934 ???? 00000000 	>  .word 9999b-8
+ 934 ???? 00000000 	>  .word hash_NEXT
+ 934              	> 9999:
+ 934              	> xt_next:
+ 935 ???? 00000000 	 .word lit, rto, comma
+ 935      00000000 
+ 935      00000000 
+ 936 ???? 00000000 	 .word lit, 1, comma
+ 936      01000000 
+ 936      00000000 
+ 937 ???? 00000000 	 .word lit, minus, comma
+ 937      00000000 
+ 937      00000000 
+GAS LISTING /tmp/ccZTBZvh.s 			page 30
+
+
+ 938 ???? 00000000 	 .word lit, dup, comma
+ 938      00000000 
+ 938      00000000 
+ 939 ???? 00000000 	 .word lit, gbranch, comma
+ 939      00000000 
+ 939      00000000 
+ 940 ???? 00000000 	 .word here, minus, comma
+ 940      00000000 
+ 940      00000000 
+ 941 ???? 00000000 	 .word lit, drop, comma
+ 941      00000000 
+ 941      00000000 
+ 942 ???? 00000000 	 .word exit
+ 943              	
+ 944              	# ( -- ) #; ( : ) aka figforth semicolon
+ 945              	def_word "colon" hash_COLON
+ 945              	> ht_colon:
+ 945 ???? 00000000 	>  .word 9999b-8
+ 945 ???? 9FB50200 	>  .word hash_COLON
+ 945              	> 9999:
+ 945              	> xt_colon:
+ 946              	 # save here, panic if semis not follow elsewhere
+ 947 ???? 00000000 	 .word heap, fetch, pike, store
+ 947      00000000 
+ 947      00000000 
+ 947      00000000 
+ 948              	 # stat is 'compile' == 1
+ 949 ???? 00000000 	 .word one, state, store
+ 949      00000000 
+ 949      00000000 
+ 950              	 # make a header
+ 951 ???? 00000000 	 .word header
+ 952 ???? 00000000 	 .word exit
+ 953              	
+ 954              	# ( -- ) #; ( ; ) aka figforth semicolon, is IMMEDIATE
+ 955              	def_word "semis" hash_SEMIS
+ 955              	> ht_semis:
+ 955 ???? 00000000 	>  .word 9999b-8
+ 955 ???? 9EB50200 	>  .word hash_SEMIS
+ 955              	> 9999:
+ 955              	> xt_semis:
+ 956              	 # load last, panic if colon not lead elsewhere
+ 957 ???? 00000000 	 .word pike, fetch, last, store
+ 957      00000000 
+ 957      00000000 
+ 957      00000000 
+ 958              	 # stat is 'execute' == 0
+ 959 ???? 00000000 	 .word nil, state, store
+ 959      00000000 
+ 959      00000000 
+ 960              	 # make a footer
+ 961 ???? 00000000 	 .word lit, exit, comma
+ 961      00000000 
+ 961      00000000 
+ 962 ???? 00000000 	 .word exit
+ 963              	
+ 964              	# ( -- ) #; ( HEADER ) makes a header with next word
+GAS LISTING /tmp/ccZTBZvh.s 			page 31
+
+
+ 965              	def_word "header" hash_HEADER
+ 965              	> ht_header:
+ 965 ???? 00000000 	>  .word 9999b-8
+ 965 ???? 00000000 	>  .word hash_HEADER
+ 965              	> 9999:
+ 965              	> xt_header:
+ 966 ???? 00000000 	 .word last, fetch, comma
+ 966      00000000 
+ 966      00000000 
+ 967 ???? 00000000 	 .word token, comma
+ 967      00000000 
+ 968 ???? 00000000 	 .word exit
+ 969              	
+ 970              	# classic djb2 hash algorithm, with XOR, adapted from cdb_hash
+ 971              	# ( c w -- w ) #; ( DJB2 )
+ 972              	def_word "djb2" hash_DJB2
+ 972              	> ht_djb2:
+ 972 ???? 00000000 	>  .word 9999b-8
+ 972 ???? 00000000 	>  .word hash_DJB2
+ 972              	> 9999:
+ 972              	> xt_djb2:
+ 973 ???? 00000000 	 .word dup, dup, plus,
+****  Warning: zero assumed for missing expression
+ 973      00000000 
+ 973      00000000 
+ 973      00000000 
+ 974 ???? 00000000 	 .word dup, plus, dup, plus,
+****  Warning: zero assumed for missing expression
+ 974      00000000 
+ 974      00000000 
+ 974      00000000 
+ 974      00000000 
+ 975 ???? 00000000 	 .word dup, plus, dup, plus,
+****  Warning: zero assumed for missing expression
+ 975      00000000 
+ 975      00000000 
+ 975      00000000 
+ 975      00000000 
+ 976 ???? 00000000 	 .word plus, xor
+ 976      00000000 
+ 977              	 .exit
+ 978              	
+ 979              	# crude token consumes a word between spaces
+ 980              	# return the hash of a token
+ 981              	# ( -- h ) #; ( TOKEN )
+ 982              	def_word "token" hash_TOKEN
+ 982              	> ht_token:
+ 982 ???? 00000000 	>  .word 9999b-8
+ 982 ???? 00000000 	>  .word hash_TOKEN
+ 982              	> 9999:
+ 982              	> xt_token:
+ 983              	 # skip spaces
+ 984 ???? 00000000 	 .word lit, BL
+ 984      20000000 
+ 985 ???? 00000000 	 .word begin, key, over, over, equ, inverse, until
+ 985      00000000 
+ 985      00000000 
+GAS LISTING /tmp/ccZTBZvh.s 			page 32
+
+
+ 985      00000000 
+ 985      00000000 
+ 986              	 # prepare
+ 987 ???? 00000000 	 .word lit, 5381, tor
+ 987      05150000 
+ 987      00000000 
+ 988              	 # scan spaces and do hash
+ 989 ???? 00000000 	 .word begin
+ 990 ???? 00000000 	 .word rto, djb2, tor
+ 990      00000000 
+ 990      00000000 
+ 991 ???? 00000000 	 .word key, over, over, equ
+ 991      00000000 
+ 991      00000000 
+ 991      00000000 
+ 992 ???? 00000000 	 .word inverse, until
+ 992      00000000 
+ 993 ???? 00000000 	 .word drop, drop
+ 993      00000000 
+ 994              	        # clear hash high bit
+ 995 ???? 00000000 	 .word nan, inverse, rto, and
+ 995      00000000 
+ 995      00000000 
+ 995      00000000 
+ 996 ???? 00000000 	 .word exit
+ 997              	
+ 998              	# ( h -- h ) #; ( FIND )
+ 999              	def_word "find" hash_FIND
+ 999              	> ht_find:
+ 999 ???? 00000000 	>  .word 9999b-8
+ 999 ???? 00000000 	>  .word hash_FIND
+ 999              	> 9999:
+ 999              	> xt_find:
+ 1000 ???? 00000000 	 .word latest
+ 1001              	 # find the hash
+ 1002 ???? 00000000 	 .word begin, over, over
+ 1002      00000000 
+ 1002      00000000 
+ 1003 ???? 00000000 	 .word cell, plus, fetch, equ
+ 1003      00000000 
+ 1003      00000000 
+ 1003      00000000 
+ 1004 ???? 00000000 	 .word while, fetch, repeat
+ 1004      00000000 
+ 1004      00000000 
+ 1005              	 # discard hash, keep last link
+ 1006 ???? 00000000 	 .word zzzz
+ 1007 ???? 00000000 	 .word cell, plus, dup, fetch, nan, and
+ 1007      00000000 
+ 1007      00000000 
+ 1007      00000000 
+ 1007      00000000 
+ 1008 ???? 00000000 	 .word if, lit, 1, else, lit, -1, then
+ 1008      00000000 
+ 1008      01000000 
+ 1008      00000000 
+ 1008      00000000 
+GAS LISTING /tmp/ccZTBZvh.s 			page 33
+
+
+ 1009 ???? 00000000 	 .word then
+ 1010 ???? 00000000 	 .word exit
+ 1011              	
+ 1012              	
+ 1013              	
+ 1014              	#----------------------------------------------------------------------
+ 1015              	# 221 "test.S" 2
+ 1016              	
+ 1017              	#---------------------------------------------------------------------
+ 1018              	9999:
+ 1019              	.set def_compiled_last, 9999b
+ 1020              	#---------------------------------------------------------------------
+GAS LISTING /tmp/ccZTBZvh.s 			page 34
+
+
+DEFINED SYMBOLS
+     /tmp/ccZTBZvh.s:61     *ABS*:00040000 RAM_LIMIT
+     /tmp/ccZTBZvh.s:65     *ABS*:00000000 FALSE
+     /tmp/ccZTBZvh.s:67     *ABS*:ffffffff TRUE
+     /tmp/ccZTBZvh.s:71     *ABS*:00000000 EXECUTE
+     /tmp/ccZTBZvh.s:73     *ABS*:00000001 COMPILE
+     /tmp/ccZTBZvh.s:77     *ABS*:00000004 CELL
+     /tmp/ccZTBZvh.s:79     *ABS*:00000020 BL
+     /tmp/ccZTBZvh.s:81     *ABS*:00000022 QU
+     /tmp/ccZTBZvh.s:86     *ABS*:80000000 FLAG_IMM
+     /tmp/ccZTBZvh.s:89     *ABS*:7fffffff MASK_IMM
+     /tmp/ccZTBZvh.s:94     *ABS*:00000000 SPTR
+     /tmp/ccZTBZvh.s:97     *ABS*:00000004 RPTR
+     /tmp/ccZTBZvh.s:100    *ABS*:00000008 LAST
+     /tmp/ccZTBZvh.s:103    *ABS*:0000000c HEAP
+     /tmp/ccZTBZvh.s:106    *ABS*:00000010 PIKE
+     /tmp/ccZTBZvh.s:109    *ABS*:00000014 STAT
+     /tmp/ccZTBZvh.s:112    *ABS*:00000018 BASE
+     /tmp/ccZTBZvh.s:115    *ABS*:0000001c TEMP
+     /tmp/ccZTBZvh.s:119    *ABS*:00000010 params
+     /tmp/ccZTBZvh.s:123    .text:00000000 $xrv32i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0
+     /tmp/ccZTBZvh.s:159    *ABS*:80000000 NAN
+     /tmp/ccZTBZvh.s:164    .text:00000002 $d
+     /tmp/ccZTBZvh.s:179    *ABS*:7c7cc745 hash_EXIT
+     /tmp/ccZTBZvh.s:180    *ABS*:1e6c4191 hash_BRANCH
+     /tmp/ccZTBZvh.s:181    *ABS*:7d28616b hash_ZBRANCH
+     /tmp/ccZTBZvh.s:182    *ABS*:689e2db6 hash_GBRANCH
+     /tmp/ccZTBZvh.s:183    *ABS*:0c682a6b hash_DOVAR
+     /tmp/ccZTBZvh.s:184    *ABS*:0c67f9ac hash_DOCON
+     /tmp/ccZTBZvh.s:187    *ABS*:7c88a9b2 hash_RPAT
+     /tmp/ccZTBZvh.s:188    *ABS*:7c8a4e93 hash_SPAT
+     /tmp/ccZTBZvh.s:189    *ABS*:7c88abdc hash_RPTO
+     /tmp/ccZTBZvh.s:190    *ABS*:7c8a507d hash_SPTO
+     /tmp/ccZTBZvh.s:193    *ABS*:0b88004c hash_TOR
+     /tmp/ccZTBZvh.s:194    *ABS*:0b8804ac hash_RTO
+     /tmp/ccZTBZvh.s:195    *ABS*:0b880702 hash_RAT
+     /tmp/ccZTBZvh.s:198    *ABS*:7c7f5c2c hash_DROP
+     /tmp/ccZTBZvh.s:199    *ABS*:0b87bc84 hash_DUP
+     /tmp/ccZTBZvh.s:200    *ABS*:7c84398b hash_OVER
+     /tmp/ccZTBZvh.s:201    *ABS*:7c8a3910 hash_SWAP
+     /tmp/ccZTBZvh.s:202    *ABS*:0b8807cc hash_ROT
+     /tmp/ccZTBZvh.s:205    *ABS*:0c3e96f9 hash_FETCH
+     /tmp/ccZTBZvh.s:206    *ABS*:0dd22b7a hash_STORE
+     /tmp/ccZTBZvh.s:207    *ABS*:2376b3fa hash_CFETCH
+     /tmp/ccZTBZvh.s:208    *ABS*:252b26f9 hash_CSTORE
+     /tmp/ccZTBZvh.s:211    *ABS*:7c8a057f hash_PLUS
+     /tmp/ccZTBZvh.s:212    *ABS*:0002b588 hash_MINUS
+     /tmp/ccZTBZvh.s:213    *ABS*:005972c2 hash_BYMUL
+     /tmp/ccZTBZvh.s:214    *ABS*:7c4d1c6c hash_BYMOD
+     /tmp/ccZTBZvh.s:217    *ABS*:0b87b72e hash_AND
+     /tmp/ccZTBZvh.s:218    *ABS*:0b87e22a hash_ORR
+     /tmp/ccZTBZvh.s:219    *ABS*:0b883040 hash_XOR
+     /tmp/ccZTBZvh.s:220    *ABS*:2c5784c9 hash_LSHIFT
+     /tmp/ccZTBZvh.s:221    *ABS*:416e6b97 hash_RSHIFT
+     /tmp/ccZTBZvh.s:222    *ABS*:2d6aa2b5 hash_INVERSE
+     /tmp/ccZTBZvh.s:223    *ABS*:26b37a79 hash_NEGATE
+     /tmp/ccZTBZvh.s:226    *ABS*:0002b598 hash_EQU
+GAS LISTING /tmp/ccZTBZvh.s 			page 35
+
+
+     /tmp/ccZTBZvh.s:227    *ABS*:0002b599 hash_LESS
+     /tmp/ccZTBZvh.s:228    *ABS*:005973cc hash_ULESS
+     /tmp/ccZTBZvh.s:229    *ABS*:0059680b hash_GTZERO
+     /tmp/ccZTBZvh.s:230    *ABS*:2d802bbf hash_GREATHER
+     /tmp/ccZTBZvh.s:233    *ABS*:0c531cc8 hash_ALIGN
+     /tmp/ccZTBZvh.s:234    *ABS*:69224e1a hash_EXECUTE
+     /tmp/ccZTBZvh.s:235    *ABS*:15eeb854 hash_PERFORM
+     /tmp/ccZTBZvh.s:238    *ABS*:7c879bf3 hash_TRUE
+     /tmp/ccZTBZvh.s:239    *ABS*:0c3c6778 hash_FALSE
+     /tmp/ccZTBZvh.s:240    *ABS*:0b87d404 hash_NAN
+     /tmp/ccZTBZvh.s:241    *ABS*:7c81b0a3 hash_CELL
+     /tmp/ccZTBZvh.s:242    *ABS*:0002b595 hash_NIL
+     /tmp/ccZTBZvh.s:243    *ABS*:0002b594 hash_ONE
+     /tmp/ccZTBZvh.s:244    *ABS*:0002b597 hash_TWO
+     /tmp/ccZTBZvh.s:247    *ABS*:0b881196 hash_SPZ
+     /tmp/ccZTBZvh.s:248    *ABS*:0b880557 hash_RPZ
+     /tmp/ccZTBZvh.s:249    *ABS*:0dd1f032 hash_STAT
+     /tmp/ccZTBZvh.s:250    *ABS*:00597251 hash_HEAP
+     /tmp/ccZTBZvh.s:251    *ABS*:2adaafbe hash_LAST
+     /tmp/ccZTBZvh.s:252    *ABS*:7c8a12b2 hash_PIKE
+     /tmp/ccZTBZvh.s:253    *ABS*:7c8025f0 hash_BASE
+     /tmp/ccZTBZvh.s:256    *ABS*:0002b59f hash_COLON
+     /tmp/ccZTBZvh.s:257    *ABS*:0002b59e hash_SEMIS
+     /tmp/ccZTBZvh.s:261    *ABS*:0b87c61b hash_BYE
+     /tmp/ccZTBZvh.s:262    *ABS*:0b87f112 hash_KEY
+     /tmp/ccZTBZvh.s:263    *ABS*:7c7c87d0 hash_EMIT
+     /tmp/ccZTBZvh.s:274    .text:00000012 ht_exit
+     /tmp/ccZTBZvh.s:274    .text:0000001a xt_exit
+     /tmp/ccZTBZvh.s:277    .text:0000001a unnest
+     /tmp/ccZTBZvh.s:278    .text:0000001a $x
+     /tmp/ccZTBZvh.s:279    .text:0000001e next
+     /tmp/ccZTBZvh.s:281    .text:00000022 pick
+     /tmp/ccZTBZvh.s:287    .text:0000002c nest
+     /tmp/ccZTBZvh.s:283    .text:00000026 jump
+     /tmp/ccZTBZvh.s:289    .text:00000030 move
+     /tmp/ccZTBZvh.s:294    .text:00000034 ht_branch
+     /tmp/ccZTBZvh.s:294    .text:00000034 $d
+     /tmp/ccZTBZvh.s:294    .text:0000003c xt_branch
+     /tmp/ccZTBZvh.s:295    .text:0000003c branch
+     /tmp/ccZTBZvh.s:296    .text:0000003c $x
+     /tmp/ccZTBZvh.s:301    .text:00000042 ht_zbranch
+     /tmp/ccZTBZvh.s:301    .text:00000042 $d
+     /tmp/ccZTBZvh.s:301    .text:0000004a xt_zbranch
+     /tmp/ccZTBZvh.s:302    .text:0000004a $x
+     /tmp/ccZTBZvh.s:309    .text:00000056 ht_gbranch
+     /tmp/ccZTBZvh.s:309    .text:00000056 $d
+     /tmp/ccZTBZvh.s:309    .text:0000005e xt_gbranch
+     /tmp/ccZTBZvh.s:310    .text:0000005e $x
+     /tmp/ccZTBZvh.s:317    .text:0000006c ht_docon
+     /tmp/ccZTBZvh.s:317    .text:0000006c $d
+     /tmp/ccZTBZvh.s:317    .text:00000074 xt_docon
+     /tmp/ccZTBZvh.s:318    .text:00000074 $x
+     /tmp/ccZTBZvh.s:324    .text:0000007e ht_dovar
+     /tmp/ccZTBZvh.s:324    .text:0000007e $d
+     /tmp/ccZTBZvh.s:324    .text:00000086 xt_dovar
+     /tmp/ccZTBZvh.s:325    .text:00000086 $x
+     /tmp/ccZTBZvh.s:333    .text:00000090 ht_tor
+GAS LISTING /tmp/ccZTBZvh.s 			page 36
+
+
+     /tmp/ccZTBZvh.s:333    .text:00000090 $d
+     /tmp/ccZTBZvh.s:333    .text:00000098 xt_tor
+     /tmp/ccZTBZvh.s:334    .text:00000098 $x
+     /tmp/ccZTBZvh.s:339    .text:000000a2 ht_rto
+     /tmp/ccZTBZvh.s:339    .text:000000a2 $d
+     /tmp/ccZTBZvh.s:339    .text:000000aa xt_rto
+     /tmp/ccZTBZvh.s:340    .text:000000aa $x
+     /tmp/ccZTBZvh.s:345    .text:000000b4 ht_rat
+     /tmp/ccZTBZvh.s:345    .text:000000b4 $d
+     /tmp/ccZTBZvh.s:345    .text:000000bc xt_rat
+     /tmp/ccZTBZvh.s:346    .text:000000bc $x
+     /tmp/ccZTBZvh.s:351    .text:000000c4 ht_rpat
+     /tmp/ccZTBZvh.s:351    .text:000000c4 $d
+     /tmp/ccZTBZvh.s:351    .text:000000cc xt_rpat
+     /tmp/ccZTBZvh.s:352    .text:000000cc $x
+     /tmp/ccZTBZvh.s:357    .text:000000d4 ht_spat
+     /tmp/ccZTBZvh.s:357    .text:000000d4 $d
+     /tmp/ccZTBZvh.s:357    .text:000000dc xt_spat
+     /tmp/ccZTBZvh.s:358    .text:000000dc $x
+     /tmp/ccZTBZvh.s:363    .text:000000e4 ht_rpto
+     /tmp/ccZTBZvh.s:363    .text:000000e4 $d
+     /tmp/ccZTBZvh.s:363    .text:000000ec xt_rpto
+     /tmp/ccZTBZvh.s:364    .text:000000ec $x
+     /tmp/ccZTBZvh.s:369    .text:000000f4 ht_spto
+     /tmp/ccZTBZvh.s:369    .text:000000f4 $d
+     /tmp/ccZTBZvh.s:369    .text:000000fc xt_spto
+     /tmp/ccZTBZvh.s:370    .text:000000fc $x
+     /tmp/ccZTBZvh.s:375    .text:00000104 ht_drop
+     /tmp/ccZTBZvh.s:375    .text:00000104 $d
+     /tmp/ccZTBZvh.s:375    .text:0000010c xt_drop
+     /tmp/ccZTBZvh.s:376    .text:0000010c $x
+     /tmp/ccZTBZvh.s:380    .text:00000112 ht_dup
+     /tmp/ccZTBZvh.s:380    .text:00000112 $d
+     /tmp/ccZTBZvh.s:380    .text:0000011a xt_dup
+     /tmp/ccZTBZvh.s:381    .text:0000011a $x
+     /tmp/ccZTBZvh.s:385    .text:00000120 ht_over
+     /tmp/ccZTBZvh.s:385    .text:00000120 $d
+     /tmp/ccZTBZvh.s:385    .text:00000128 xt_over
+     /tmp/ccZTBZvh.s:386    .text:00000128 $x
+     /tmp/ccZTBZvh.s:391    .text:00000130 ht_swap
+     /tmp/ccZTBZvh.s:391    .text:00000130 $d
+     /tmp/ccZTBZvh.s:391    .text:00000138 xt_swap
+     /tmp/ccZTBZvh.s:392    .text:00000138 $x
+     /tmp/ccZTBZvh.s:398    .text:00000140 ht_rot
+     /tmp/ccZTBZvh.s:398    .text:00000140 $d
+     /tmp/ccZTBZvh.s:398    .text:00000148 xt_rot
+     /tmp/ccZTBZvh.s:399    .text:00000148 $x
+     /tmp/ccZTBZvh.s:407    .text:00000158 ht_fetch
+     /tmp/ccZTBZvh.s:407    .text:00000158 $d
+     /tmp/ccZTBZvh.s:407    .text:00000160 xt_fetch
+     /tmp/ccZTBZvh.s:408    .text:00000160 $x
+     /tmp/ccZTBZvh.s:412    .text:00000164 ht_store
+     /tmp/ccZTBZvh.s:412    .text:00000164 $d
+     /tmp/ccZTBZvh.s:412    .text:0000016c xt_store
+     /tmp/ccZTBZvh.s:413    .text:0000016c $x
+     /tmp/ccZTBZvh.s:419    .text:00000178 ht_cfetch
+     /tmp/ccZTBZvh.s:419    .text:00000178 $d
+GAS LISTING /tmp/ccZTBZvh.s 			page 37
+
+
+     /tmp/ccZTBZvh.s:419    .text:00000180 xt_cfetch
+     /tmp/ccZTBZvh.s:420    .text:00000180 $x
+     /tmp/ccZTBZvh.s:424    .text:00000186 ht_cstore
+     /tmp/ccZTBZvh.s:424    .text:00000186 $d
+     /tmp/ccZTBZvh.s:424    .text:0000018e xt_cstore
+     /tmp/ccZTBZvh.s:425    .text:0000018e $x
+     /tmp/ccZTBZvh.s:431    .text:0000019c ht_plus
+     /tmp/ccZTBZvh.s:431    .text:0000019c $d
+     /tmp/ccZTBZvh.s:431    .text:000001a4 xt_plus
+     /tmp/ccZTBZvh.s:432    .text:000001a4 $x
+     /tmp/ccZTBZvh.s:437    .text:000001ac ht_minus
+     /tmp/ccZTBZvh.s:437    .text:000001ac $d
+     /tmp/ccZTBZvh.s:437    .text:000001b4 xt_minus
+     /tmp/ccZTBZvh.s:438    .text:000001b4 $x
+     /tmp/ccZTBZvh.s:443    .text:000001bc ht_bymul
+     /tmp/ccZTBZvh.s:443    .text:000001bc $d
+     /tmp/ccZTBZvh.s:443    .text:000001c4 xt_bymul
+     /tmp/ccZTBZvh.s:444    .text:000001c4 $x
+     /tmp/ccZTBZvh.s:447    .text:000001d0 push2
+     /tmp/ccZTBZvh.s:453    .text:000001d8 ht_bymod
+     /tmp/ccZTBZvh.s:453    .text:000001d8 $d
+     /tmp/ccZTBZvh.s:453    .text:000001e0 xt_bymod
+     /tmp/ccZTBZvh.s:454    .text:000001e0 $x
+     /tmp/ccZTBZvh.s:572    .text:00000310 by_zero
+     /tmp/ccZTBZvh.s:461    .text:000001f2 ht_and
+     /tmp/ccZTBZvh.s:461    .text:000001f2 $d
+     /tmp/ccZTBZvh.s:461    .text:000001fa xt_and
+     /tmp/ccZTBZvh.s:462    .text:000001fa $x
+     /tmp/ccZTBZvh.s:467    .text:00000202 ht_or
+     /tmp/ccZTBZvh.s:467    .text:00000202 $d
+     /tmp/ccZTBZvh.s:467    .text:0000020a xt_or
+     /tmp/ccZTBZvh.s:468    .text:0000020a $x
+     /tmp/ccZTBZvh.s:473    .text:00000212 ht_xor
+     /tmp/ccZTBZvh.s:473    .text:00000212 $d
+     /tmp/ccZTBZvh.s:473    .text:0000021a xt_xor
+     /tmp/ccZTBZvh.s:474    .text:0000021a $x
+     /tmp/ccZTBZvh.s:479    .text:00000222 ht_lshift
+     /tmp/ccZTBZvh.s:479    .text:00000222 $d
+     /tmp/ccZTBZvh.s:479    .text:0000022a xt_lshift
+     /tmp/ccZTBZvh.s:480    .text:0000022a $x
+     /tmp/ccZTBZvh.s:485    .text:00000234 ht_rshift
+     /tmp/ccZTBZvh.s:485    .text:00000234 $d
+     /tmp/ccZTBZvh.s:485    .text:0000023c xt_rshift
+     /tmp/ccZTBZvh.s:486    .text:0000023c $x
+     /tmp/ccZTBZvh.s:491    .text:00000246 ht_align
+     /tmp/ccZTBZvh.s:491    .text:00000246 $d
+     /tmp/ccZTBZvh.s:491    .text:0000024e xt_align
+     /tmp/ccZTBZvh.s:492    .text:0000024e $x
+     /tmp/ccZTBZvh.s:497    .text:00000254 ht_inverse
+     /tmp/ccZTBZvh.s:497    .text:00000254 $d
+     /tmp/ccZTBZvh.s:497    .text:0000025c xt_inverse
+     /tmp/ccZTBZvh.s:499    .text:0000025c $x
+     /tmp/ccZTBZvh.s:503    .text:00000262 ht_negate
+     /tmp/ccZTBZvh.s:503    .text:00000262 $d
+     /tmp/ccZTBZvh.s:503    .text:0000026a xt_negate
+     /tmp/ccZTBZvh.s:505    .text:0000026a $x
+     /tmp/ccZTBZvh.s:509    .text:00000270 ht_execute
+GAS LISTING /tmp/ccZTBZvh.s 			page 38
+
+
+     /tmp/ccZTBZvh.s:509    .text:00000270 $d
+     /tmp/ccZTBZvh.s:509    .text:00000278 xt_execute
+     /tmp/ccZTBZvh.s:511    .text:00000278 $x
+     /tmp/ccZTBZvh.s:516    .text:00000282 ht_perform
+     /tmp/ccZTBZvh.s:516    .text:00000282 $d
+     /tmp/ccZTBZvh.s:516    .text:0000028a xt_perform
+     /tmp/ccZTBZvh.s:517    .text:0000028a $x
+     /tmp/ccZTBZvh.s:525    .text:00000296 ht_equ
+     /tmp/ccZTBZvh.s:525    .text:00000296 $d
+     /tmp/ccZTBZvh.s:525    .text:0000029e xt_equ
+     /tmp/ccZTBZvh.s:526    .text:0000029e $x
+     /tmp/ccZTBZvh.s:558    .text:000002f2 istrue
+     /tmp/ccZTBZvh.s:565    .text:00000304 isfalse
+     /tmp/ccZTBZvh.s:532    .text:000002aa ht_less
+     /tmp/ccZTBZvh.s:532    .text:000002aa $d
+     /tmp/ccZTBZvh.s:532    .text:000002b2 xt_less
+     /tmp/ccZTBZvh.s:533    .text:000002b2 $x
+     /tmp/ccZTBZvh.s:539    .text:000002be ht_uless
+     /tmp/ccZTBZvh.s:539    .text:000002be $d
+     /tmp/ccZTBZvh.s:539    .text:000002c6 xt_uless
+     /tmp/ccZTBZvh.s:540    .text:000002c6 $x
+     /tmp/ccZTBZvh.s:546    .text:000002d2 ht_greather
+     /tmp/ccZTBZvh.s:546    .text:000002d2 $d
+     /tmp/ccZTBZvh.s:546    .text:000002da xt_greather
+     /tmp/ccZTBZvh.s:547    .text:000002da $x
+     /tmp/ccZTBZvh.s:556    .text:000002e6 ht_true
+     /tmp/ccZTBZvh.s:556    .text:000002e6 $d
+     /tmp/ccZTBZvh.s:556    .text:000002ee xt_true
+     /tmp/ccZTBZvh.s:557    .text:000002ee $x
+     /tmp/ccZTBZvh.s:563    .text:000002f8 ht_false
+     /tmp/ccZTBZvh.s:563    .text:000002f8 $d
+     /tmp/ccZTBZvh.s:563    .text:00000300 xt_false
+     /tmp/ccZTBZvh.s:564    .text:00000300 $x
+     /tmp/ccZTBZvh.s:570    .text:00000308 ht_nan
+     /tmp/ccZTBZvh.s:570    .text:00000308 $d
+     /tmp/ccZTBZvh.s:570    .text:00000310 xt_nan
+     /tmp/ccZTBZvh.s:571    .text:00000310 by_erro
+     /tmp/ccZTBZvh.s:573    .text:00000310 by_under
+     /tmp/ccZTBZvh.s:574    .text:00000310 by_over
+     /tmp/ccZTBZvh.s:575    .text:00000310 $x
+     /tmp/ccZTBZvh.s:580    .text:0000031a ht_zero
+     /tmp/ccZTBZvh.s:580    .text:0000031a $d
+     /tmp/ccZTBZvh.s:580    .text:00000322 xt_zero
+     /tmp/ccZTBZvh.s:581    .text:00000322 $x
+     /tmp/ccZTBZvh.s:586    .text:0000032c ht_one
+     /tmp/ccZTBZvh.s:586    .text:0000032c $d
+     /tmp/ccZTBZvh.s:586    .text:00000334 xt_one
+     /tmp/ccZTBZvh.s:587    .text:00000334 $x
+     /tmp/ccZTBZvh.s:592    .text:0000033c ht_two
+     /tmp/ccZTBZvh.s:592    .text:0000033c $d
+     /tmp/ccZTBZvh.s:592    .text:00000344 xt_two
+     /tmp/ccZTBZvh.s:593    .text:00000344 $x
+     /tmp/ccZTBZvh.s:598    .text:0000034c ht_cell
+     /tmp/ccZTBZvh.s:598    .text:0000034c $d
+     /tmp/ccZTBZvh.s:598    .text:00000354 xt_cell
+     /tmp/ccZTBZvh.s:599    .text:00000354 $x
+     /tmp/ccZTBZvh.s:607    .text:0000035c ht_rp0
+GAS LISTING /tmp/ccZTBZvh.s 			page 39
+
+
+     /tmp/ccZTBZvh.s:607    .text:0000035c $d
+     /tmp/ccZTBZvh.s:607    .text:00000364 xt_rp0
+     /tmp/ccZTBZvh.s:608    .text:00000364 $x
+     /tmp/ccZTBZvh.s:613    .text:0000036e ht_sp0
+     /tmp/ccZTBZvh.s:613    .text:0000036e $d
+     /tmp/ccZTBZvh.s:613    .text:00000376 xt_sp0
+     /tmp/ccZTBZvh.s:614    .text:00000376 $x
+     /tmp/ccZTBZvh.s:619    .text:00000380 ht_state
+     /tmp/ccZTBZvh.s:619    .text:00000380 $d
+     /tmp/ccZTBZvh.s:619    .text:00000388 xt_state
+     /tmp/ccZTBZvh.s:620    .text:00000388 $x
+     /tmp/ccZTBZvh.s:625    .text:00000392 ht_latest
+     /tmp/ccZTBZvh.s:625    .text:00000392 $d
+     /tmp/ccZTBZvh.s:625    .text:0000039a xt_latest
+     /tmp/ccZTBZvh.s:626    .text:0000039a $x
+     /tmp/ccZTBZvh.s:631    .text:000003a4 ht_heap
+     /tmp/ccZTBZvh.s:631    .text:000003a4 $d
+     /tmp/ccZTBZvh.s:631    .text:000003ac xt_heap
+     /tmp/ccZTBZvh.s:632    .text:000003ac $x
+     /tmp/ccZTBZvh.s:637    .text:000003b6 ht_pike
+     /tmp/ccZTBZvh.s:637    .text:000003b6 $d
+     /tmp/ccZTBZvh.s:637    .text:000003be xt_pike
+     /tmp/ccZTBZvh.s:638    .text:000003be $x
+     /tmp/ccZTBZvh.s:643    .text:000003c8 ht_base
+     /tmp/ccZTBZvh.s:643    .text:000003c8 $d
+     /tmp/ccZTBZvh.s:643    .text:000003d0 xt_base
+     /tmp/ccZTBZvh.s:644    .text:000003d0 $x
+     /tmp/ccZTBZvh.s:657    *ABS*:00000000 _ZERO
+     /tmp/ccZTBZvh.s:658    *ABS*:00000001 _ONE
+     /tmp/ccZTBZvh.s:660    *ABS*:00000000 _STDIN
+     /tmp/ccZTBZvh.s:661    *ABS*:00000001 _STDOUT
+     /tmp/ccZTBZvh.s:663    *ABS*:0000003f _GETC
+     /tmp/ccZTBZvh.s:664    *ABS*:00000040 _PUTC
+     /tmp/ccZTBZvh.s:665    *ABS*:0000005d _EXIT
+     /tmp/ccZTBZvh.s:667    *ABS*:0000002d _SBRK
+     /tmp/ccZTBZvh.s:668    *ABS*:00000037 _FCNT
+     /tmp/ccZTBZvh.s:669    *ABS*:000000c0 _MMAP
+     /tmp/ccZTBZvh.s:694    .data:00000000 _char
+     /tmp/ccZTBZvh.s:701    .text:000003da _exit
+     /tmp/ccZTBZvh.s:707    .text:000003e4 _init
+     /tmp/ccZTBZvh.s:712    .text:000003e6 _getc
+     /tmp/ccZTBZvh.s:735    .text:0000041a _putc
+     /tmp/ccZTBZvh.s:755    .text:0000044c ht_bye
+     /tmp/ccZTBZvh.s:755    .text:0000044c $d
+     /tmp/ccZTBZvh.s:755    .text:00000454 xt_bye
+     /tmp/ccZTBZvh.s:756    .text:00000454 $x
+     /tmp/ccZTBZvh.s:760    .text:0000045e ht_key
+     /tmp/ccZTBZvh.s:760    .text:0000045e $d
+     /tmp/ccZTBZvh.s:760    .text:00000466 xt_key
+     /tmp/ccZTBZvh.s:761    .text:00000466 $x
+     /tmp/ccZTBZvh.s:766    .text:00000474 ht_emit
+     /tmp/ccZTBZvh.s:766    .text:00000474 $d
+     /tmp/ccZTBZvh.s:766    .text:0000047c xt_emit
+     /tmp/ccZTBZvh.s:767    .text:0000047c $x
+     /tmp/ccZTBZvh.s:775    .text:0000048a def_word_last
+     /tmp/ccZTBZvh.s:775    .text:0000048a .L999960
+     /tmp/ccZTBZvh.s:786    .text:0000048a ht_lit
+GAS LISTING /tmp/ccZTBZvh.s 			page 40
+
+
+     /tmp/ccZTBZvh.s:786    .text:0000048a $d
+     /tmp/ccZTBZvh.s:786    .text:00000492 xt_lit
+     /tmp/ccZTBZvh.s:791    .text:0000049a ht_here
+     /tmp/ccZTBZvh.s:791    .text:000004a2 xt_here
+     /tmp/ccZTBZvh.s:796    .text:000004ae ht_allot
+     /tmp/ccZTBZvh.s:796    .text:000004b6 xt_allot
+     /tmp/ccZTBZvh.s:801    .text:000004ca ht_comma
+     /tmp/ccZTBZvh.s:801    .text:000004d2 xt_comma
+     /tmp/ccZTBZvh.s:806    .text:000004e6 ht_begin
+     /tmp/ccZTBZvh.s:806    .text:000004ee xt_begin
+     /tmp/ccZTBZvh.s:811    .text:000004f6 ht_back
+     /tmp/ccZTBZvh.s:811    .text:000004fe xt_back
+     /tmp/ccZTBZvh.s:816    .text:0000050e ht_again
+     /tmp/ccZTBZvh.s:816    .text:00000516 xt_again
+     /tmp/ccZTBZvh.s:821    .text:0000052a ht_until
+     /tmp/ccZTBZvh.s:821    .text:00000532 xt_until
+     /tmp/ccZTBZvh.s:826    .text:00000546 ht_endif
+     /tmp/ccZTBZvh.s:826    .text:0000054e xt_endif
+     /tmp/ccZTBZvh.s:831    .text:00000566 ht_mark
+     /tmp/ccZTBZvh.s:831    .text:0000056e xt_mark
+     /tmp/ccZTBZvh.s:836    .text:0000057e ht_aft
+     /tmp/ccZTBZvh.s:836    .text:00000586 xt_aft
+     /tmp/ccZTBZvh.s:841    .text:0000058e ht_if
+     /tmp/ccZTBZvh.s:841    .text:00000596 xt_if
+     /tmp/ccZTBZvh.s:846    .text:000005aa ht_else
+     /tmp/ccZTBZvh.s:846    .text:000005b2 xt_else
+     /tmp/ccZTBZvh.s:851    .text:000005ce ht_then
+     /tmp/ccZTBZvh.s:851    .text:000005d6 xt_then
+     /tmp/ccZTBZvh.s:856    .text:000005de ht_while
+     /tmp/ccZTBZvh.s:856    .text:000005e6 xt_while
+     /tmp/ccZTBZvh.s:861    .text:000005fa ht_repeat
+     /tmp/ccZTBZvh.s:861    .text:00000602 xt_repeat
+     /tmp/ccZTBZvh.s:866    .text:0000061e ht_do
+     /tmp/ccZTBZvh.s:866    .text:00000626 xt_do
+     /tmp/ccZTBZvh.s:874    .text:00000656 ht_loop
+     /tmp/ccZTBZvh.s:874    .text:0000065e xt_loop
+     /tmp/ccZTBZvh.s:890    .text:000006f2 ht_ploop
+     /tmp/ccZTBZvh.s:890    .text:000006fa xt_ploop
+     /tmp/ccZTBZvh.s:904    .text:00000776 ht_i
+     /tmp/ccZTBZvh.s:904    .text:0000077e xt_i
+     /tmp/ccZTBZvh.s:909    .text:0000078e ht_j
+     /tmp/ccZTBZvh.s:909    .text:00000796 xt_j
+     /tmp/ccZTBZvh.s:920    .text:000007ee ht_leave
+     /tmp/ccZTBZvh.s:920    .text:000007f6 xt_leave
+     /tmp/ccZTBZvh.s:928    .text:0000082a ht_for
+     /tmp/ccZTBZvh.s:928    .text:00000832 xt_for
+     /tmp/ccZTBZvh.s:934    .text:00000846 ht_next
+     /tmp/ccZTBZvh.s:934    .text:0000084e xt_next
+     /tmp/ccZTBZvh.s:945    .text:000008a6 ht_colon
+     /tmp/ccZTBZvh.s:945    .text:000008ae xt_colon
+     /tmp/ccZTBZvh.s:955    .text:000008d2 ht_semis
+     /tmp/ccZTBZvh.s:955    .text:000008da xt_semis
+     /tmp/ccZTBZvh.s:965    .text:00000906 ht_header
+     /tmp/ccZTBZvh.s:965    .text:0000090e xt_header
+     /tmp/ccZTBZvh.s:972    .text:00000926 ht_djb2
+     /tmp/ccZTBZvh.s:972    .text:0000092e xt_djb2
+     /tmp/ccZTBZvh.s:982    .text:0000096e ht_token
+GAS LISTING /tmp/ccZTBZvh.s 			page 41
+
+
+     /tmp/ccZTBZvh.s:982    .text:00000976 xt_token
+     /tmp/ccZTBZvh.s:999    .text:000009ea ht_find
+     /tmp/ccZTBZvh.s:999    .text:000009f2 xt_find
+     /tmp/ccZTBZvh.s:1018   .text:00000a5e def_compiled_last
+     /tmp/ccZTBZvh.s:269    .text:00000012 .L99992
+     /tmp/ccZTBZvh.s:274    .text:0000001a .L99993
+     /tmp/ccZTBZvh.s:294    .text:0000003c .L99994
+     /tmp/ccZTBZvh.s:301    .text:0000004a .L99995
+     /tmp/ccZTBZvh.s:309    .text:0000005e .L99996
+     /tmp/ccZTBZvh.s:317    .text:00000074 .L99997
+     /tmp/ccZTBZvh.s:324    .text:00000086 .L99998
+     /tmp/ccZTBZvh.s:333    .text:00000098 .L99999
+     /tmp/ccZTBZvh.s:339    .text:000000aa .L999910
+     /tmp/ccZTBZvh.s:345    .text:000000bc .L999911
+     /tmp/ccZTBZvh.s:351    .text:000000cc .L999912
+     /tmp/ccZTBZvh.s:357    .text:000000dc .L999913
+     /tmp/ccZTBZvh.s:363    .text:000000ec .L999914
+     /tmp/ccZTBZvh.s:369    .text:000000fc .L999915
+     /tmp/ccZTBZvh.s:375    .text:0000010c .L999916
+     /tmp/ccZTBZvh.s:380    .text:0000011a .L999917
+     /tmp/ccZTBZvh.s:385    .text:00000128 .L999918
+     /tmp/ccZTBZvh.s:391    .text:00000138 .L999919
+     /tmp/ccZTBZvh.s:398    .text:00000148 .L999920
+     /tmp/ccZTBZvh.s:407    .text:00000160 .L999921
+     /tmp/ccZTBZvh.s:412    .text:0000016c .L999922
+     /tmp/ccZTBZvh.s:419    .text:00000180 .L999923
+     /tmp/ccZTBZvh.s:424    .text:0000018e .L999924
+     /tmp/ccZTBZvh.s:431    .text:000001a4 .L999925
+     /tmp/ccZTBZvh.s:437    .text:000001b4 .L999926
+     /tmp/ccZTBZvh.s:443    .text:000001c4 .L999927
+     /tmp/ccZTBZvh.s:453    .text:000001e0 .L999928
+     /tmp/ccZTBZvh.s:461    .text:000001fa .L999929
+     /tmp/ccZTBZvh.s:467    .text:0000020a .L999930
+     /tmp/ccZTBZvh.s:473    .text:0000021a .L999931
+     /tmp/ccZTBZvh.s:479    .text:0000022a .L999932
+     /tmp/ccZTBZvh.s:485    .text:0000023c .L999933
+     /tmp/ccZTBZvh.s:491    .text:0000024e .L999934
+     /tmp/ccZTBZvh.s:497    .text:0000025c .L999935
+     /tmp/ccZTBZvh.s:503    .text:0000026a .L999936
+     /tmp/ccZTBZvh.s:509    .text:00000278 .L999937
+     /tmp/ccZTBZvh.s:516    .text:0000028a .L999938
+     /tmp/ccZTBZvh.s:525    .text:0000029e .L999939
+     /tmp/ccZTBZvh.s:532    .text:000002b2 .L999940
+     /tmp/ccZTBZvh.s:539    .text:000002c6 .L999941
+     /tmp/ccZTBZvh.s:546    .text:000002da .L999942
+     /tmp/ccZTBZvh.s:556    .text:000002ee .L999943
+     /tmp/ccZTBZvh.s:563    .text:00000300 .L999944
+     /tmp/ccZTBZvh.s:570    .text:00000310 .L999945
+     /tmp/ccZTBZvh.s:580    .text:00000322 .L999946
+     /tmp/ccZTBZvh.s:586    .text:00000334 .L999947
+     /tmp/ccZTBZvh.s:592    .text:00000344 .L999948
+     /tmp/ccZTBZvh.s:598    .text:00000354 .L999949
+     /tmp/ccZTBZvh.s:607    .text:00000364 .L999950
+     /tmp/ccZTBZvh.s:613    .text:00000376 .L999951
+     /tmp/ccZTBZvh.s:619    .text:00000388 .L999952
+     /tmp/ccZTBZvh.s:625    .text:0000039a .L999953
+     /tmp/ccZTBZvh.s:631    .text:000003ac .L999954
+GAS LISTING /tmp/ccZTBZvh.s 			page 42
+
+
+     /tmp/ccZTBZvh.s:637    .text:000003be .L999955
+     /tmp/ccZTBZvh.s:717    .text:000003f8 .L0 
+     /tmp/ccZTBZvh.s:740    .text:0000042c .L0 
+     /tmp/ccZTBZvh.s:643    .text:000003d0 .L999956
+     /tmp/ccZTBZvh.s:755    .text:00000454 .L999957
+     /tmp/ccZTBZvh.s:760    .text:00000466 .L999958
+     /tmp/ccZTBZvh.s:786    .text:00000492 .L999961
+     /tmp/ccZTBZvh.s:791    .text:000004a2 .L999962
+     /tmp/ccZTBZvh.s:796    .text:000004b6 .L999963
+     /tmp/ccZTBZvh.s:801    .text:000004d2 .L999964
+     /tmp/ccZTBZvh.s:806    .text:000004ee .L999965
+     /tmp/ccZTBZvh.s:811    .text:000004fe .L999966
+     /tmp/ccZTBZvh.s:816    .text:00000516 .L999967
+     /tmp/ccZTBZvh.s:821    .text:00000532 .L999968
+     /tmp/ccZTBZvh.s:826    .text:0000054e .L999969
+     /tmp/ccZTBZvh.s:831    .text:0000056e .L999970
+     /tmp/ccZTBZvh.s:836    .text:00000586 .L999971
+     /tmp/ccZTBZvh.s:841    .text:00000596 .L999972
+     /tmp/ccZTBZvh.s:846    .text:000005b2 .L999973
+     /tmp/ccZTBZvh.s:851    .text:000005d6 .L999974
+     /tmp/ccZTBZvh.s:856    .text:000005e6 .L999975
+     /tmp/ccZTBZvh.s:861    .text:00000602 .L999976
+     /tmp/ccZTBZvh.s:866    .text:00000626 .L999977
+     /tmp/ccZTBZvh.s:874    .text:0000065e .L999978
+     /tmp/ccZTBZvh.s:890    .text:000006fa .L999979
+     /tmp/ccZTBZvh.s:904    .text:0000077e .L999980
+     /tmp/ccZTBZvh.s:909    .text:00000796 .L999981
+     /tmp/ccZTBZvh.s:920    .text:000007f6 .L999982
+     /tmp/ccZTBZvh.s:928    .text:00000832 .L999983
+     /tmp/ccZTBZvh.s:934    .text:0000084e .L999984
+     /tmp/ccZTBZvh.s:945    .text:000008ae .L999985
+     /tmp/ccZTBZvh.s:955    .text:000008da .L999986
+     /tmp/ccZTBZvh.s:965    .text:0000090e .L999987
+     /tmp/ccZTBZvh.s:972    .text:0000092e .L999988
+     /tmp/ccZTBZvh.s:982    .text:00000976 .L999989
+
+UNDEFINED SYMBOLS
+hash_LIT
+docon
+exit
+hash_HERE
+heap
+fetch
+hash_ALLOT
+here
+plus
+store
+hash_COMMA
+cell
+allot
+hash_BEGIN
+hash_BACK
+minus
+comma
+hash_AGAIN
+lit
+back
+GAS LISTING /tmp/ccZTBZvh.s 			page 43
+
+
+hash_UNTIL
+zbranch
+hash_ENDIF
+over
+swap
+hash_MARK
+nil
+hash_AAFT
+hash_IF
+mark
+hash_ELSE
+endif
+hash_THEN
+hash_WHILE
+hash_REPEAT
+hash_DO
+tor
+hash_LOOP
+rto
+equ
+drop
+hash_I
+rat
+hash_J
+hash_LEAVE
+hash_FOR
+hash_NEXT
+dup
+gbranch
+pike
+one
+state
+header
+last
+hash_HEADER
+token
+hash_DJB2
+xor
+hash_TOKEN
+begin
+key
+inverse
+until
+djb2
+nan
+and
+hash_FIND
+latest
+while
+repeat
+zzzz
+if
+else
+then
