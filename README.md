@@ -16,9 +16,16 @@ No Terminal Input Buffer, just an token-to-hash ascii parser.
 
 Only use a IMMEDIATE flag, at MSBit (31) of hash, also is NaN. 
 
+Uses SP, RP, IP, TOS keeped in dedicated registers.
+
 There are a file with more core words to use.
 
 ** Use the tos2 directory **
+
+** STILL NOT FOR USE **
+
+** NEEDS REVIEW OF DOCUMENTATION **
+
 
 ## For use
 
@@ -55,7 +62,7 @@ or
     [ISA](https://dejazzer.com/coen2710/lectures/RISC-V-Reference-Data-Green-Card.pdf)
 
 The aeForth is a ELF program called by 'elsewhere operational system', 
-and use registers r0, ra, sp, s0, s1, a0-a7, t0-t1. 
+and use registers r0, ra, sp, s0, s1, a0-a7, t0-t2. 
 
 ## Coding
 
@@ -75,7 +82,7 @@ contains the user variables for Forth
 ## Colon and Semis
 
 The colon **:** makes a header by:
-        1. copy HERE to HEAD
+        1. copy HERE to PIKE
         2. copy LATEST to first cell;
         3. calculate the djb2 hash of the next token;
         4. copy hash to second cell;
@@ -86,13 +93,13 @@ In compile state, all non immediate words are compiled,
     
 The semis **;** ends the word by:
         1. place a 'EXIT into last cell
-        2. copy HEAD to LATEST
+        2. copy PIKE to LATEST
         3. change STATE to execute (0);
 
 if the compilation is interrupted, 
     STATE and LATEST keeps untouched, 
     but HERE changes and some junk was placed and stays into dictionary.
-    Could clean that with more some code, to copy HEAD to HERE
+    Could clean that with more some code, to copy PIKE to HERE
 
 When the compilation of a word breaks, the LATEST are keepd in order 
 but HERE was advanced with references of words compiled, that junk 
