@@ -69,6 +69,8 @@ int main ( int argc, char * argv[]) {
 
                 djb2 (word);
 
+		// only 31 bits :)
+
                 hasf = hash & (0x80000000 - 1);
 
                 // printf ("%08X : %08X : %s ", hasf, hash, word);
