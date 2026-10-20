@@ -102,6 +102,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
 .equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 
+.equ hash_SCANK, 0x0DDC5111 #; ( SCANK )
+.equ hash_SKIPK, 0x0DE08FCF #; ( SKIPK )
+
+.equ hash_VALUE, 0x0D5DEAAE #; ( VALUE )
+.equ hash_TO, 0x0059745E #; ( TO )
+.equ hash_DEFER, 0x0C605B35 #; ( DEFER )
+.equ hash_IS, 0x0059733F #; ( IS )
+
+.equ hash_CREATE, 0x24DC0181 #; ( CREATE )
+.equ hash_DOES, 0x0C6804C6 #; ( DOES> )
+.equ hash_BUILDS, 0x1DF52960 #; ( BUILDS )
+.equ hash_VARIABLE, 0x31F82EE3 #; ( VARIABLE )
+.equ hash_CONSTANT, 0x33CC827B #; ( CONSTANT )
+.equ hash_BUFFER, 0x1DF37CE5 #; ( BUFFER )
+.equ hash_ARRAY, 0x0C587A5C #; ( ARRAY )
+
+
 
 #---------------------------------------------------------------------- 
  
@@ -372,13 +389,13 @@ def_word "find" hash_FIND
 	.word xt_dup, xt_if, xt_else, xt_then
 	.word xt_repeat 
 	# discard hash, keep last link 
-	.word xt_zzzz 
+	# .word xt_zzzz 
 	.word xt_cell, xt_plus, xt_dup, xt_fetch, xt_nan, xt_and 
 	.word xt_if, xt_lit, 1, xt_else, xt_lit, -1, xt_then 
 	.word xt_then 
 	.word xt_exit 
  
-# ( -- h ) #; ( ' ) tick 
+# ( -- h ) #; ( ' ) tick, return the xt of a word 
 def_word "tick" hash_TICK IMMEDIATE 
 	.word xt_hash, xt_find 
 	.word xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
@@ -433,3 +450,87 @@ def_word "abort" hash_ABORT
  
 #---------------------------------------------------------------------- 
  
+# ( -- ) #; ( CREATE ) 
+def_word "create" hash_CREATE  
+	.word xt_isname
+	.word xt_lit, xt_lit, xt_comma
+	.word xt_here, xt_cell, xt_plus, xt_cell, xt_plus, xt_comma
+	.word xt_lit, xt_exit, xt_comma
+	.word xt_lit, xt_exit, xt_comma
+	.word xt_exit
+
+# ( -- ) #; ( DOES ) 
+def_word "does" hash_DOES 
+	.word xt_rto, xt_latest, xt_fetch
+	.word xt_cell, xt_plus, xt_cell, xt_plus
+	.word xt_cell, xt_plus, xt_cell, xt_plus
+	.word xt_store
+	.word xt_exit
+
+# ( -- ) #; ( BUILDS ) 
+def_word "builds" hash_BUILDS 
+	.word xt_create
+	.word xt_exit
+
+# ( -- ) #; ( VARIABLE ) 
+def_word "variable" hash_VARIABLE 
+	.word xt_create, xt_nil, xt_comma
+	.word xt_exit
+
+# ( w -- ) #; ( CONSTANT ) 
+def_word "constant" hash_CONSTANT 
+	.word xt_create, xt_comma
+	.word xt_does, xt_fetch
+	.word xt_exit
+
+# ( w -- ) #; ( BUFFER ) 
+def_word "buffer" hash_BUFFER 
+	.word xt_create, xt_allot
+	.word xt_exit
+
+# ( w -- ) #; ( ARRAY ) 
+def_word "array" hash_ARRAY 
+	.word xt_create, xt_allot
+	.word xt_does, xt_plus, xt_fetch
+	.word xt_exit
+
+# ( w -- ) #; ( VALUE ) 
+def_word "value" hash_VALUE 
+	.word xt_constant
+	.word xt_exit
+
+# ( w -- ) #; ( TO ) 
+def_word "to" hash_TO 
+	.word xt_tick 
+	.word xt_state, xt_fetch
+	.word xt_if, xt_lit, xt_lit, xt_comma
+	.word xt_comma 
+	.word xt_lit, xt_store, xt_store
+	.word xt_else, xt_store
+	.word xt_then
+	.word xt_exit
+
+# ( -- ) #; ( DEFER ) 
+def_word "defer" hash_DEFER 
+	.word xt_isname 
+	.word xt_lit, xt_exit, xt_comma
+	.word xt_lit, xt_exit, xt_comma
+	.word xt_exit
+
+# ( -- ) #; ( IS ) 
+def_word "is" hash_IS 
+	.word xt_tick, xt_store
+	.word xt_exit
+
+# ( -- ) #; ( SKIPK ) 
+def_word "skipk" hash_SKIPK
+	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
+	.word xt_until, xt_drop
+	.word xt_exit
+
+# ( -- ) #; ( SCANK ) 
+def_word "scank" hash_SCANK
+	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
+	.word xt_inverse, xt_until, xt_drop
+	.word xt_exit
+

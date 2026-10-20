@@ -85,6 +85,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth third on stack, not reserved
 #define trd a6
 
+# forth fourth on stack, not reserved
+#define fth a6
+
 # a0, a1, a2, a7 used as scratch, preserved inside ecalls
 
 # fixed memory pointers
