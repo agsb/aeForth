@@ -118,6 +118,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_BUFFER, 0x1DF37CE5 #; ( BUFFER )
 .equ hash_ARRAY, 0x0C587A5C #; ( ARRAY )
 
+.equ hash_2DUP, 0x7C5447D6 #; ( 2DUP )
+.equ hash_2DROP, 0x06DD1C3E #; ( 2DROP )
+.equ hash_2SWAP, 0x06D56D02 #; ( 2SWAP )
+.equ hash_2OVER, 0x06E00A99 #; ( 2OVER )
+.equ hash_2STORE, 0x00596856 #; ( 2! )
+.equ hash_2FETCH, 0x00596837 #; ( 2@ )
+.equ hash_2TOR, 0x0B86713B #; ( 2>R )
+.equ hash_2RTO, 0x0B866CFB #; ( 2R> )
+.equ hash_2RAT, 0x0B866C85 #; ( 2R@ )
 
 
 #---------------------------------------------------------------------- 
@@ -533,4 +542,42 @@ def_word "scank" hash_SCANK
 	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
 	.word xt_inverse, xt_until, xt_drop
 	.word xt_exit
+
+#---------------------------------------------------------------------- 
+
+def_word "twodup" hash_2DUP
+	.word xt_over, xt_over
+	.word xt_exit
+
+def_word "twodrop" hash_2DROP
+	.word xt_drop, xt_drop
+	.word xt_exit
+
+def_word "twoswap" hash_2SWAP
+	.word xt_rot, xt_tor, xt_rot, xt_rto
+	.word xt_exit
+
+def_word "twofetch" hash_2FETCH
+	.word xt_dup, xt_cell, xt_plus, xt_fetch, xt_swap, xt_fetch
+	.word xt_exit
+
+def_word "twostore" hash_2STORE
+	.word xt_swap, xt_over, xt_store, xt_cell, xt_plus, xt_store
+	.word xt_exit
+
+def_word "twotor" hash_2TOR
+	.word xt_swap, xt_tor, xt_tor
+	.word xt_exit
+
+def_word "tworto" hash_2RTO
+	.word xt_rto, xt_rto, xt_swap
+	.word xt_exit
+
+def_word "tworat" hash_2RAT
+	.word xt_rto, xt_rto, xt_twodup, xt_tor, xt_tor, xt_swap
+	.word xt_exit
+
+
+# : 2NIP 2SWAP 2DROP ;
+# : 2TUCK 2SWAP 2OVER ;
 
