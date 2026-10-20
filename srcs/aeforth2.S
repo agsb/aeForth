@@ -191,16 +191,24 @@ xt_\label:
     j next
 .endm
 
+#
+# Moore says the 22 deep are infinite :)
+# use round-robin stacks of 32 deep, or 2^n
+# magics by -33 == NOT(0x32)
+.equ stack_deep, -33 
+
 # generic push into memory
 .macro push rg ps 
  	addi \ps, \ps, -1 * CELL
+	and \ps, \ps, stack_deep
 	sw \rg, 0 (\ps)
 .endm
 
 # generic pull from memory
 .macro pull rg ps
 	lw \rg, 0 (\ps)
- 	addi \ps, \ps, 1 * CELL
+ 	addi \ps, \ps, +1 * CELL
+	and \ps, \ps, stack_deep
 .endm
 
 # ---------------------------------------------------------

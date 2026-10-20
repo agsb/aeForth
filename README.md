@@ -20,12 +20,9 @@ Uses SP, RP, IP, TOS keeped in dedicated registers.
 
 There are a file with more core words to use.
 
-** Use the tos2 directory **
-
 ** STILL NOT FOR USE **
 
 ** NEEDS REVIEW OF DOCUMENTATION **
-
 
 ## For use
 

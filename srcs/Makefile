@@ -54,7 +54,7 @@ QEMU = ${BASE}qemu-riscv64
 
 QFLAGS = -display none -bios none -serial mon:stdio -smp 1 -machine virt 
 
-MY = aeforth
+MY = test
 
 ########################################
 

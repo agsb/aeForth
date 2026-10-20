@@ -1,6 +1,5 @@
 # NOTES
 
- 
     Uses cell with 32-bits;
  
     Only IMMEDIATE flag used as $8000, no hide, no compile, no extras;
@@ -12,48 +11,48 @@
 
     The header order is LINK, HASH and code or references.
  
-    No overflow or underflow stack checks;
+    No overflow or underflow stack checks, only round-robin;
  
-    No numbers only words (yet);
+    Still mo numbers only words (yet);
 
  ## NO MORE
 
-        TIB (80 bytes) and locals (8 cells) are in sequence; 
+    No more TIB or PAD. Create if need.
 
-        PAD (84 bytes) and PIC (68 bytes) must be allocated if need;
+    ~~TIB (80 bytes) and locals (8 cells) are in sequence;~~
+
+    ~~PAD (84 bytes) and PIC (68 bytes) must be allocated if need;~~
  
 ## Remarks
  
     This code uses Minimal Indirect Thread Code, aka MITC;
  
-    No TOS or ROS registers, all values keeped at stacks;
+    ~~No TOS or ROS registers, all values keeped at stacks;~~
  
     Words must be between spaces, before and after;
  
-    Words are case-sensitivy and less than 32 characters;
+    Words of ascii characters, no controls and any size;
  
-    No multiuser, no multitask, no checks, not faster;
+    Still no multiuser, no multitask, no checks, not faster;
 
     IMMEDIATE word only works outside word definition, 
     it always make latest word immediate.
  
-    Not using smudge, colon saves HERE into HEAD and 
-          semis loads LATEST from HEAD;
+    Not using smudge, colon saves HERE into PIKE and 
+          semis loads LATEST from PIKE;
  
 ## For Devs
  
-    Chuck Moore uses 64 columns. Be wise, obey the rule of 
-        72 characters per line; 
+    Chuck Moore uses 64 columns. 
+
+    Be wise, obey the rule of 72 characters per line; 
  
     Never mess with two underscore variables;
  
 # For stacks
  
-    The hardware stack is not used for this Forth;
+    The hardware stack is not used as Forth stack;
  
-    The hello_world.forth file states that stacks works to allow 
-        : dup sp@ @ ; so spt must point to actual TOS;
-    
     "when the heap moves forward, the stack moves backward"; 
  
     The stack movement to be:
@@ -61,10 +60,16 @@
         pull is 'fetch and increase'
  
     Stacks represented as (standart)
-        (w1 w2 w3 -- u1 u2), (w1 w2 w3 -- u1 u2)
-        data, return (before -- after), top at left.
-        c unsigned 8-bit character, a 32-bit address,
-        w signed 32-bit, u unsigned 32-bit,
+        (w1 w2 w3 -- u1 u2 ; w1 w2 -- w1 )
+        ( data stack ; return stack)
+        (before -- after), top at left.
+        c unsigned 8-bit character, 
+        a 32-bit address,
+        w signed 32-bit, 
+        u unsigned 32-bit, 
+        f flag TRUE or FALSE, 
+        h hash 31-bit value,
+        x 32-bit execution address
  
 ## For RiscV
  
@@ -82,6 +87,9 @@
 
 ## For Heaps
 
+    Order is variables, stacks, forth, dictionary, heap, end-of-memory
+
+    Heap always grows till end of memory.
 
 ## For Hash
 

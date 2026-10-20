@@ -89,9 +89,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_HEADER, 0x33DCB49A #; ( HEADER ) 
 .equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
 .equ hash_TOKEN, 0x0D8960FE #; ( TOKEN ) 
+.equ hash_WORD, 0x7C888E6B #; ( WORD )
+.equ hash_HASH, 0x7C8590B7 #; ( HASH )
 .equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
 .equ hash_POSTPONE, 0x7A137C29 #; ( POSTPONE ) 
 .equ hash_ABORT, 0x0C4FFEAF #; ( ABORT )
+
+.equ hash_LBRACK, 0x0002B5FE #; ( [ )
+.equ hash_RBRACK, 0x0002B5F8 #; ( ] )
+.equ hash_ISNAME, 0x05BEEF42 #; ( :ISNAME )
+.equ hash_NONAME, 0x7C2B3679 #; ( :NONAME )
+.equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
+.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 
 
 #---------------------------------------------------------------------- 
@@ -116,6 +125,16 @@ def_word "comma" hash_COMMA
 	.word xt_here, xt_store, xt_cell, xt_allot 
 	.word xt_exit 
  
+# ( -- ) #; ( [ )  
+def_word "lbrack" hash_LBRACK
+	.word xt_lit, xt_nil, xt_state, xt_store
+	.word xt_exit
+
+# ( -- ) #; ( ] )  
+def_word "rbrack" hash_RBRACK
+	.word xt_lit, xt_one, xt_state, xt_store
+	.word xt_exit
+
 #---------------------------------------------------------------------- 
  
 # ( -- a ) ;# ( BEGIN ) 
@@ -148,11 +167,6 @@ def_word "mark" hash_MARK IMMEDIATE
 	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
  
-# ( -- a ) ;# ( AFT ) 
-def_word "aft" hash_AFT IMMEDIATE 
-	.word xt_here 
-	.word xt_exit 
- 
 # ( -- ) ;# ( IF ) 
 def_word "if" hash_IF IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma, xt_mark 
@@ -161,6 +175,13 @@ def_word "if" hash_IF IMMEDIATE
 # ( -- ) ;# ( ELSE ) 
 def_word "else" hash_ELSE IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma, xt_mark, xt_swap, xt_endif 
+	.word xt_exit 
+ 
+# ( -- a ) ;# ( AFT ) 
+def_word "aft" hash_AFT IMMEDIATE 
+	.word xt_drop
+	.word xt_lit, xt_branch, xt_here, xt_nil, xt_comma
+	.word xt_here, xt_swap 
 	.word xt_exit 
  
 # ( -- ) ;# ( THEN ) 
@@ -180,43 +201,49 @@ def_word "repeat" hash_REPEAT IMMEDIATE
  
 #---------------------------------------------------------------------- 
  
-# ( w1 w2 -- ; -- w2 w1 ) ;# ( DO ) 
+# ( w1 w2 -- ; -- w2 w1 ) ;# ( DO ) makes a count up
+# limit start DO
 def_word "do" hash_DO IMMEDIATE 
-	.word xt_lit, xt_swap, xt_comma 
 	.word xt_here 
 	.word xt_lit, xt_tor, xt_comma 
 	.word xt_lit, xt_tor, xt_comma 
 	.word xt_exit 
+
+# as :noname 
+do_pass:
+	.word xt_lit, xt_plus, xt_comma 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_over, xt_comma 
+	.word xt_lit, xt_equ, xt_comma 
+	.word xt_lit, xt_zbranch, xt_comma 
+	.word xt_here, xt_minus, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
+	.word xt_exit 
  
 # ( -- ; w2 w1 -- w2 w1 ) ;# ( LOOP ) 
 def_word "loop" hash_LOOP IMMEDIATE 
+	# limit 
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, xt_lit, xt_comma 
-	.word xt_lit, 01, xt_comma 
-	.word xt_lit, xt_plus, xt_comma 
+	# increment
+	.word xt_lit, xt_one, xt_comma 
+	# counter
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, xt_over, xt_comma 
-	.word xt_lit, xt_over, xt_comma 
-	.word xt_lit, xt_equ, xt_comma 
-	.word xt_lit, xt_zbranch, xt_comma 
-	.word xt_here, xt_minus, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
-	.word xt_exit 
- 
+	# do
+	.word do_pass
+	.word xt_exit
+
 # ( w -- ; w2 w1 -- w2 w1 ) ;# ( +LOOP ) 
 def_word "ploop" hash_LOOP IMMEDIATE 
+	# limit 
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, xt_plus, xt_comma 
+	# increment
+	.word xt_lit, xt_swap, xt_comma
+	# counter
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, xt_over, xt_comma 
-	.word xt_lit, xt_over, xt_comma 
-	.word xt_lit, xt_equ, xt_comma 
-	.word xt_lit, xt_zbranch, xt_comma 
-	.word xt_here, xt_minus, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
-	.word xt_exit 
+	# do
+	.word do_pass
+	.word xt_exit
  
 # ( -- w1 ; w2 w1 -- w2 w1 ) ;# ( I ) 
 def_word "i" hash_I IMMEDIATE 
@@ -237,12 +264,12 @@ def_word "j" hash_J IMMEDIATE
 # ( -- ; w2 w1 -- ) ;# ( LEAVE ) 
 def_word "leave" hash_LEAVE IMMEDIATE 
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
 	.word xt_lit, xt_rto, xt_comma 
+	.word xt_lit, xt_drop, xt_comma 
 	.word xt_lit, xt_drop, xt_comma 
 	.word xt_exit 
 	 
-# ( w -- ; -- w ) ;# ( FOR ) 
+# ( w -- ; -- w ) ;# ( FOR ) make a count down
 def_word "for" hash_FOR IMMEDIATE 
 	.word xt_here 
 	.word xt_lit, xt_tor, xt_comma 
@@ -251,7 +278,7 @@ def_word "for" hash_FOR IMMEDIATE
 # ( -- ; w -- w ) ;# ( NEXT ) 
 def_word "next" hash_NEXT IMMEDIATE 
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, 01, xt_comma 
+	.word xt_lit, xt_one, xt_comma 
 	.word xt_lit, xt_minus, xt_comma 
 	.word xt_lit, xt_dup, xt_comma 
 	.word xt_lit, xt_gbranch, xt_comma 
@@ -298,45 +325,32 @@ def_word "endcase" hash_ENDCASE IMMEDIATE
 def_word "colon" hash_COLON 
 	# save here, panic if semis not follow elsewhere 
 	.word xt_heap, xt_fetch, xt_pike, xt_store 
-	# stat is xt_compilext_ == 1 
+	# stat is xt_compile == 1 
 	.word xt_one, xt_state, xt_store 
 	# make a header 
-	.word xt_header 
+	.word xt_isname 
 	.word xt_exit 
  
 # ( -- ) #; ( ; ) aka figforth semicolon, is IMMEDIATE 
 def_word "semis" hash_SEMIS IMMEDIATE 
 	# load last, panic if colon not lead elsewhere 
 	.word xt_pike, xt_fetch, xt_latest, xt_store 
-	# stat is xt_executext_ == 0 
+	# stat is xt_execute == 0 
 	.word xt_nil, xt_state, xt_store 
 	# make a footer 
 	.word xt_lit, xt_exit, xt_comma 
 	.word xt_exit 
  
-# ( -- ) #; ( HEADER ) makes a header with next word 
-def_word "header" hash_HEADER 
-	.word xt_latest, xt_fetch, xt_comma 
-	.word xt_token, xt_comma 
-	.word xt_exit 
- 
-# classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
-# ( c w -- w ) #; ( DJB2 ) 
-def_word "djb2" hash_DJB2 
-	.word xt_dup, xt_dup, xt_plus 
-	.word xt_dup, xt_plus, xt_dup, xt_plus 
-	.word xt_dup, xt_plus, xt_dup, xt_plus 
-	.word xt_plus, xt_xor 
-	.word xt_exit 
- 
 # crude token consumes a word between spaces 
-# return the hash of a token 
-# ( -- h ) #; ( TOKEN ) 
-def_word "token" hash_TOKEN 
+# return the hash of a token word
+# ( -- h ) #; ( word ) 
+def_word "hash" hash_HASH
 	# skip spaces 
 	.word xt_lit, BL 
-	.word xt_begin, xt_key, xt_over, xt_over, xt_equ, xt_inverse, xt_until 
-	# prepare 
+	.word xt_begin
+	.word xt_key, xt_over, xt_over, xt_equ, xt_inverse
+	.word xt_until 
+	# prepare djb2 constant, adapted from cdb_hash
 	.word xt_lit, 5381, xt_tor 
 	# scan spaces and do hash 
 	.word xt_begin 
@@ -354,7 +368,9 @@ def_word "find" hash_FIND
 	# find the hash 
 	.word xt_begin, xt_over, xt_over 
 	.word xt_cell, xt_plus, xt_fetch, xt_equ 
-	.word xt_while, xt_fetch, xt_repeat 
+	.word xt_while, xt_fetch 
+	.word xt_dup, xt_if, xt_else, xt_then
+	.word xt_repeat 
 	# discard hash, keep last link 
 	.word xt_zzzz 
 	.word xt_cell, xt_plus, xt_dup, xt_fetch, xt_nan, xt_and 
@@ -364,7 +380,7 @@ def_word "find" hash_FIND
  
 # ( -- h ) #; ( ' ) tick 
 def_word "tick" hash_TICK IMMEDIATE 
-	.word xt_token, xt_find 
+	.word xt_hash, xt_find 
 	.word xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
 	.word xt_else, xt_abort 
 	.word xt_then 
@@ -373,6 +389,42 @@ def_word "tick" hash_TICK IMMEDIATE
 # ( -- ) #; ( POSTPONE ) 
 def_word "postpone" hash_POSTPONE IMMEDIATE 
 	.word xt_tick, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) #; ( :ISNAME ) makes a header with next word 
+def_word "isname" hash_ISNAME
+	.word xt_latest, xt_fetch, xt_comma 
+	.word xt_hash, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) #; ( :NONAME ) makes a header with next word 
+def_word "noname" hash_NONAME
+	.word xt_here, xt_lbrack 
+	.word xt_exit 
+ 
+# ( -- ) #; ( IMMEDIATE ) makes a word immediate 
+def_word "immediate" hash_IMMEDIATE
+	.word xt_latest, xt_fetch, xt_cell, xt_plus
+	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
+	.word xt_exit 
+ 
+# ( -- ) #; ( RECURSE ) compiles the word been compiled 
+def_word "recurse" hash_RECURSE IMMEDIATE
+	# drop return
+	.word xt_lit, xt_rto, xt_comma
+	# compile to self
+	.word xt_pike, xt_fetch
+	.word xt_cell, xt_plus, xt_cell, xt_plus
+	.word xt_comma
+	.word xt_exit 
+ 
+# classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
+# ( c w -- w ) #; ( DJB2 ) 
+def_word "djb2" hash_DJB2 
+	.word xt_dup, xt_dup, xt_plus 
+	.word xt_dup, xt_plus, xt_dup, xt_plus 
+	.word xt_dup, xt_plus, xt_dup, xt_plus 
+	.word xt_plus, xt_xor 
 	.word xt_exit 
  
 # ( -- ) #; ( ABORT ) 

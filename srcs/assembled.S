@@ -140,7 +140,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_KEY, 0x0B87F112 #; ( KEY )
 .equ hash_EMIT, 0x7C7C87D0 #; ( EMIT )
 
-# ---------------------------------------------------------
+
+#----------------------------------------------------------------------
+#
+# this is the forth heart beat, Minimum Indirect Thread Code
+#
+# nib is the address after last native code primitive word
+#
+# aka EXIT
+unnest:
+	pull ip rp
+
+# aka NEXT
+next:
+	pull nos ip
+
+pick:
+	bge nos, nib, nest
+
+jump:
+	jalr ra, 0 (nos)
+	j next
+
+# aka DOCOL
+nest:
+	push ip rp 
+
+move:
+	mv ip, nos
+	j next
+
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
 # A fake header as end of dictionary linked list
 	.word FALSE
 	.word TRUE
@@ -150,23 +182,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # ( -- ) #; ( EXIT ) 
 def_word "exit" hash_EXIT 
-#
-# aka EXIT
-unnest:
-	pull ip rp
-next:
-	pull nos ip
-pick:
-	bge nos, nib, nest
-jump:
-	jalr ra, 0 (nos)
-	j next
-# aka DOCOL
-nest:
-	push ip rp 
-move:
-	mv ip, nos
-	j next
+	j unnest
 
 # ( -- ) #; ( BRANCH )
 def_word "branch" hash_BRANCH 
@@ -175,15 +191,15 @@ branch:
 	add ip, ip, nos
 end_native
 
-# ( w -- ) #; ( ZBRANCH )
+# ( w -- ) #; ( ZBRANCH ) equal than zero
 def_word "zbranch" hash_ZBRANCH 
 	mv nos, tos
 	pull tos sp
-	beqz nos, branch
+	beq nos, zero, branch
 	addi ip, ip, CELL
 end_native
 
-# ( w -- ) #; ( GBRANCH )
+# ( w -- ) #; ( GBRANCH ) greater than zero
 def_word "gbranch" hash_GBRANCH 
 	mv nos, tos
 	pull tos sp

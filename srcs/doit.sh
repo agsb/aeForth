@@ -1,17 +1,7 @@
-#!/usr/bin/bash
 
-# crude script
+make clean && make
 
-make clean
+grep 'def_word "' aeforth2.S | tee word.lst | sort > word.srt
 
-make
-
-# system and application
-QEMU=qemu-system-riscv64
-
-# single application
-QEMU=qemu-riscv32
-
-${QEMU} aeforth.elf \
- -display none -bios none -serial mon:stdio -smp 1 -machine virt
+wc word.lst
 
