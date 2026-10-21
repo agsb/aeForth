@@ -62,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_BACK, 0x7C8023EE #; ( BACK ) 
 .equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
 .equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
+.equ hash_STILL, 0x0DD20F2B #; ( STILL )
 .equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
 .equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
 .equ hash_AFT, 0x0B87B636 #; ( AFT ) 
@@ -152,7 +153,7 @@ def_word "comma" hash_COMMA
 	.word xt_exit 
  
 # ( -- ) #; ( [ )  
-def_word "lbrack" hash_LBRACK
+def_word "lbrack" hash_LBRACK IMMEDIATE
 	.word xt_lit, xt_nil, xt_state, xt_store
 	.word xt_exit
 
@@ -183,6 +184,11 @@ def_word "until" hash_UNTIL IMMEDIATE
 	.word xt_lit, xt_zbranch, xt_comma, xt_back 
 	.word xt_exit 
  
+# ( a -- ) ;# ( STILL ) 
+def_word "still" hash_STILL IMMEDIATE 
+	.word xt_lit, xt_gbranch, xt_comma, xt_back 
+	.word xt_exit 
+
 # ( a -- a ) ;# ( ENDIF ) 
 def_word "endif" hash_ENDIF IMMEDIATE 
 	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
@@ -200,7 +206,8 @@ def_word "if" hash_IF IMMEDIATE
  
 # ( -- ) ;# ( ELSE ) 
 def_word "else" hash_ELSE IMMEDIATE 
-	.word xt_lit, xt_branch, xt_comma, xt_mark, xt_swap, xt_endif 
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_mark, xt_swap, xt_endif 
 	.word xt_exit 
  
 # ( -- a ) ;# ( AFT ) 
@@ -437,7 +444,7 @@ def_word "immediate" hash_IMMEDIATE
 # ( -- ) #; ( RECURSE ) compiles the word been compiled 
 def_word "recurse" hash_RECURSE IMMEDIATE
 	# drop return
-	.word xt_lit, xt_rto, xt_comma
+	.word xt_rto
 	# compile to self
 	.word xt_pike, xt_fetch
 	.word xt_cell, xt_plus, xt_cell, xt_plus
@@ -577,6 +584,8 @@ def_word "tworat" hash_2RAT
 	.word xt_rto, xt_rto, xt_twodup, xt_tor, xt_tor, xt_swap
 	.word xt_exit
 
+
+#---------------------------------------------------------------------- 
 
 # : 2NIP 2SWAP 2DROP ;
 # : 2TUCK 2SWAP 2OVER ;

@@ -68,13 +68,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -st -nd -rd -th 
 
 # forth parameter stack pointer, reserved
-#define sp s0
+#define spt s0
 
 # forth return stack pointer, reserved
-#define rp s1
+#define rpt s1
 
 # forth instruction pointer, reserved
-#define ip a3
+#define ipt a3
 
 # forth top of stack, reserved, for easy
 #define tos a4
@@ -86,7 +86,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define trd a6
 
 # forth fourth on stack, not reserved
-#define fth a6
+#define fth a7
 
 # a0, a1, a2, a7 used as scratch, preserved inside ecalls
 
@@ -164,6 +164,64 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ params, 16
 
+# user variables
+
+.equ usr_size, params * CELL
+
+# Moore uses 22 deep stacks
+# aeForth uses 32 in round-robin
+.equ stacks, 32
+
+# data stack
+
+.equ sp_size, stacks * CELL
+
+# return stack
+
+.equ rp_size, stacks * CELL
+
+#----------------------------------------------------------------------
+# Nothing here, void.
+.section .data
+.p2align 4, 0x0
+
+# There is no spoon.
+
+#----------------------------------------------------------------------
+# but always in RAM :)
+.section .bss
+.p2align 4, 0x0
+
+# void at top of bss
+
+# user stack of parameter, for offsets vide defines.S
+
+_user:
+.skip usr_size
+
+# data stack grows backward, bottom
+.skip sp_size
+_sp0:
+
+# return stack grows backward, bottom
+.skip rp_size
+_rp0:
+
+#----------------------------------------------------------------------
+# NOTE:
+# user_size + sp_size + rp_size must be less than 2024 bytes
+# because code uses addi (+12bits) to setup offset address
+#----------------------------------------------------------------------
+
+# user dictionary
+.word 0x0
+
+# at start of memory
+h_where:
+.skip RAM_LIMIT - ( h_where - _user )
+# to end of  memory
+h_there:
+
 #----------------------------------------------------------------------
 # essential
 #
@@ -174,8 +232,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ IMMEDIATE, NAN
 
 #----------------------------------------------------------------------
-
-.align 2
 
 # label 9999 must be exclusive :)
 # ht_ header, with link and hash
@@ -190,9 +246,12 @@ xt_\label:
 .endm
 
 # gcc handles big long jumps by relaxation :)
-.macro end_native
+#
+.macro end_word
     j next
 .endm
+
+#----------------------------------------------------------------------
 
 #
 # Moore says the 22 deep are infinite :)
@@ -214,12 +273,113 @@ xt_\label:
 	and \ps, \ps, stack_deep
 .endm
 
-# ---------------------------------------------------------
+#----------------------------------------------------------------------
+.section text
+.p2align 4, 0x0
+
+#----------------------------------------------------------------------
 # A fake header start of dictionary linked list
 #
 	.word FALSE
 	.word TRUE
 9999:
+
+#----------------------------------------------------------------------
+.globl _start
+
+#----------------------------------------------------------------------
+# go ! go ! go !
+main:
+
+# do any system initializations
+	call _init
+
+#----------------------------------------------------------------------
+# do what need be only once
+
+cold:
+# load constant pointer address
+
+        la usr, _user
+
+        la nib, assembled_last
+
+# xxx
+.ifdef beats
+        # beat
+        li t0, 0
+
+        # tick
+        li t1, 0
+
+        # tack
+        li t2, 0
+.endif
+
+#----------------------------------------------------------------------
+# do what need for setup
+
+warm:
+# save sp0
+	la tos, _sp0
+	sw tos, SPTR (usr)
+
+# save rp0
+	la tos, _rp0
+	sw tos, RPTR (usr)
+
+# last link list of dictionary, aka latest
+
+        la tos, compiled_last
+        sw tos, LAST (usr)
+
+# next heap free cell, aka DP
+
+        la tos, h_where
+        sw tos, HEAP (usr)
+
+# last heap free cell
+
+        la tos, h_where
+        sw tos, PIKE (usr)
+
+# base radix for numbers, aka BASE, defaults to 16
+
+        lui tos, 0x10
+        sw tos, BASE (usr)
+
+#---------------------------------------------------------------------
+abort:
+# reset data stack
+
+        lw tos, SPTR (usr) 
+        mv spt, tos
+
+#---------------------------------------------------------------------
+quit:
+# reset return stack
+
+        lw tos, RPTR (usr)
+        mv rpt, tos
+
+# state of forth, aka STATE
+
+        lui tos, EXECUTE
+        sw tos, STAT (usr)
+
+	ret 
+
+#---------------------------------------------------------------------
+.equ hash_RESET, 0x0DA3B330 #; ( RESET )
+def_word "reset" hash_RESET
+_start:
+
+	call main
+	
+	# zzzz must be the interpreter zzzz
+	la ipt, compiled_last
+
+	j next
 
 #----------------------------------------------------------------------
 
@@ -233,7 +393,6 @@ xt_\label:
 #include "compiled.S"
 
 #---------------------------------------------------------------------
-9999:
-.set compiled_last, 9999b
+.set compiled_last, 9999b - 8
 #---------------------------------------------------------------------
 
