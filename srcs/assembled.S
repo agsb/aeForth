@@ -140,7 +140,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_KEY, 0x0B87F112 #; ( KEY ) 
 .equ hash_EMIT, 0x7C7C87D0 #; ( EMIT ) 
  
- 
+#---------------------------------------------------------------------- 
+.section .text
+.p2align 2, 0x0
+
 #---------------------------------------------------------------------- 
 # 
 # this is the forth heart beat, Minimum Indirect Thread Code 
@@ -153,7 +156,9 @@ unnest:
  
 # aka NEXT 
 next: 
-	pull nos ipt 
+	# no round-robin limit
+	lw nos, 0 (ipt)
+	addi ipt, ipt,CELL
  
 pick: 
 	bge nos, nib, nest 
@@ -169,14 +174,6 @@ nest:
 move: 
 	mv ipt, nos 
 	j next 
- 
-#---------------------------------------------------------------------- 
- 
-#---------------------------------------------------------------------- 
-# A fake header as end of dictionary linked list 
-	.word FALSE 
-	.word TRUE 
-9999: 
  
 #---------------------------------------------------------------------- 
  

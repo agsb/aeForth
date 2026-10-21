@@ -23,8 +23,9 @@ GCC = ${PASS}gcc
 
 GCCFLAGS = -nostartfiles -nodefaultlibs -static -Oz \
 		-march=rv32gc -mabi=ilp32 \
-	   	
-# -mno-explicit-relocs -fno-pic -Wl,--no-relax\
+
+# -mno-explicit-relocs 
+#-fno-pic -Wl,--no-relax \
 # -march=rv32g  -mabi=ilp32 \
 # -Wl,-Ttext,0
 # -Wl,-z,relro -Wl,-z,now

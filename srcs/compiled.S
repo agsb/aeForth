@@ -441,7 +441,7 @@ def_word "immediate" hash_IMMEDIATE
 	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
 	.word xt_exit 
  
-# ( -- ) #; ( RECURSE ) compiles the word been compiled 
+# ( -- ) #; ( RECURSE ) compiles the word been compiled, could cause dead loops
 def_word "recurse" hash_RECURSE IMMEDIATE
 	# drop return
 	.word xt_rto
@@ -538,13 +538,13 @@ def_word "is" hash_IS
 	.word xt_tick, xt_store
 	.word xt_exit
 
-# ( -- ) #; ( SKIPK ) 
+# ( -- ) #; ( SKIPK ) skip while not equal key 
 def_word "skipk" hash_SKIPK
 	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
 	.word xt_until, xt_drop
 	.word xt_exit
 
-# ( -- ) #; ( SCANK ) 
+# ( -- ) #; ( SCANK ) scan while equal key
 def_word "scank" hash_SCANK
 	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
 	.word xt_inverse, xt_until, xt_drop
@@ -584,38 +584,5 @@ def_word "tworat" hash_2RAT
 	.word xt_rto, xt_rto, xt_twodup, xt_tor, xt_tor, xt_swap
 	.word xt_exit
 
-
 #---------------------------------------------------------------------- 
-
-VARIABLE HANDLER 0 HANDLER ! \ last exception handler
-
-def_word "catch" hash_CATCH
-
-: CATCH ( xt -- exception# | 0 \ return addr on stack
-   SP@ >R             ( xt )       \ save data stack pointer
-   HANDLER @ >R       ( xt )       \ and previous handler
-   RP@ HANDLER !      ( xt )       \ set current handler
-   EXECUTE            ( )          \ execute returns if no THROW
-   R> HANDLER !       ( )          \ restore previous handler
-   R> DROP            ( )          \ discard saved stack ptr
-    0                 ( 0 )        \ normal completion
-;
-
-: THROW ( ??? exception# -- ??? exception# )
-    ?DUP IF          ( exc# )     \ 0 THROW is no-op
-      HANDLER @ RP!   ( exc# )     \ restore prev return stack
-      R> HANDLER !    ( exc# )     \ restore prev handler
-      R> SWAP >R      ( saved-sp ) \ exc# on return stack
-      SP! DROP R>     ( exc# )     \ restore stack
-      \ Return to the caller of CATCH because return
-      \ stack is restored to the state that existed
-       \ when CATCH began execution
-    THEN
-;
-
-
-#---------------------------------------------------------------------- 
-
-# : 2NIP 2SWAP 2DROP ;
-# : 2TUCK 2SWAP 2OVER ;
 

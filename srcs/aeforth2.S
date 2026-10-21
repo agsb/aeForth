@@ -47,19 +47,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#----------------------------------------------------------------------
 #
 # aeForth with MITC, 
 #
 # Using 
-# 	Minimal Indirect Thread Code
-#	ip, sp, rp, tos, in dedicated registers
-#	nos, trd, fth as generic registers
-#	words in uppercase
+#         Minimal Indirect Thread Code
+#        ip, sp, rp, tos, in dedicated registers
+#        nos, trd, fth as generic registers
+#        hash of words in uppercase
+#        no buffer input.
 #
 # s0, s1, a0, a2, a3, a7 used in ecalls
 #
 # s0, s1, a0, a2, a3, a4, a5 used in 16 bits opcodes
-#
 #
 #----------------------------------------------------------------------
 #
@@ -82,21 +83,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth second on stack, not reserved
 #define nos a5
 
-# forth third on stack, not reserved
+# forth third on stack, not reserved, not for reduced opcodes
 #define trd a6
 
-# forth fourth on stack, not reserved
+# forth fourth on stack, not reserved, not for reduced opcodes
 #define fth a7
 
 # a0, a1, a2, a7 used as scratch, preserved inside ecalls
 
-# fixed memory pointers
+# fixed memory pointers, for offset and compares
 
 #define usr s2
 
-#define ran s3
-
-#define nib s4 
+#define nib s3 
 
 #----------------------------------------------------------------------
 # generics alias
@@ -105,6 +104,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # max size of dictionary 64k CELLS, depends on host machine
 
 .equ RAM_LIMIT, 0x40000
+
+#----------------------------------------------------------------------
 
 # as FORTH 1983
 
@@ -134,33 +135,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # +2147483647
 .equ MASK_IMM, 0x7FFFFFFF
 
-# user parameter stack sp rp last heap state base
+# user parameter stack: void sp0 rp0 last heap pike state base temp(8)
+
+# void start
+.equ VOID, 0 * CELL
 
 # data stack index
-.equ SPTR, 0 * CELL
+.equ SPTR, 1 * CELL
 
 # return stack index
-.equ RPTR, 1 * CELL
+.equ RPTR, 2 * CELL
 
 # last link cell in heap dictionary linked list
-.equ LAST, 2 * CELL
+.equ LAST, 3 * CELL
 
 # next free cell in heap dictionary, aka dp
-.equ HEAP, 3 * CELL
+.equ HEAP, 4 * CELL
 
 # last heap
-.equ PIKE, 4 * CELL
+.equ PIKE, 5 * CELL
 
 # state flag
-.equ STAT, 5 * CELL
+.equ STAT, 6 * CELL
 
 # base radix for numbers, for future use
-.equ BASE, 6 * CELL
+.equ BASE, 7 * CELL
 
-# temporary scratch as array of CELLS
-.equ TEMP, 7 * CELL
-
-# allow some cells for extras
+# allow some 8 cells for extras scratch
 
 .equ params, 16
 
@@ -168,8 +169,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ usr_size, params * CELL
 
-# Moore uses 22 deep stacks
-# aeForth uses 32 in round-robin
+# Moore uses 22 deep stacks, aeForth uses 32 in round-robin
+
 .equ stacks, 32
 
 # data stack
@@ -179,48 +180,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # return stack
 
 .equ rp_size, stacks * CELL
-
-#----------------------------------------------------------------------
-# Nothing here, void.
-.section .data
-.p2align 4, 0x0
-
-# There is no spoon.
-
-#----------------------------------------------------------------------
-# but always in RAM :)
-.section .bss
-.p2align 4, 0x0
-
-# void at top of bss
-
-# user stack of parameter, for offsets vide defines.S
-
-_user:
-.skip usr_size
-
-# data stack grows backward, bottom
-.skip sp_size
-_sp0:
-
-# return stack grows backward, bottom
-.skip rp_size
-_rp0:
-
-#----------------------------------------------------------------------
-# NOTE:
-# user_size + sp_size + rp_size must be less than 2024 bytes
-# because code uses addi (+12bits) to setup offset address
-#----------------------------------------------------------------------
-
-# user dictionary
-.word 0x0
-
-# at start of memory
-h_where:
-.skip RAM_LIMIT - ( h_where - _user )
-# to end of  memory
-h_there:
 
 #----------------------------------------------------------------------
 # essential
@@ -256,43 +215,94 @@ xt_\label:
 #
 # Moore says the 22 deep are infinite :)
 # use round-robin stacks of 32 deep, or 2^n
-# magics by -33 == NOT(0x32)
-.equ stack_deep, -33 
+# magics by -1 * 32 * CELL == NOT(32*CELL)
+# the stack must start at a multiple of it as 1*10000000, how ?
+#
+.equ stack_deep, (-1 * stacks * CELL) 
 
 # generic push into memory
 .macro push rg ps 
- 	addi \ps, \ps, -1 * CELL
-	and \ps, \ps, stack_deep
-	sw \rg, 0 (\ps)
+         addi \ps, \ps, -1 * CELL
+        andi \ps, \ps, stack_deep
+        sw \rg, 0 (\ps)
 .endm
 
 # generic pull from memory
 .macro pull rg ps
-	lw \rg, 0 (\ps)
- 	addi \ps, \ps, +1 * CELL
-	and \ps, \ps, stack_deep
+        lw \rg, 0 (\ps)
+         addi \ps, \ps, +1 * CELL
+        andi \ps, \ps, stack_deep
 .endm
 
 #----------------------------------------------------------------------
-.section text
+# Nothing here, void.
+.section .data
+.p2align 4, 0x0
+
+# There is no spoon.
+
+#----------------------------------------------------------------------
+# but always in RAM :)
+.section .bss
+
+# common align
+.p2align 4, 0x0
+
+# common user structure and dictionary
+_user:
+.skip usr_size
+
+# for use of round robin, stacks must be 128 bytes align,(deep)*(CELL)
+
+.option push
+.option norelax 
+
+# data stack grows backward, bottom
+.p2align 7, 0x0
+.skip sp_size
+_sp0:
+
+# return stack grows backward, bottom
+.p2align 7, 0x0
+.skip rp_size
+_rp0:
+
+.option pop
+
+# common align
 .p2align 4, 0x0
 
 #----------------------------------------------------------------------
-# A fake header start of dictionary linked list
-#
-	.word FALSE
-	.word TRUE
-9999:
+# NOTE:
+# user_size + sp_size + rp_size must be less than 2024 bytes
+# because code uses addi (+12bits) to setup offset address
+#----------------------------------------------------------------------
+
+# user dictionary
+.word 0x0
+
+# at start of memory
+h_where:
+.skip RAM_LIMIT - ( h_where - _user )
+# to end of  memory
+h_there:
+
+#----------------------------------------------------------------------
+.section .text
+.p2align 2, 0x0
 
 #----------------------------------------------------------------------
 .globl _start
+
+_start:
 
 #----------------------------------------------------------------------
 # go ! go ! go !
 main:
 
 # do any system initializations
-	call _init
+
+        call _init
 
 #----------------------------------------------------------------------
 # do what need be only once
@@ -302,9 +312,10 @@ cold:
 
         la usr, _user
 
+# load end of assembled dictionary
+
         la nib, assembled_last
 
-# xxx
 .ifdef beats
         # beat
         li t0, 0
@@ -316,29 +327,30 @@ cold:
         li t2, 0
 .endif
 
+
 #----------------------------------------------------------------------
 # do what need for setup
 
 warm:
-# save sp0
-	la tos, _sp0
-	sw tos, SPTR (usr)
+# hold sp0
+        la tos, _sp0
+        sw tos, SPTR (usr)
 
-# save rp0
-	la tos, _rp0
-	sw tos, RPTR (usr)
+# hold rp0
+        la tos, _rp0
+        sw tos, RPTR (usr)
 
-# last link list of dictionary, aka latest
+# last on link list of dictionary, aka latest
 
         la tos, compiled_last
         sw tos, LAST (usr)
 
-# next heap free cell, aka DP
+# next free cell on heap, aka DP
 
         la tos, h_where
         sw tos, HEAP (usr)
 
-# last heap free cell
+# last free cell on heap before compile
 
         la tos, h_where
         sw tos, PIKE (usr)
@@ -362,26 +374,14 @@ quit:
         lw tos, RPTR (usr)
         mv rpt, tos
 
-# state of forth, aka STATE
-
-        lui tos, EXECUTE
-        sw tos, STAT (usr)
-
-	ret 
+        ret 
 
 #---------------------------------------------------------------------
-.equ hash_RESET, 0x0DA3B330 #; ( RESET )
-def_word "reset" hash_RESET
-_start:
-
-	call main
-	
-	# zzzz must be the interpreter zzzz
-	la ipt, compiled_last
-
-	j next
-
-#----------------------------------------------------------------------
+# A fake header start of dictionary linked list
+#
+        .word FALSE
+        .word TRUE
+9999:
 
 #include "assembled.S"
 
@@ -396,3 +396,25 @@ _start:
 .set compiled_last, 9999b - 8
 #---------------------------------------------------------------------
 
+.end
+
+.ifdef XXX
+#---------------------------------------------------------------------
+.equ hash_RESET, 0x0DA3B330 #; ( RESET )
+def_word "reset" hash_RESET
+
+        call main
+        
+# state of forth, aka STATE
+
+        lui tos, EXECUTE
+        sw tos, STAT (usr)
+
+        # zzzz must be the interpreter zzzz
+
+        la ipt, compiled_last
+
+        j next
+
+#----------------------------------------------------------------------
+.endif
