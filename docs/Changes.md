@@ -25,6 +25,23 @@
 
 ## Done
 
+23/10/2026
+
+Regroup of control words :
+
+	- begin mark back fore 
+	- again until whilst
+	- aft while repeat
+	- if else then
+
+	whilst goes to begin if TOS is greater than zero, as a while to backwards.
+
+Small changes in :
+ 
+	- EXECUTE execute the xt at TOS inside forth inner loop
+	- PERFORM execute a native jump to TOS and return to forth inner loop
+	- COMPILE, still is comma.
+
 20/10/2026
 
 **Moore says the 22 deep are almost infinite**
