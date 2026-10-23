@@ -1,0 +1,130 @@
+aeforth2.S:def_word "reset" hash_RESET
+assembled.S:def_word "exit" hash_EXIT 
+assembled.S:def_word "branch" hash_BRANCH 
+assembled.S:def_word "zbranch" hash_ZBRANCH 
+assembled.S:def_word "gbranch" hash_GBRANCH 
+assembled.S:def_word "docon" hash_DOCON 
+assembled.S:def_word "dovar" hash_DOVAR 
+assembled.S:def_word "tor" hash_TOR 
+assembled.S:def_word "rto" hash_RTO 
+assembled.S:def_word "rat" hash_RAT 
+assembled.S:def_word "rpat" hash_RPAT 
+assembled.S:def_word "spat" hash_SPAT 
+assembled.S:def_word "rpto" hash_RPTO 
+assembled.S:def_word "spto" hash_SPTO 
+assembled.S:def_word "drop" hash_DROP 
+assembled.S:def_word "dup" hash_DUP 
+assembled.S:def_word "over" hash_OVER 
+assembled.S:def_word "swap" hash_SWAP 
+assembled.S:def_word "rot" hash_ROT 
+assembled.S:def_word "fetch" hash_FETCH 
+assembled.S:def_word "store" hash_STORE 
+assembled.S:def_word "cfetch" hash_CFETCH 
+assembled.S:def_word "cstore" hash_CSTORE 
+assembled.S:def_word "plus" hash_PLUS 
+assembled.S:def_word "minus" hash_MINUS 
+assembled.S:def_word "bymul", hash_BYMUL 
+assembled.S:def_word "bymod", hash_BYMOD 
+assembled.S:def_word "and" hash_AND 
+assembled.S:def_word "or" hash_ORR 
+assembled.S:def_word "xor" hash_XOR 
+assembled.S:def_word "lshift", hash_LSHIFT 
+assembled.S:def_word "rshift", hash_RSHIFT 
+assembled.S:def_word "align", hash_ALIGN 
+assembled.S:def_word "inverse", hash_INVERSE 
+assembled.S:def_word "negate", hash_NEGATE 
+assembled.S:def_word "execute", hash_EXECUTE 
+assembled.S:def_word "perform", hash_PERFORM 
+assembled.S:def_word "equ" hash_EQU 
+assembled.S:def_word "less" hash_LESS 
+assembled.S:def_word "uless" hash_ULESS 
+assembled.S:def_word "greather" hash_GREATHER 
+assembled.S:def_word "true" hash_TRUE 
+assembled.S:def_word "false" hash_TRUE 
+assembled.S:def_word "nan" hash_NAN 
+assembled.S:def_word "nil" hash_NIL 
+assembled.S:def_word "one" hash_ONE 
+assembled.S:def_word "two" hash_TWO 
+assembled.S:def_word "cell" hash_CELL 
+assembled.S:def_word "rp0" hash_RPZ 
+assembled.S:def_word "sp0" hash_SPZ 
+assembled.S:def_word "state" hash_STAT 
+assembled.S:def_word "latest" hash_LAST 
+assembled.S:def_word "heap" hash_HEAP 
+assembled.S:def_word "pike" hash_PIKE 
+assembled.S:def_word "base" hash_BASE 
+assembled.S:def_word "bye" hash_BYE 
+assembled.S:def_word "key" hash_KEY 
+assembled.S:def_word "emit" hash_EMIT 
+assembled.S:def_word "tobeats" hash_TOBEATS 
+assembled.S:def_word "beatsto" hash_BEATSTO 
+assembled.S:def_word "zbeats" hash_ZBEATS
+compiled.S:def_word "lit" hash_LIT 
+compiled.S:def_word "here" hash_HERE 
+compiled.S:def_word "allot" hash_ALLOT 
+compiled.S:def_word "comma" hash_COMMA 
+compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
+compiled.S:def_word "rbrack" hash_RBRACK
+compiled.S:def_word "literal" hash_LITERAL
+compiled.S:def_word "begin" hash_BEGIN IMMEDIATE 
+compiled.S:def_word "mark" hash_MARK IMMEDIATE 
+compiled.S:def_word "back" hash_BACK IMMEDIATE 
+compiled.S:def_word "fore" hash_FORE IMMEDIATE 
+compiled.S:def_word "again" hash_AGAIN IMMEDIATE 
+compiled.S:def_word "until" hash_UNTIL IMMEDIATE 
+compiled.S:def_word "still" hash_WHILST IMMEDIATE 
+compiled.S:def_word "aft" hash_AFT IMMEDIATE 
+compiled.S:def_word "while" hash_WHILE IMMEDIATE 
+compiled.S:def_word "repeat" hash_REPEAT IMMEDIATE 
+compiled.S:def_word "if" hash_IF IMMEDIATE 
+compiled.S:def_word "else" hash_ELSE IMMEDIATE 
+compiled.S:def_word "then" hash_THEN IMMEDIATE 
+compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
+compiled.S:def_word "do" hash_DO IMMEDIATE 
+compiled.S:def_word "loop" hash_LOOP IMMEDIATE 
+compiled.S:def_word "ploop" hash_LOOP IMMEDIATE 
+compiled.S:def_word "i" hash_I IMMEDIATE 
+compiled.S:def_word "j" hash_J IMMEDIATE 
+compiled.S:def_word "leave" hash_LEAVE IMMEDIATE 
+compiled.S:def_word "for" hash_FOR IMMEDIATE 
+compiled.S:def_word "next" hash_NEXT IMMEDIATE 
+compiled.S:def_word "case" hash_CASE IMMEDIATE 
+compiled.S:def_word "of" hash_OF IMMEDIATE 
+compiled.S:def_word "endof" hash_ENDOF IMMEDIATE 
+compiled.S:def_word "endcase" hash_ENDCASE IMMEDIATE 
+compiled.S:def_word "colon" hash_COLON 
+compiled.S:def_word "semis" hash_SEMIS IMMEDIATE 
+compiled.S:def_word "hash" hash_HASH
+compiled.S:def_word "find" hash_FIND 
+compiled.S:def_word "tick" hash_TICK IMMEDIATE 
+compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE 
+compiled.S:def_word "isname" hash_ISNAME
+compiled.S:def_word "noname" hash_NONAME
+compiled.S:def_word "immediate" hash_IMMEDIATE
+compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE
+compiled.S:def_word "djb2" hash_DJB2 
+compiled.S:def_word "abort" hash_ABORT  
+compiled.S:def_word "create" hash_CREATE  
+compiled.S:def_word "does" hash_DOES 
+compiled.S:def_word "builds" hash_BUILDS 
+compiled.S:def_word "variable" hash_VARIABLE 
+compiled.S:def_word "constant" hash_CONSTANT 
+compiled.S:def_word "buffer" hash_BUFFER 
+compiled.S:def_word "array" hash_ARRAY 
+compiled.S:def_word "value" hash_VALUE 
+compiled.S:def_word "to" hash_TO 
+compiled.S:def_word "defer" hash_DEFER 
+compiled.S:def_word "is" hash_IS 
+compiled.S:def_word "skipk" hash_SKIPK
+compiled.S:def_word "scank" hash_SCANK
+compiled.S:def_word "lparen" hash_LPAREM
+compiled.S:def_word "backslash" hash_BSLASH
+compiled.S:def_word "twodup" hash_2DUP
+compiled.S:def_word "twodrop" hash_2DROP
+compiled.S:def_word "twoswap" hash_2SWAP
+compiled.S:def_word "twofetch" hash_2FETCH
+compiled.S:def_word "twostore" hash_2STORE
+compiled.S:def_word "twotor" hash_2TOR
+compiled.S:def_word "tworto" hash_2RTO
+compiled.S:def_word "tworat" hash_2RAT
+test.S:def_word "reset" hash_RESET

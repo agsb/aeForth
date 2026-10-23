@@ -60,8 +60,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_LITERAL, 0x738774CE #; ( LITERAL )
 
 .equ hash_BEGIN, 0x0C8280A2 #; ( BEGIN ) 
-.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
 .equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
+.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
+.equ hash_FORE, 0x7C7E2FDB #; ( FORE )
 
 .equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
 .equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
@@ -69,11 +70,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
 .equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
 
-.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
 .equ hash_AFT, 0x0B87B636 #; ( AFT ) 
 .equ hash_IF, 0x0059732A #; ( IF ) 
 .equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
 .equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
+.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
 
 .equ hash_CASE, 0x7C81C251 #; ( CASE )
 .equ hash_OF, 0x0059736C #; ( OF )
@@ -179,67 +180,86 @@ def_word "begin" hash_BEGIN IMMEDIATE
 	.word xt_here 
 	.word xt_exit 
  
-# ( a -- ) ;# ( BACK ) goes to backward 
-def_word "back" hash_BACK IMMEDIATE 
-	.word xt_here, xt_minus, xt_comma 
-	.word xt_exit 
- 
-# ( a -- ) ;# ( AGAIN ) goes back always
-def_word "again" hash_AGAIN IMMEDIATE 
-	.word xt_lit, xt_branch, xt_comma, xt_back 
-	.word xt_exit 
- 
-# ( a -- ) ;# ( UNTIL ) goes back if TOS is zero
-def_word "until" hash_UNTIL IMMEDIATE 
-	.word xt_lit, xt_zbranch, xt_comma, xt_back 
-	.word xt_exit 
- 
-# ( a -- ) ;# ( WHILST ) goes back if TOS greater than zero
-def_word "still" hash_WHILST IMMEDIATE 
-	.word xt_lit, xt_gbranch, xt_comma, xt_back 
-	.word xt_exit 
-
-# ( -- ) ;# ( WHILE ) goes forward if TOS equal zero 
-def_word "while" hash_WHILE IMMEDIATE 
-	.word xt_lit, xt_zbranch, xt_comma, xt_mark 
-	.word xt_exit 
- 
-# ( -- ) ;# ( REPEAT ) goes back to begin
-def_word "repeat" hash_REPEAT IMMEDIATE 
-	.word xt_swap, xt_lit, xt_branch, xt_comma, xt_back, xt_endif 
-	.word xt_exit 
- 
 # ( -- a ) ;# ( MARK ) 
 def_word "mark" hash_MARK IMMEDIATE 
 	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
  
+#---------------------------------------------------------------------- 
+
+# ( -- ) ;# ( BACK ) goes backward 
+def_word "back" hash_BACK IMMEDIATE 
+	.word xt_here, xt_minus, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( FORE ) goes forward 
+def_word "fore" hash_FORE IMMEDIATE 
+	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+
+# ( a -- ) ;# ( AGAIN ) goes back always
+def_word "again" hash_AGAIN IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_back 
+	.word xt_exit 
+ 
+# ( a -- ) ;# ( UNTIL ) goes back, TOS is zero
+def_word "until" hash_UNTIL IMMEDIATE 
+	.word xt_lit, xt_zbranch, xt_comma
+	.word xt_back 
+	.word xt_exit 
+ 
+# ( a -- ) ;# ( WHILST ) goes back, TOS greater than zero
+def_word "still" hash_WHILST IMMEDIATE 
+	.word xt_lit, xt_gbranch, xt_comma
+	.word xt_back 
+	.word xt_exit 
+
+#---------------------------------------------------------------------- 
+
+# ( -- a ) ;# ( AFT ) goes forward always
+def_word "aft" hash_AFT IMMEDIATE 
+	.word xt_drop
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_mark 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( WHILE ) goes forward, TOS is zero 
+def_word "while" hash_WHILE IMMEDIATE 
+	.word xt_lit, xt_zbranch, xt_comma
+	.word xt_mark 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( REPEAT ) goes backwaed to begin
+def_word "repeat" hash_REPEAT IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_swap, xt_back, xt_fore 
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+
 # ( -- ) ;# ( IF ) 
 def_word "if" hash_IF IMMEDIATE 
-	.word xt_lit, xt_zbranch, xt_comma, xt_mark 
+	.word xt_lit, xt_zbranch, xt_comma
+	.word xt_mark 
 	.word xt_exit 
  
 # ( -- ) ;# ( ELSE ) 
 def_word "else" hash_ELSE IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
-	.word xt_mark, xt_swap, xt_endif 
-	.word xt_exit 
- 
-# ( -- a ) ;# ( AFT ) 
-def_word "aft" hash_AFT IMMEDIATE 
-	.word xt_drop
-	.word xt_lit, xt_branch, xt_here, xt_nil, xt_comma
-	.word xt_here, xt_swap 
-	.word xt_exit 
- 
-# ( a -- a ) ;# ( ENDIF ) 
-def_word "endif" hash_ENDIF IMMEDIATE 
-	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
+	.word xt_mark, xt_swap, xt_fore 
 	.word xt_exit 
  
 # ( -- ) ;# ( THEN ) 
 def_word "then" hash_THEN IMMEDIATE 
-	.word xt_endif 
+	.word xt_fore
+	.word xt_exit 
+ 
+# ( -- ) ;# ( ENDIF ) 
+def_word "endif" hash_ENDIF IMMEDIATE 
+	.word xt_fore
 	.word xt_exit 
  
 #---------------------------------------------------------------------- 

@@ -76,26 +76,27 @@ compiled.S:def_word "constant" hash_CONSTANT
 compiled.S:def_word "create" hash_CREATE  
 compiled.S:def_word "defer" hash_DEFER 
 compiled.S:def_word "djb2" hash_DJB2 
-compiled.S:def_word "do" hash_DO IMMEDIATE 
 compiled.S:def_word "does" hash_DOES 
+compiled.S:def_word "do" hash_DO IMMEDIATE 
 compiled.S:def_word "else" hash_ELSE IMMEDIATE 
 compiled.S:def_word "endcase" hash_ENDCASE IMMEDIATE 
 compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
 compiled.S:def_word "endof" hash_ENDOF IMMEDIATE 
 compiled.S:def_word "find" hash_FIND 
+compiled.S:def_word "fore" hash_FORE IMMEDIATE 
 compiled.S:def_word "for" hash_FOR IMMEDIATE 
 compiled.S:def_word "hash" hash_HASH
 compiled.S:def_word "here" hash_HERE 
-compiled.S:def_word "i" hash_I IMMEDIATE 
 compiled.S:def_word "if" hash_IF IMMEDIATE 
+compiled.S:def_word "i" hash_I IMMEDIATE 
 compiled.S:def_word "immediate" hash_IMMEDIATE
 compiled.S:def_word "is" hash_IS 
 compiled.S:def_word "isname" hash_ISNAME
 compiled.S:def_word "j" hash_J IMMEDIATE 
 compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
 compiled.S:def_word "leave" hash_LEAVE IMMEDIATE 
-compiled.S:def_word "lit" hash_LIT 
 compiled.S:def_word "literal" hash_LITERAL
+compiled.S:def_word "lit" hash_LIT 
 compiled.S:def_word "loop" hash_LOOP IMMEDIATE 
 compiled.S:def_word "lparen" hash_LPAREM
 compiled.S:def_word "mark" hash_MARK IMMEDIATE 
