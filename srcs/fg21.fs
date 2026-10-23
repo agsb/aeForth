@@ -11,9 +11,9 @@ VARIABLE P
 CASE	\ 32 operands as 5 bits, ? is non defined
  
 	( else ) 	0 OF   END-OF \ 00000
-	( T=0 )  	1 OF   END-OF \ 00001
+	( T0 )  	1 OF   END-OF \ 00001
 	( call ) 	2 OF   END-OF \ 00010
-	( C=0 ) 	3 OF   END-OF \ 00011
+	( C0 ) 		3 OF   END-OF \ 00011
 	( ? ) 		4 OF   END-OF \ 00100
 	( ? ) 		5 OF   END-OF \ 00101
 	( ret ) 	6 OF   END-OF \ 00110
