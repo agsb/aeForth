@@ -1,5 +1,18 @@
 #---------------------------------------------------------------------- 
 
+FIND ?DUP 
+IF                                     ( xt +-1 )
+   STATE @ 
+   IF                                     ( xt +-1 )
+     0> IF EXECUTE ELSE COMPILE, THEN   ( ??? )
+   ELSE                                            ( xt +-1 )
+     DROP EXECUTE                                ( ??? )
+   THEN
+ELSE                                              ( c-addr )
+   ( whatever you do for an undefined word )
+THEN
+... 
+
 VARIABLE HANDLER 0 HANDLER ! \ last exception handler
 
 def_word "catch" hash_CATCH

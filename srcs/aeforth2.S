@@ -215,14 +215,14 @@ xt_\label:
 #
 # Moore says the 22 deep are infinite :)
 # use round-robin stacks of 32 deep, or 2^n
+# the stack must start at a multiple of it as 1*10000000
 # magics by -1 * 32 * CELL == NOT(32*CELL)
-# the stack must start at a multiple of it as 1*10000000, how ?
 #
 .equ stack_deep, (-1 * stacks * CELL) 
 
 # generic push into memory
 .macro push rg ps 
-         addi \ps, \ps, -1 * CELL
+        addi \ps, \ps, -1 * CELL
         andi \ps, \ps, stack_deep
         sw \rg, 0 (\ps)
 .endm
@@ -230,7 +230,7 @@ xt_\label:
 # generic pull from memory
 .macro pull rg ps
         lw \rg, 0 (\ps)
-         addi \ps, \ps, +1 * CELL
+        addi \ps, \ps, +1 * CELL
         andi \ps, \ps, stack_deep
 .endm
 
@@ -253,6 +253,7 @@ _user:
 .skip usr_size
 
 # for use of round robin, stacks must be 128 bytes align,(deep)*(CELL)
+# 2^7, 32 * 4, deep * CELL. 
 
 .option push
 .option norelax 
@@ -293,8 +294,6 @@ h_there:
 
 #----------------------------------------------------------------------
 .globl _start
-
-_start:
 
 #----------------------------------------------------------------------
 # go ! go ! go !
@@ -383,6 +382,28 @@ quit:
         .word TRUE
 9999:
 
+#---------------------------------------------------------------------
+
+.equ hash_RESET, 0x0DA3B330 #; ( RESET )
+def_word "reset" hash_RESET
+
+_start:
+
+        call main
+        
+# state of forth, aka STATE
+
+        lui tos, EXECUTE
+        sw tos, STAT (usr)
+
+        # zzzz must be the interpreter zzzz
+
+        la ipt, compiled_last
+
+        j next
+
+#----------------------------------------------------------------------i
+
 #include "assembled.S"
 
 #---------------------------------------------------------------------
@@ -398,23 +419,3 @@ quit:
 
 .end
 
-.ifdef XXX
-#---------------------------------------------------------------------
-.equ hash_RESET, 0x0DA3B330 #; ( RESET )
-def_word "reset" hash_RESET
-
-        call main
-        
-# state of forth, aka STATE
-
-        lui tos, EXECUTE
-        sw tos, STAT (usr)
-
-        # zzzz must be the interpreter zzzz
-
-        la ipt, compiled_last
-
-        j next
-
-#----------------------------------------------------------------------
-.endif

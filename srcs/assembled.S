@@ -156,6 +156,9 @@ unnest:
  
 # aka NEXT 
 next: 
+.ifdef beats
+	addi t0, t0, 1
+.endif
 	# no round-robin limit
 	lw nos, 0 (ipt)
 	addi ipt, ipt,CELL
@@ -164,11 +167,17 @@ pick:
 	bge nos, nib, nest 
  
 jump: 
+.ifdef beats
+	addi t1, t1, 1
+.endif
 	jalr ra, 0 (nos) 
 	j next 
  
 # aka DOCOL 
 nest: 
+.ifdef beats
+	addi t2, t2, 1
+.endif
 	push ipt rpt 
  
 move: 
@@ -557,5 +566,45 @@ def_word "emit" hash_EMIT
 	pull tos spt 
 end_word 
  
+#--------------------------------------------------------------------- 
+# counts forth heart beats
+# t0 counts next executed, t1 counts primitives, t2 counts compiled
+#
+.ifdef beats
+
+.equ hash_>BEATS, 0x6BC0B39A #; ( >BEATS )
+.equ hash_BEATS>, 0x1CCFA27A #; ( BEATS> )
+.equ hash_ZBEATS, 0x554440FE #; ( ZBEATS )
+
+# ( t2 t1 t0 -- ) #; ( BASE ) 
+def_word "tobeats" hash_TOBEATS 
+	mv t0, tos
+	pull tos spt
+	mv t1, tos
+	pull tos spt
+	mv t2, tos
+	pull tos spt
+end_word
+
+# ( -- t2 t1 t0 ) #; ( BASE ) 
+def_word "beatsto" hash_BEATSTO 
+	push tos spt
+	mv tos, t2
+	push tos spt
+	mv tos, t1
+	push tos spt
+	mv tos, t2
+end_word
+
+# ( -- ) #; ( BEATSASE ) 
+def_word "zbeats" hash_ZBEATS
+	mv t0, zero
+	mv t1, zero
+	mv t2, zero
+end_word
+
+.endif
+
+
 #--------------------------------------------------------------------- 
 
