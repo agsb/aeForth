@@ -1,4 +1,4 @@
-# milliForth-RiscV
+#  aeForth for RiscV
 
 *"To master riding bicycles you have do ride bicycles"*
 
