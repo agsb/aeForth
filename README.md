@@ -10,15 +10,15 @@ and [Notes](https://github.com/agsb/aeForth/blob/main/docs/Notes.md)
 This is an implementation of Forth concept for RISCV ISA, 
 using [Minimal Indirect Thread Code](https://github.com/agsb/agsb.github.io/blob/main/The_words_in_MTC_Forth.v4.pdf).
 
-No human WORDS. It uses DJB2 hash in headers. 
+No human WORDS. It uses 31-bits DJB2 hash in headers. 
 
-No Terminal Input Buffer, just an token-to-hash ascii parser.
+No Terminal Input Buffer, just one-by-one-key input, and a token-to-hash ascii parser.
 
-Only use a IMMEDIATE flag, at MSBit (31) of hash, also is NaN. 
+Only use a IMMEDIATE flag, at MSBit (32) of hash, also is NaN. 
 
 Uses SP, RP, IP, TOS keeped in dedicated registers.
 
-There are a file with more core words to use.
+There are some primitive words in native code, some in pre-compiled code and a file to compile with more forth words.
 
 ** STILL NOT FOR USE **
 
@@ -59,7 +59,7 @@ or
     [ISA](https://dejazzer.com/coen2710/lectures/RISC-V-Reference-Data-Green-Card.pdf)
 
 The aeForth is a ELF program called by 'elsewhere operational system', 
-and use registers r0, ra, sp, s0, s1, a0-a7, t0-t2. 
+and use registers r0, ra, sp, s0, s1, a0-a7, s2, s3, t0-t2. 
 
 ## Coding
 
@@ -79,34 +79,32 @@ contains the user variables for Forth
 ## Colon and Semis
 
 The colon **:** makes a header by:
-        1. copy HERE to PIKE
-        2. copy LATEST to first cell;
-        3. calculate the djb2 hash of the next token;
-        4. copy hash to second cell;
-        5. change STATE to compile (1);
+      
+      1. copy HERE to PIKE
+      2. copy LATEST to first cell;
+      3. calculate the djb2 hash of the following token;
+      4. copy hash to second cell;
+      5. change STATE to compile (1);
 
 In compile state, all non immediate words are compiled, 
         and the immediate words are executed. 
     
 The semis **;** ends the word by:
-        1. place a 'EXIT into last cell
-        2. copy PIKE to LATEST
-        3. change STATE to execute (0);
-
-if the compilation is interrupted, 
-    STATE and LATEST keeps untouched, 
-    but HERE changes and some junk was placed and stays into dictionary.
-    Could clean that with more some code, to copy PIKE to HERE
+      
+      1. place a 'EXIT into last cell
+      2. copy PIKE to LATEST
+      3. change STATE to execute (0);
 
 When the compilation of a word breaks, the LATEST are keepd in order 
-but HERE was advanced with references of words compiled, that junk 
-stays lost in heap. 
+   but HERE was advanced with references of words compiled, that junk 
+   stays lost in heap. 
 
-To clean just copy HEAD to HERE at error or missing.
+To clean it just copy PIKE to HERE at error or missing.
 
-## internals
+## Internals
 
-This aeForth uses DJB2 hash for dictionary entries.  
+This aeForth only uses 31-bit DJB2 hash for dictionary entries, with LINK and HASH, 
+   as header, followed by code or list of references .  
 
 ## the Language
 
