@@ -136,6 +136,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_2RTO, 0x0B866CFB #; ( 2R> )
 .equ hash_2RAT, 0x0B866C85 #; ( 2R@ )
 
+.equ hash_TOCODE, 0x076E91B2 #; ( :CODE )
+.equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
+
 #---------------------------------------------------------------------- 
  
 # ( -- w ) ;# ( LIT ) 
@@ -172,6 +175,29 @@ def_word "rbrack" hash_RBRACK
 def_word "literal" hash_LITERAL
 	.word xt_lit, xt_lit, xt_comma, xt_comma
 	.word xt_exit
+
+#---------------------------------------------------------------------- 
+/*
+	But how make a :CODE ~~~ CODE; ?
+
+	: SOMEWORD :CODE ~ place opcodes ~ CODE; ;
+
+	:CODE \ PERFORM jumps to first cell ~
+
+	CODE; \ what it do ? \ places 00008067 is jalr zero, 0 (ra) 
+*/
+
+# ( w -- ) #; #; ( :CODE ), does a native call 
+def_word "tocode" hash_TOCODE 
+	.word xt_rto, xt_cell, xt_plus
+	.word xt_perform
+	.word xt_exit 
+
+# ( w -- ) #; #; ( CODE; ), does a native return 
+def_word "codeto" hash_TOCODE IMMEDIATE
+        # jalr zero, 0 (ra) 
+	.word xt_lit, 0x00008067, xt_comma
+	.word xt_exit 
 
 #---------------------------------------------------------------------- 
  

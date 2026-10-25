@@ -66,6 +66,8 @@ compiled.S:def_word "comma" hash_COMMA
 compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
 compiled.S:def_word "rbrack" hash_RBRACK
 compiled.S:def_word "literal" hash_LITERAL
+compiled.S:def_word "tocode" hash_TOCODE 
+compiled.S:def_word "codeto" hash_TOCODE IMMEDIATE
 compiled.S:def_word "begin" hash_BEGIN IMMEDIATE 
 compiled.S:def_word "mark" hash_MARK IMMEDIATE 
 compiled.S:def_word "back" hash_BACK IMMEDIATE 

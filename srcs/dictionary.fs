@@ -1,3 +1,34 @@
+
+#---------------------------------------------------------------------- 
+
+: # 
+	BASE @ M/MOD ROT 9 OVER < IF 7 + THEN 30 + HOLD ;
+
+: #> 
+	DROP DROP HLD @ PAD OVER - ;
+
+: <#	
+	PAD HLD ! ;
+
+: #S
+	BEGIN # OVER OVER OR 0= UNTIL ;
+
+: (.")
+	R> COUNT OVER OVER + EVEN >R TYPE ;
+
+: (;CODE)
+	R> LATEST PFA CFA ! ;
+
+: ;CODE
+	?CSP COMPILE (;CODE) [COMPILE] [
+	ASSEMBLER ; IMMEDIATE
+
+: (NUMBER)
+	BEGIN 1+ DUP >R C@ BASE @ DIGIT
+	WHILE SWAP BASE @ U* DROP ROT BASE @ U* D+ DPL @ 1+
+	IF 1 DPL +1 ENDIF R>
+	REPEAT R>;
+
 #---------------------------------------------------------------------- 
 
 FIND ?DUP 

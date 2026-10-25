@@ -375,9 +375,12 @@ quit:
 
         ret 
 
+	jalr zero, 0 (ra)
+
 #---------------------------------------------------------------------
-# A fake header start of dictionary linked list
+# A fake header at end of dictionary linked list
 #
+_linked:
         .word FALSE
         .word TRUE
 9999:

@@ -149,7 +149,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # this is the forth heart beat, Minimum Indirect Thread Code 
 # 
 # nib is the address after last native code primitive word 
-# 
+#
+# beats counts executions 
+#
+
 # aka EXIT 
 unnest: 
 	pull ipt rpt 
@@ -162,7 +165,8 @@ next:
 	# no round-robin limit
 	lw nos, 0 (ipt)
 	addi ipt, ipt,CELL
- 
+
+# this is the tipping point, above nib only lives compiled words 
 pick: 
 	bge nos, nib, nest 
  
@@ -271,6 +275,8 @@ def_word "spto" hash_SPTO
 	pull tos spt 
 end_word 
  
+#---------------------------------------------------------------------- 
+ 
 # ( w -- ) #; ( DROP ) 
 def_word "drop" hash_DROP 
 	pull tos spt 
@@ -327,6 +333,8 @@ def_word "cstore" hash_CSTORE
 	pull tos spt 
 end_word 
  
+#---------------------------------------------------------------------- 
+ 
 # ( w1 w2 -- w3 ) #; ( + ) 
 def_word "plus" hash_PLUS 
 	pull nos spt 
@@ -356,6 +364,8 @@ def_word "bymod", hash_BYMOD
     	div trd, tos, nos 
     	rem nos, tos, nos 
     	j push2 
+ 
+#---------------------------------------------------------------------- 
  
 # ( w1 w2 -- w3 ) #; ( AND ) 
 def_word "and" hash_AND 
@@ -405,20 +415,55 @@ def_word "negate", hash_NEGATE
         neg tos, tos 
 end_word 
  
-# ( w1 -- ; -- w2 ) #; ( EXECUTE ), 
+#--------------------------------------------------------------------- 
+
+# ( w1 -- ; -- w2 ) #; ( EXECUTE ), execute a word in Forth
 def_word "execute", hash_EXECUTE 
-        # sub fst, zero, fst 
         push tos rpt 
 	pull tos spt 
 end_word 
  
+
 # ( w -- ) #; #; ( PERFORM ), does a native jump 
+# at end do ' jalr zero, 0 (ra) ' to return at j next
+# must preserve ipt spt rpt tos usr nib 
 def_word "perform", hash_PERFORM 
+	
 	mv nos, tos 
 	pull tos spt 
         jalr ra, 0 (nos) 
 end_word 
- 
+
+/* 
+
+# beware of call it
+
+entry_point:
+# at init of function, preserve those, use 32 for align
+        addi sp, sp, -32
+        sw ipt, 0(sp)
+        sw spt, 4(sp)
+        sw rpt, 8(sp)
+        sw tos, 12(sp)
+        sw usr, 16(sp)
+        sw nib, 20(sp)
+
+	~~DO_WHAT_IS_NEED~~
+
+# at quit of function, restore those, use 32 for align
+        lw ipt, 0(sp)
+        lw spt, 4(sp)
+        lw rpt, 8(sp)
+        lw tos, 12(sp)
+        lw usr, 16(sp)
+        lw nib, 20(sp)
+        addi sp, sp, 32
+
+# return
+	jalr zero, 0 (ra)
+
+*/
+
 #--------------------------------------------------------------------- 
  
 # ( w1 w2 -- T|F ) #; ( = ) 

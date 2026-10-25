@@ -1,12 +1,22 @@
 
-VARIABLE A
-VARIABLE T
-VARIABLE S
-VARIABLE R
-VARIABLE P
+( emulate a F21 cpu, word size is 21 bits, 20 is address, 1 Mb )
 
-22 ARRAY TS
-16 ARRAY RS
+VARIABLE P	\ program pointer
+VARIABLE A	\ address pointer
+VARIABLE T	\ top of stack
+VARIABLE C	\ control word
+VARIABLE S	\ pointer to stack, does ++ and --
+VARIABLE R	\ pointer to stack, does ++ and --
+
+\ parameter stack
+18 ARRAY TS
+
+\ return stack
+17 ARRAY RS
+
+\
+\ packed 4 instructions in one 20 bits word
+\
 
 CASE	\ 32 operands as 5 bits, ? is non defined
  
