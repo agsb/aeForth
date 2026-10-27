@@ -107,9 +107,9 @@ to do any operation with one parameter
 
 to do any operation with two parameters
 
-    1. lw A, 0(sp); sp++; lw B, 0(sp); (oper) A, A, B; sw A, 0(sp);
-    2. lw A, 0(sp); sp++; (oper) T, T, A;
-    3. (oper) T, T, N; lw N, 0(sp); sp++;
+    1. lw A, 0(sp); sp++; lw B, 0(sp); oper(A, B); sw A, 0(sp);
+    2. lw A, 0(sp); sp++; oper(T, A);
+    3. oper(T, N); lw N, 0(sp); sp++;
 
 ## Snipts
 

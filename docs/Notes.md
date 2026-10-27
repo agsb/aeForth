@@ -2,18 +2,16 @@
 
     Uses cell with 32-bits;
  
-    Only IMMEDIATE flag used as $8000, no hide, no compile, no extras;
+    Only IMMEDIATE flag used as $8000:0000, no hide, no compile, no extras;
  
     As ANSI Forth 1983: FALSE is 0 and TRUE is -1 ;
  
-    Uses DJB2 Hash instead of size-name-pad in header of words in
+    Uses DJB2 31-bit Hash instead of size-name-pad in header of words in
         dictionary.
 
     The header order is LINK, HASH and code or references.
  
-    No overflow or underflow stack checks, only round-robin;
- 
-    Still mo numbers only words (yet);
+    Still only hexdecimal numbers, no base radix included;
 
  ## NO MORE
 
@@ -26,8 +24,8 @@
 ## Remarks
  
     This code uses Minimal Indirect Thread Code, aka MITC;
- 
-    ~~No TOS or ROS registers, all values keeped at stacks;~~
+
+    The values of TOS, SP, RP, IP and NIB are in registers;
  
     Words must be between spaces, before and after;
  
@@ -51,6 +49,12 @@
  
 # For stacks
  
+    **Moore says that stacks with 22 deep is about infinite.**
+
+    aeForth uses stacks of 32 cells (128 bytes).
+
+    Stacks are round-robin, no overflow or underflow stack checks.
+ 
     The hardware stack is not used as Forth stack;
  
     "when the heap moves forward, the stack moves backward"; 
@@ -61,8 +65,9 @@
  
     Stacks represented as (standart)
         (w1 w2 w3 -- u1 u2 ; w1 w2 -- w1 )
-        ( data stack ; return stack)
-        (before -- after), top at left.
+        ( data stack ; return stack )
+        ( before -- after ), top at right, w2 is over w1.
+
         c unsigned 8-bit character, 
         a 32-bit address,
         w signed 32-bit, 
@@ -96,6 +101,8 @@
 _"AI uses hash code as word, Humans uses semantics as word"_
      [Liang Ng](https://www.youtube.com/watch?v=sSlM3Mr_9sI)
     
+Going to use DJB2 i31-bit hash for represent the words at dictionary.
+    
 Why not use hashes for words ?
 
 Moore once used size and first three characters of name as words
@@ -111,9 +118,9 @@ The hash over 0x00000000 to 0x7FFFFFFF, reserve -1 to IMMEDIATE flag
 
 _" there is no spoon "_
 
-Going to use DJB2 hash for represent the words at dictionary.
-    
 ## For Numbers
+
+Make the integer range of values simetric to zero.
 
 To represent short signed integer numbers is used the high bit 
 of the MSB as signal indicator, eg for one byte, 00000001
@@ -123,5 +130,28 @@ to 01111111 ( 1 to 127 ) is positive, 00000000 is zero and 11111111 to
 In aeForth, -128 is not a number ( NaN ) and is used to indicate 
 numeric errors in conversion, overflow, undeflow, zero division.
 
-Sure it is extended to 4 bytes cells. 
+Sure it is extended to 4 bytes cells, then 0x8000:0000 is NaN.
+
+AeForth uses simetric division, as defined in X3.215-1994 ANSI
+
+                     Table 3.4 - Symmetric Division Example
+                    Dividend   Divisor   Remainder   Quotient
+                    -----------------------------------------
+                       10         7          3          1
+                      -10         7         -3         -1
+                       10        -7          3         -1
+                      -10        -7         -3          1
+                    -----------------------------------------
+
+## Primitive or Compiled words
+
+Any word the does not call another word is a primitive.
+
+Any word that depends of another word is a compiled word.
+
+Any Forth interprets compiled and only executes primitives.
+
+## Why only TOS ?
+
+
 
