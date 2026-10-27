@@ -105,6 +105,7 @@ compiled.S:def_word "next" hash_NEXT IMMEDIATE
 compiled.S:def_word "noname" hash_NONAME
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "ploop" hash_LOOP IMMEDIATE 
+compiled.S:def_word "plustore" hash_PLUSTORE
 compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE 
 compiled.S:def_word "rbrack" hash_RBRACK
 compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE

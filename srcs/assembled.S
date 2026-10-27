@@ -213,7 +213,7 @@ end_word
 def_word "gbranch" hash_GBRANCH 
 	mv nos, tos 
 	pull tos spt 
-	bgt nos, zero, branch 
+	blt zero, nos, branch 
 	addi ipt, ipt, CELL 
 end_word 
  
@@ -385,6 +385,18 @@ def_word "xor" hash_XOR
 	xor tos, nos, tos 
 end_word 
  
+# ( w1 -- w2 ) #; ( INVERSE) 
+def_word "inverse", hash_INVERSE 
+        # xori fst, fst, -1 
+        not tos, tos 
+end_word 
+ 
+# ( w1 -- w2 ) #; ( NEGATE ), arithmetic inverse 
+def_word "negate", hash_NEGATE 
+        # sub fst, zero, fst 
+        neg tos, tos 
+end_word 
+ 
 # ( w1 w2 -- w1<<w2 ) #; ( LSHIFT ) shift left some bits 
 def_word "lshift", hash_LSHIFT 
          pull nos spt 
@@ -403,18 +415,6 @@ def_word "align", hash_ALIGN
         andi tos, tos, ~(CELL-1) 
 end_word 
  
-# ( w1 -- w2 ) #; ( INVERSE) 
-def_word "inverse", hash_INVERSE 
-        # xori fst, fst, -1 
-        not tos, tos 
-end_word 
- 
-# ( w1 -- w2 ) #; ( NEGATE ), arithmetic inverse 
-def_word "negate", hash_NEGATE 
-        # sub fst, zero, fst 
-        neg tos, tos 
-end_word 
- 
 #--------------------------------------------------------------------- 
 
 # ( w1 -- ; -- w2 ) #; ( EXECUTE ), execute a word in Forth
@@ -422,13 +422,11 @@ def_word "execute", hash_EXECUTE
         push tos rpt 
 	pull tos spt 
 end_word 
- 
 
 # ( w -- ) #; #; ( PERFORM ), does a native jump 
-# at end do ' jalr zero, 0 (ra) ' to return at j next
-# must preserve ipt spt rpt tos usr nib 
+# at end do: ' jalr zero, 0 (ra) ' to return at j next
+# must preserve ra ipt spt rpt tos usr nib 
 def_word "perform", hash_PERFORM 
-	
 	mv nos, tos 
 	pull tos spt 
         jalr ra, 0 (nos) 
@@ -436,7 +434,7 @@ end_word
 
 /* 
 
-# beware of call it
+# Using PERFORM, beware of call it with proper setup
 
 entry_point:
 # at init of function, preserve those, use 32 for align
@@ -448,7 +446,9 @@ entry_point:
         sw usr, 16(sp)
         sw nib, 20(sp)
 
+	~~~~~~~~~~~~~~~~~~~
 	~~DO_WHAT_IS_NEED~~
+	~~~~~~~~~~~~~~~~~~~
 
 # at quit of function, restore those, use 32 for align
         lw ipt, 0(sp)

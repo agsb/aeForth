@@ -28,11 +28,11 @@ assembled.S:def_word "bymod", hash_BYMOD
 assembled.S:def_word "and" hash_AND 
 assembled.S:def_word "or" hash_ORR 
 assembled.S:def_word "xor" hash_XOR 
+assembled.S:def_word "inverse", hash_INVERSE 
+assembled.S:def_word "negate", hash_NEGATE 
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "rshift", hash_RSHIFT 
 assembled.S:def_word "align", hash_ALIGN 
-assembled.S:def_word "inverse", hash_INVERSE 
-assembled.S:def_word "negate", hash_NEGATE 
 assembled.S:def_word "execute", hash_EXECUTE 
 assembled.S:def_word "perform", hash_PERFORM 
 assembled.S:def_word "equ" hash_EQU 
@@ -121,6 +121,7 @@ compiled.S:def_word "skipk" hash_SKIPK
 compiled.S:def_word "scank" hash_SCANK
 compiled.S:def_word "lparen" hash_LPAREM
 compiled.S:def_word "backslash" hash_BSLASH
+compiled.S:def_word "plustore" hash_PLUSTORE
 compiled.S:def_word "twodup" hash_2DUP
 compiled.S:def_word "twodrop" hash_2DROP
 compiled.S:def_word "twoswap" hash_2SWAP

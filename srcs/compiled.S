@@ -139,6 +139,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_TOCODE, 0x076E91B2 #; ( :CODE )
 .equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
 
+.equ hash_PLUSTORE, 0x0059676F #; ( +! )
+
 #---------------------------------------------------------------------- 
  
 # ( -- w ) ;# ( LIT ) 
@@ -614,6 +616,11 @@ def_word "lparen" hash_LPAREM
 # ( -- ) #; ( \ ) scan to new line
 def_word "backslash" hash_BSLASH
 	.word xt_lit, '\n', xt_scank
+	.word xt_exit
+
+# ( -- ) #; ( +! ) plus and store
+def_word "plustore" hash_PLUSTORE
+	.word xt_dup, xt_fetch, xt_plus, xt_swap, xt_store
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
