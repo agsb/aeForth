@@ -141,6 +141,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ hash_PLUSTORE, 0x0059676F #; ( +! )
 
+#.equ hash_DIGIT, 0x0C62B132 #; ( DIGIT )
+.equ hash_TODIGIT, 0x6C6CCCEC #; ( >DIGIT ) 
+.equ hash_TONUMBER, 0x58D73858 #; ( >NUMBER ) 
+
 #---------------------------------------------------------------------- 
  
 # ( -- w ) ;# ( LIT ) 
@@ -596,26 +600,26 @@ def_word "is" hash_IS
 	.word xt_tick, xt_store
 	.word xt_exit
 
-# ( -- ) #; ( SKIPK ) skip while not equal key 
+# ( c -- ) #; ( SKIPK ) skip while not equal key 
 def_word "skipk" hash_SKIPK
 	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
-	.word xt_until, xt_drop
+	.word xt_until
 	.word xt_exit
 
-# ( -- ) #; ( SCANK ) scan while equal key
+# ( c -- ) #; ( SCANK ) scan while equal key
 def_word "scank" hash_SCANK
 	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
-	.word xt_inverse, xt_until, xt_drop
+	.word xt_inverse, xt_until 
 	.word xt_exit
 
 # ( -- ) #; ( ( ) scan while not ')
 def_word "lparen" hash_LPAREM
-	.word xt_lit, ')', xt_scank
+	.word xt_lit, ')', xt_scank, xt_drop
 	.word xt_exit
 
 # ( -- ) #; ( \ ) scan to new line
 def_word "backslash" hash_BSLASH
-	.word xt_lit, '\n', xt_scank
+	.word xt_lit, '\n', xt_scank, xt_drop
 	.word xt_exit
 
 # ( -- ) #; ( +! ) plus and store
