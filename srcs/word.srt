@@ -56,6 +56,7 @@ assembled.S:def_word "tor" hash_TOR
 assembled.S:def_word "true" hash_TRUE 
 assembled.S:def_word "two" hash_TWO 
 assembled.S:def_word "uless" hash_ULESS 
+assembled.S:def_word "user" hash_RPZ 
 assembled.S:def_word "xor" hash_XOR 
 assembled.S:def_word "zbeats" hash_ZBEATS
 assembled.S:def_word "zbranch" hash_ZBRANCH 
@@ -102,6 +103,7 @@ compiled.S:def_word "loop" hash_LOOP IMMEDIATE
 compiled.S:def_word "lparen" hash_LPAREM
 compiled.S:def_word "mark" hash_MARK IMMEDIATE 
 compiled.S:def_word "next" hash_NEXT IMMEDIATE 
+compiled.S:def_word "nip" hash_NIP
 compiled.S:def_word "noname" hash_NONAME
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "ploop" hash_LOOP IMMEDIATE 
@@ -118,6 +120,7 @@ compiled.S:def_word "then" hash_THEN IMMEDIATE
 compiled.S:def_word "tick" hash_TICK IMMEDIATE 
 compiled.S:def_word "to" hash_TO 
 compiled.S:def_word "tocode" hash_TOCODE 
+compiled.S:def_word "tuck" hash_TUCK
 compiled.S:def_word "twodrop" hash_2DROP
 compiled.S:def_word "twodup" hash_2DUP
 compiled.S:def_word "twofetch" hash_2FETCH

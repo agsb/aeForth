@@ -46,6 +46,7 @@ assembled.S:def_word "nil" hash_NIL
 assembled.S:def_word "one" hash_ONE 
 assembled.S:def_word "two" hash_TWO 
 assembled.S:def_word "cell" hash_CELL 
+assembled.S:def_word "user" hash_RPZ 
 assembled.S:def_word "rp0" hash_RPZ 
 assembled.S:def_word "sp0" hash_SPZ 
 assembled.S:def_word "state" hash_STAT 
@@ -122,6 +123,8 @@ compiled.S:def_word "scank" hash_SCANK
 compiled.S:def_word "lparen" hash_LPAREM
 compiled.S:def_word "backslash" hash_BSLASH
 compiled.S:def_word "plustore" hash_PLUSTORE
+compiled.S:def_word "nip" hash_NIP
+compiled.S:def_word "tuck" hash_TUCK
 compiled.S:def_word "twodup" hash_2DUP
 compiled.S:def_word "twodrop" hash_2DROP
 compiled.S:def_word "twoswap" hash_2SWAP

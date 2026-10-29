@@ -140,6 +140,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
 
 .equ hash_PLUSTORE, 0x0059676F #; ( +! )
+.equ hash_NIP, 0x0B87D312 #; ( NIP )
+.equ hash_TUCK, 0x7C878D2C #; ( TUCK )
 
 #.equ hash_DIGIT, 0x0C62B132 #; ( DIGIT )
 .equ hash_TODIGIT, 0x6C6CCCEC #; ( >DIGIT ) 
@@ -620,6 +622,16 @@ def_word "backslash" hash_BSLASH
 # ( -- ) #; ( +! ) plus and store
 def_word "plustore" hash_PLUSTORE
 	.word xt_dup, xt_fetch, xt_plus, xt_swap, xt_store
+	.word xt_exit
+
+# ( -- ) #; ( NIP ) 
+def_word "nip" hash_NIP
+	.word xt_swap, xt_drop
+	.word xt_exit
+
+# ( -- ) #; ( TUCK )
+def_word "tuck" hash_TUCK
+	.word xt_dup, xt_tor, xt_swap, xt_rto
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
