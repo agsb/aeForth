@@ -179,30 +179,25 @@ def_word "rbrack" hash_RBRACK
 
 # ( -- ) #; ( LITERAL )  
 def_word "literal" hash_LITERAL
-	.word xt_lit, xt_lit, xt_comma, xt_comma
+	.word xt_lit, xt_lit, xt_comma
+	.word xt_comma
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
 /*
-	But how make a :CODE ~~~ CODE; ?
-
 	: SOMEWORD :CODE ~ place opcodes ~ CODE; ;
-
-	:CODE \ PERFORM jumps to first cell ~
-
-	CODE; \ what it do ? \ places 00008067 is jalr zero, 0 (ra) 
 */
 
 # ( w -- ) #; #; ( :CODE ), does a native call 
 def_word "tocode" hash_TOCODE 
-	.word xt_rto, xt_cell, xt_plus
-	.word xt_perform
+	.word xt_rto, xt_perform
 	.word xt_exit 
 
 # ( w -- ) #; #; ( CODE; ), does a native return 
+# jalr zero, 0 (ra) 
+.equ RET, 0x00008067
 def_word "codeto" hash_TOCODE IMMEDIATE
-        # jalr zero, 0 (ra) 
-	.word xt_lit, 0x00008067, xt_comma
+	.word xt_lit, RET, xt_comma
 	.word xt_exit 
 
 #---------------------------------------------------------------------- 

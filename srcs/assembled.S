@@ -553,49 +553,49 @@ end_word
 # ( -- usr ) #; ( USER ) 
 def_word "user" hash_RPZ 
 	push tos spt 
-	imv tos, usr 
+	mv tos, usr 
 end_word 
 
 # ( -- rp0 ) #; ( RPZ ) 
 def_word "rp0" hash_RPZ 
 	push tos spt 
-	lw tos, RPTR ( usr ) 
+	lw tos, RPTR  * CELL ( usr ) 
 end_word 
  
 # ( -- sp0 ) #; ( SPZ ) 
 def_word "sp0" hash_SPZ 
 	push tos spt 
-	lw tos, SPTR ( usr ) 
+	lw tos, SPTR  * CELL ( usr ) 
 end_word 
  
 # ( -- state ) #; ( STATE ) 
 def_word "state" hash_STAT 
 	push tos spt 
-	lw tos, STAT ( usr ) 
+	lw tos, STAT  * CELL ( usr ) 
 end_word 
  
 # ( -- last ) #; ( LATEST ) 
 def_word "latest" hash_LAST 
 	push tos spt 
-	lw tos, LAST ( usr ) 
+	lw tos, LAST  * CELL ( usr ) 
 end_word 
  
 # ( -- heap ) #; ( DP ) 
 def_word "heap" hash_HEAP 
 	push tos spt 
-	lw tos, HEAP ( usr ) 
+	lw tos, HEAP  * CELL ( usr ) 
 end_word 
  
 # ( -- pike ) #; ( PIKE ) 
 def_word "pike" hash_PIKE 
 	push tos spt 
-	lw tos, PIKE ( usr ) 
+	lw tos, PIKE  * CELL ( usr ) 
 end_word 
  
 # ( -- base ) #; ( BASE ) 
 def_word "base" hash_BASE 
 	push tos spt 
-	lw tos, BASE ( usr ) 
+	lw tos, BASE  * CELL ( usr ) 
 end_word 
  
 #--------------------------------------------------------------------- 

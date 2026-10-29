@@ -89,13 +89,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth fourth on stack, not reserved, not for reduced opcodes
 #define fth a7
 
-# a0, a1, a2, a7 used as scratch, preserved inside ecalls
+# a0, a1, a2, a7 could be used as scratch, preserved inside ecalls
 
 # fixed memory pointers, for offset and compares
 
 #define usr s2
 
 #define nib s3 
+
+# the t0, t1, t2 are used to count forth word executions
 
 #----------------------------------------------------------------------
 # generics alias
@@ -138,28 +140,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # user parameter stack: void sp0 rp0 last heap pike state base temp(8)
 
 # void start
-.equ VOID, 0 * CELL
+.equ VOID, 0 
 
 # data stack index
-.equ SPTR, 1 * CELL
+.equ SPTR, 1 
 
 # return stack index
-.equ RPTR, 2 * CELL
+.equ RPTR, 2 
 
 # last link cell in heap dictionary linked list
-.equ LAST, 3 * CELL
+.equ LAST, 3 
 
 # next free cell in heap dictionary, aka dp
-.equ HEAP, 4 * CELL
+.equ HEAP, 4 
 
 # last heap
-.equ PIKE, 5 * CELL
+.equ PIKE, 5 
 
 # state flag
-.equ STAT, 6 * CELL
+.equ STAT, 6 
 
 # base radix for numbers, for future use
-.equ BASE, 7 * CELL
+.equ BASE, 7 
 
 # allow some 8 cells for extras scratch
 
@@ -279,8 +281,8 @@ _rp0:
 # because code uses addi (+12bits) to setup offset address
 #----------------------------------------------------------------------
 
-# user dictionary
-.word 0x0
+# just for sake
+.word FALSE
 
 # at start of memory
 h_where:
@@ -375,7 +377,35 @@ quit:
 
         ret 
 
+#---------------------------------------------------------------------
+_test:
 	jalr zero, 0 (ra)
+
+	call 100f
+	.word 0x0
+100:
+	ret
+	
+	call 100f
+	.word 0x0
+	.word 0x0
+100:
+	ret
+	
+	call 100f
+	.word 0x0
+	.word 0x0
+	.word 0x0
+100:
+	ret
+	
+	call 100f
+	.word 0x0
+	.word 0x0
+	.word 0x0
+	.word 0x0
+100:
+	ret
 
 #---------------------------------------------------------------------
 # A fake header at end of dictionary linked list
