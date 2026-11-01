@@ -35,109 +35,111 @@ syscal id in a7, result in a0
 	
 EXAMPLE:
 
-.section .data
-filename:   .asciz "output.txt"
-text_to_wr: .asciz "Hello from RISC-V Linux!\n"
-.equ len, . - text_to_wr         # Calculate length of the string dynamically
-
-.section .text
-.global _start
-
 _start:
-    # OPEN / CREATE FILE using openat (Syscall 56)
-    li a7, 56                   # openat syscall number
+# OPEN / CREATE FILE using openat (Syscall 56)
+# ( cstr flags mode -- fd )
+fsopen:				
     li a0, -100                 # AT_FDCWD: look in current working directory
     la a1, filename             # Address of filename string
     li a2, 0101                 # Flags: O_WRONLY (01) | O_CREAT (0100) octal
     li a3, 0644                 # Mode: Permissions (rw-r--r--)
+    addi sp, sp, 2 * CELL
+    li a7, 56                   # openat syscall number
     ecall                       # Call Linux Kernel -> returns File Descriptor in a0
     
-    # CLOSE FILE using close (Syscall 57)
-    li a7, 57                   # close syscall number
-    mv a0, s0                   # Pass File Descriptor to close
-    ecall                       # Call Linux Kernel
-
-    # WRITE TO FILE using write (Syscall 64)
-    li a7, 64                   # write syscall number
-    mv a0, s0                   # Pass saved File Descriptor
-    la a1, text_to_wr           # Address of text buffer
-    li a2, len                  # Buffer length in bytes
-    ecall                       # Call Linux Kernel -> returns bytes written in a0
-
-    # READ FROM FILE using read (Syscall 63)
-    li a7, 63           # Syscall ID: sys_read
-    mv a0, s0           # Arg 1: The file descriptor we saved in s0
-    la a1, buffer       # Arg 2: Pointer to the destination buffer
-    li a2, len          # Arg 3: Maximum number of bytes to read
-    ecall               # Call the Linux kernel
-
-    # EXIT PROGRAM using exit (Syscall 93)
-    li a7, 93                   # exit syscall number
-    li a0, 0                    # Status code 0 (Success)
-    ecall                       # Terminate program
-
-    # CHANGE DIRECTORY using (Syscall 49)
-    li a7, 49
-    la a0, target_dir
-    ecall
-
-    # GET ACTUAL DIRECTORY using (Syscall 17)
-    li a7, 17
-    la a0, buffer
-    la a1, len
-    ecall
-
-    # Check return value in a0 (0 means success)
-    # Exit or continue execution from here...
-
-*/
-
-# ( cstr flags mode -- fd )
-fsopen:				
-  mv a2, tos	# mode 
-  lw a1, 0(sp)	# flags
-  lw a0, 4(sp)	# name
-  addi sp, sp, 2 * CELL
-  li a7, #5	# sys_open
-  ecall
-  ret
-
+# CLOSE FILE using close (Syscall 57)
 # ( fd -- n )
 fsclose:			
-  li a7, #6	# sys_close
-  ecall
-  ret
+    mv a0, tos                  # Pass File Descriptor to close
+    li a7, 57                   # close syscall number
+    ecall                       # Call Linux Kernel
 
-# ( a n fd -- n2 )
-fsread:				
-  lw a2, 0(sp)	#size
-  lw a1, 4(sp)	# buff
-  addi sp, sp, 2 * CELL
-  li a7, #3	# sys_read
-  ecall
-  ret
-
+# WRITE TO FILE using write (Syscall 64)
 # ( a n fd -- n2 )
 fswrite:		
-  lw a2, 0(sp)	# size
-  lw a1, 4(sp)	# buff
-  addi sp, sp, 2 * CELL
-  li a7, #4	# sys_write
-  ecall
-  ret
+    mv a0, tos                  # Pass saved File Descriptor
+    la a1, 0 (spt)              # Address of text buffer
+    li a2, 4 (spt)              # Buffer length in bytes
+    addi sp, sp, 2 * CELL
+    li a7, 64                   # write syscall number
+    ecall                       # Call Linux Kernel -> returns bytes written in a0
 
+# READ FROM FILE using read (Syscall 63)
+# ( a n fd -- n2 )
+fsread:				
+    mv a0, tos          # fd file descriptor
+    la a1, 0 (spt)      # Pointer to the destination buffer
+    li a2, 4 (spt)      # Maximum number of bytes to read
+    addi sp, sp, 2 * CELL
+    li a7, 63           # Syscall ID: sys_read
+    ecall               # Call the Linux kernel
+
+# SEEK FROM FILE (Syscall 62)
+# Example: Seek to 1024 bytes from the beginning of the file (SEEK_SET)
 # ( pos fd -- n )
 fsseek:
-  lw a1, 4(sp)
-  addi sp, sp, 1 * CELL
-  mv a2, #0	# SEEK_SET
-  li a7, #19	# sys_lseek
-  ecall
-  ret
+    li a0, tos        # fd file descriptor)
+    li a1, 0 (spt)    # offset = 1024 bytes
+    li a2, 4 (spt)    # whence = 0 (SEEK_SET)
+    addi sp, sp, 2 * CELL
+    li a7, 62         # Syscall number for lseek
+    ecall             # Invoke Linux Kernel 
+
+# CHANGE DIRECTORY using (Syscall 49)
+fschdir:
+    la a0, target_dir
+    li a7, 49
+    ecall
+
+# GET ACTUAL DIRECTORY using (Syscall 17)
+fsgetdir:
+    la a0, buffer
+    la a1, len
+    addi sp, sp, 2 * CELL
+    li a7, 17
+    ecall
 
 # ( a1 -- a2 )
 mmap:                           
   li a7, #90	# old_mmap
+  ecall
+  ret
+
+# Check return value in a0 (0 means success)
+# Exit or continue execution from here...
+
+*/
+
+  li a7, 56	# sys_open
+  mv a2, tos	# mode 
+  lw a1, 0(sp)	# flags
+  lw a0, 4(sp)	# name
+  addi sp, sp, 2 * CELL
+  ecall
+  ret
+
+  li a7, #6	# sys_close
+  ecall
+  ret
+
+  li a7, #3	# sys_read
+  lw a2, 0(sp)	#size
+  lw a1, 4(sp)	# buff
+  addi sp, sp, 2 * CELL
+  ecall
+  ret
+
+  li a7, #4	# sys_write
+  lw a2, 0(sp)	# size
+  lw a1, 4(sp)	# buff
+  addi sp, sp, 2 * CELL
+  ecall
+  ret
+
+  li a7, #19	# sys_lseek
+  mv a2, #0	# SEEK_SET
+  lw a1, 4(sp)
+  addi sp, sp, 1 * CELL
   ecall
   ret
 
