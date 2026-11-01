@@ -75,10 +75,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define rpt s1
 
 # forth instruction pointer, reserved
-#define ipt a3
+#define ipt a4
 
 # forth top of stack, reserved, for easy
-#define tos a4
+#define tos a3
 
 # forth second on stack, not reserved
 #define nos a5
