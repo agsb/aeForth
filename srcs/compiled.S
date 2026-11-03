@@ -181,8 +181,7 @@ def_word "rbrack" hash_RBRACK
 
 # ( -- ) #; ( LITERAL )  
 def_word "literal" hash_LITERAL
-	.word xt_lit, xt_lit, xt_comma
-	.word xt_comma
+	.word xt_lit, xt_lit, xt_comma, xt_comma
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
@@ -196,7 +195,7 @@ def_word "tocode" hash_TOCODE
 	.word xt_exit 
 
 # ( w -- ) #; #; ( CODE; ), does a native return 
-# jalr zero, 0 (ra) 
+# in RISCV ret is jalr zero, 0 (ra) 
 .equ RET, 0x00008067
 def_word "codeto" hash_TOCODE IMMEDIATE
 	.word xt_lit, RET, xt_comma
@@ -241,7 +240,7 @@ def_word "until" hash_UNTIL IMMEDIATE
 	.word xt_exit 
  
 # ( a -- ) ;# ( WHILST ) goes back, TOS greater than zero
-def_word "still" hash_WHILST IMMEDIATE 
+def_word "whilst" hash_WHILST IMMEDIATE 
 	.word xt_lit, xt_gbranch, xt_comma
 	.word xt_back 
 	.word xt_exit 
@@ -648,6 +647,10 @@ def_word "twoswap" hash_2SWAP
 	.word xt_rot, xt_tor, xt_rot, xt_rto
 	.word xt_exit
 
+def_word "twonip" hash_2NIP
+	.word xt_nip, xt_nip
+	.word xt_exit
+
 def_word "twofetch" hash_2FETCH
 	.word xt_dup, xt_cell, xt_plus, xt_fetch, xt_swap, xt_fetch
 	.word xt_exit
@@ -669,4 +672,88 @@ def_word "tworat" hash_2RAT
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
+.equ hash_FALSE, 0x0C3C6778 #; ( FALSE )
+.equ hash_TRUE, 0x7C879BF3 #; ( TRUE )
+.equ hash_ON, 0x00597364 #; ( ON )
+.equ hash_OFF, 0x0B87E0AA #; ( OFF )
+.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
+.equ hash_BL, 0x0059728B #; ( BL )
+.equ hash_QU, 0x00597421 #; ( QU )
+.equ hash_TWODIV, 0x00596858 #; ( 2/ )
+.equ hash_TWOMUL, 0x0059685D #; ( 2* )
+.equ hash_ZEQU, 0x00596808 #; ( 0= )
+.equ hash_ZLESS, 0x00596809 #; ( 0< )
+.equ hash_ZGREAT, 0x0059680B #; ( 0> )
+
+def_word "false" hash_FALSE
+	.word xt_lit, FALSE
+	.word xt_exit
+
+def_word "true" hash_TRUE
+	.word xt_lit, TRUE
+	.word xt_exit
+
+def_word "bl" hash_BL
+	.word xt_lit, BL
+	.word xt_exit
+
+def_word "qu" hash_QU
+	.word xt_lit, QU
+	.word xt_exit
+
+def_word "on" hash_ON
+	.word xt_lit, TRUE
+	.word xt_swap, xt_store
+	.word xt_exit
+
+def_word "off" hash_OFF
+	.word xt_lit, FALSE
+	.word xt_swap, xt_store
+	.word xt_exit
+
+def_word "cells" hash_CELLS
+	.word xt_lit, 2
+	.word xt_lshift
+	.word xt_exit
+
+# ( w -- w*2 ) #; ( 2* )
+def_word "twomul" hash_TWOMUL
+	.word xt_lit, 1
+	.word xt_lshift
+	.word xt_exit
+
+# ( w -- w/2 ) #; ( 2/ )
+def_word "twodiv" hash_TWODIV
+	.word xt_lit, 1
+	.word xt_rshift
+	.word xt_exit
+
+# ( w -- f ) #; ( 0= )
+def_word "zequ" hash_ZEQU
+	.word xt_lit, 0
+	.word xt_equ
+	.word xt_exit
+
+# ( w -- f ) #; ( 0< )
+def_word "zless" hash_ZLESS
+	.word xt_lit, 0
+	.word xt_less
+	.word xt_exit
+
+# ( w -- f ) #; ( 0> )
+def_word "zgreat" hash_ZGREAT
+	.word xt_lit, 0
+	.word xt_greather
+	.word xt_exit
+
+# ( w1 w2 -- f ) #; ( <> )
+def_word "dife" hash_DIFE
+	.word xt_equ, xt_invert
+	.word xt_exit
+
+# ( w -- f ) #; ( 0<> )
+def_word "zdife" hash_ZDIFE
+	.word xt_lit, 0
+	.word xt_dife, xt_invert
+	.word xt_exit
 

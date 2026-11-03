@@ -82,10 +82,10 @@ _init:
 _getc:
 	esave 
 
-        li a7, _GETC
         li a0, _STDIN
         la a1, _char
         li a2, _ONE
+        li a7, _GETC
         ecall
 
         lb tos, 0 (a1)
@@ -105,10 +105,10 @@ _getc:
 _putc:
 	esave
 
-        li a7, _PUTC
         li a0, _STDOUT
         la a1, _char
         li a2, _ONE
+        li a7, _PUTC
 
         sb tos, 0 (a1)
 
@@ -119,4 +119,21 @@ _putc:
         ret
 
 #---------------------------------------------------------------------
+
+# ( -- ) #; ( BYE )
+def_word "bye" hash_BYE
+	call _exit
+end_word
+
+# ( -- c ) #; ( KEY )
+def_word "key" hash_KEY
+	push tos spt
+	call _getc
+end_word
+
+# ( c -- ) #; ( EMIT )
+def_word "emit" hash_EMIT
+	call _putc
+	pull tos spt
+end_word
 

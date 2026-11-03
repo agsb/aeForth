@@ -599,27 +599,6 @@ def_word "base" hash_BASE
 end_word 
  
 #--------------------------------------------------------------------- 
- 
-#include "ecalls.S" 
- 
-# ( -- ) #; ( BYE ) 
-def_word "bye" hash_BYE 
-	call _exit 
-end_word 
- 
-# ( -- c ) #; ( KEY ) 
-def_word "key" hash_KEY 
-	push tos spt 
-	call _getc 
-end_word 
- 
-# ( c -- ) #; ( EMIT ) 
-def_word "emit" hash_EMIT 
-	call _putc 
-	pull tos spt 
-end_word 
- 
-#--------------------------------------------------------------------- 
 # counts forth heart beats
 # t0 counts next executed, t1 counts primitives, t2 counts compiled
 #

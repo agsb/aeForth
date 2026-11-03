@@ -25,6 +25,16 @@
 
 ## Done
 
+02/11/2026
+
+    many ideas from https://github.com/8l/ff/blob/master/ff-arm.s
+
+    focus in linux systems ecalls for directories and files
+
+25/10/2026
+
+    bad bad bad day for Brasil.
+
 23/10/2026
 
 Regroup of control words :
@@ -61,7 +71,7 @@ Complete rewrite;
 - split sources into:
     main, with defines, equates, macros, includes;
     assembled, primitive words that do not call words, with native code;
-    compiled, composed words that call words, with forth code;
+    compiled, compound words that call words, with forth code;
     ecalls, with system (linux) dependent words.
 
 07/05/2026
