@@ -203,12 +203,12 @@ def_word "codeto" hash_TOCODE IMMEDIATE
 
 #---------------------------------------------------------------------- 
  
-# ( -- a ) ;# ( BEGIN ) start 
+# ( -- a ) ;# ( BEGIN ) prepare backward 
 def_word "begin" hash_BEGIN IMMEDIATE 
 	.word xt_here 
 	.word xt_exit 
  
-# ( -- a ) ;# ( MARK ) 
+# ( -- a ) ;# ( MARK ) prepare forward
 def_word "mark" hash_MARK IMMEDIATE 
 	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
