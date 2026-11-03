@@ -104,8 +104,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_EQU, 0x0002B598  #; ( = ) 
 .equ hash_LESS, 0x0002B599 #; ( < ) 
 .equ hash_ULESS, 0x005973CC #; (U< ) 
-.equ hash_GTZERO, 0x0059680B #; ( 0> ) 
-.equ hash_GREATHER, 0x2D802BBF #; ( > ) 
+
+.equ hash_MORE, 0x2D802BBF #; ( > ) 
+.equ hash_UMORE, 0x005973CE #; ( U> ) 
+
+.equ hash_ZEQU, 0x00596808 #;  ( 0= ) 
+.equ hash_ZLESS, 0x00596809 #; ( 0< ) 
+.equ hash_ZMORE, 0x0059680B #; ( 0> )
  
 # address 
 .equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN ) 
@@ -166,7 +171,7 @@ next:
 .endif
 	# no round-robin limit
 	lw nos, 0 (ipt)
-	addi ipt, ipt,CELL
+	addi ipt, ipt, CELL
 
 # this is the tipping point, above nib only lives compiled words 
 pick: 
@@ -191,7 +196,8 @@ move:
 	j next 
  
 #---------------------------------------------------------------------- 
- 
+# branchs always by offset not by absolute
+
 # ( -- ) #; ( EXIT ) 
 def_word "exit" hash_EXIT 
 	j unnest 
@@ -218,6 +224,8 @@ def_word "gbranch" hash_GBRANCH
 	blt zero, nos, branch 
 	addi ipt, ipt, CELL 
 end_word 
+ 
+#---------------------------------------------------------------------- 
  
 # ( -- w ) #; ( DOCON ), also is LIT 
 def_word "docon" hash_DOCON 
@@ -253,6 +261,8 @@ def_word "rat" hash_RAT
 	lw tos, 0 (rpt) 
 end_word 
  
+#---------------------------------------------------------------------- 
+
 # ( -- rpt ) #; ( RP@ ) 
 def_word "rpat" hash_RPAT 
 	push tos spt 
@@ -311,6 +321,8 @@ def_word "rot" hash_ROT
 	mv tos, nos 
 end_word 
  
+#---------------------------------------------------------------------- 
+
 # ( a -- w ) #; ( @ ) 
 def_word "fetch" hash_FETCH 
 	lw tos, 0 (tos) 
@@ -346,10 +358,10 @@ end_word
 # ( w1 w2 -- w3 ) #; ( - ) 
 def_word "minus" hash_MINUS 
 	pull nos spt 
-	add tos, nos, tos 
+	sub tos, nos, tos 
 end_word 
  
-# ( w1 w2 -- w3 w4 ) multiply, double result 
+# ( w1 w2 -- w3 w4 ) multiply, result result_high
 def_word "bymul", hash_BYMUL 
     	pull nos spt 
     	mulh trd, tos, nos 
@@ -359,7 +371,7 @@ push2:
     	mv tos, trd 
 end_word 
  
-# ( w1 w2 -- w3 w4 ) divide, reminder and quontient 
+# ( w1 w2 -- w3 w4 ) divide: -- reminder quontient 
 def_word "bymod", hash_BYMOD 
     	pull nos spt 
     	beqz nos, by_zero 
@@ -425,7 +437,7 @@ def_word "execute", hash_EXECUTE
 	pull tos spt 
 end_word 
 
-# ( w -- ) #; #; ( PERFORM ), does a native jump 
+# ( w -- ) #; ( PERFORM ), does a native jump 
 # at end do: ' jalr zero, 0 (ra) ' to return at j next
 # must preserve ra ipt spt rpt tos usr nib 
 def_word "perform", hash_PERFORM 
@@ -447,6 +459,7 @@ entry_point:
         sw tos, 12(sp)
         sw usr, 16(sp)
         sw nib, 20(sp)
+        sw ra,  24(sp)
 
 	~~~~~~~~~~~~~~~~~~~
 	~~DO_WHAT_IS_NEED~~
@@ -459,6 +472,7 @@ entry_point:
         lw tos, 12(sp)
         lw usr, 16(sp)
         lw nib, 20(sp)
+        lw ra,  24(sp)
         addi sp, sp, 32
 
 # return
@@ -488,11 +502,38 @@ def_word "uless" hash_ULESS
 	bltu nos, tos, istrue 
 	j isfalse 
 end_word 
+
+#--------------------------------------------------------------------- 
  
-# ( u1 u2 -- T|F ) #; ( 0> ) u1 > u2 
-def_word "greather" hash_GREATHER 
+# ( w1 w2 -- T|F ) #; ( > ) w1 > w2 
+def_word "more" hash_MORE 
     	pull nos spt 
 	blt tos, nos, istrue 
+	j isfalse 
+end_word 
+ 
+# ( u1 u2 -- T|F ) #; ( U> ) u1 > u2 
+def_word "umore" hash_UMORE 
+    	pull nos spt 
+	bltu tos, nos, istrue 
+	j isfalse 
+end_word 
+
+# ( w1 -- T|F ) #; ( = ) w1 == 0 
+def_word "zequ" hash_ZEQU 
+	beq tos, zero, istrue 
+	j isfalse 
+end_word 
+ 
+# ( w1 -- T|F ) #; ( 0< ) w1 < 0
+def_word "zless" hash_ZLESS 
+	blt tos, zero, istrue 
+	j isfalse 
+end_word 
+ 
+# ( w1 -- T|F ) #; ( 0> ) w1 > 0 
+def_word "zmore" hash_ZMORE 
+	blt zero, tos, istrue 
 	j isfalse 
 end_word 
  
@@ -523,6 +564,8 @@ by_over:
 	lui tos, 0x8000 
 end_word 
  
+#--------------------------------------------------------------------- 
+
 # ( -- 0) #; ( 0 ) #; 
 def_word "nil" hash_NIL 
 	push tos spt 
@@ -568,6 +611,8 @@ def_word "sp0" hash_SPZ
 	lw tos, SPTR  * CELL ( usr ) 
 end_word 
  
+#--------------------------------------------------------------------- 
+
 # ( -- state ) #; ( STATE ) 
 def_word "state" hash_STAT 
 	push tos spt 
@@ -636,7 +681,6 @@ def_word "zbeats" hash_ZBEATS
 end_word
 
 .endif
-
 
 #--------------------------------------------------------------------- 
 

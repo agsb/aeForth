@@ -31,7 +31,7 @@ https://github.com/scotws/RISC-V-tests/blob/master/docs/riscv_linux_system_calls
 
 tos is a0
 syscal id in a7, 
-result in a0, and a1
+result in a0, a1
 all names must end with zero.
 
 */
@@ -85,17 +85,39 @@ fs_lsdir:
 	ret
         
 #----------------------------------------------------------------------
+
+# CREATE FILE using unlinkat (Syscall 35)
+# ( flags name mode -- fd )
+fs_create:				
+        # mv a0, tos              # -100, for AT_FDCWD: look in current working directory
+        lw a1, 0 (spt)          # Address of filename string
+        lw a2, 4 (spt) 		# 578, for O_CREAT (64) | O _RDWR (2) | O_TRUNC (512)
+        lw a3, 8 (spt)		# 420, for 0644 Mode: Permissions (rw-------)
+        li a7, 56               # openat syscall number
+        ecall                   # Call Linux Kernel -> returns File Descriptor in a0
+	ret
+
 # OPEN / CREATE FILE using openat (Syscall 56)
 # ( cstr flags name mode -- fd )
 fs_open:				
         # mv a0, tos              # -100, for AT_FDCWD: look in current working directory
         lw a1, 0 (spt)          # Address of filename string
-        lw a2, 4 (spt) 		# 64, for O_CREAT 
-        lw a3, 8 (spt)		# 384, for 0600 Mode: Permissions (rw-------)
+        lw a2, 4 (spt) 		# 66, for O_CREAT (64) | O_RDWR (2) or 0, for must exist and read_only 
+        lw a3, 8 (spt)		# 420, for 0644 Mode: Permissions (rw-------)
         li a7, 56               # openat syscall number
         ecall                   # Call Linux Kernel -> returns File Descriptor in a0
 	ret
-        
+
+# DELETE FILE using unlinkat (Syscall 35)
+# ( flags name mode -- fd )
+fs_erase:				
+        # mv a0, tos              # -100, for AT_FDCWD: look in current working directory
+        lw a1, 0 (spt)          # Address of filename string
+        lw a2, 4 (spt) 		# 0, for delete a common file 
+        li a7, 35               # unlinkat syscall number
+        ecall                   # Call Linux Kernel -> returns File Descriptor in a0
+	ret
+
 # CLOSE FILE using close (Syscall 57)
 # ( fd -- n )
 fs_close:			
@@ -106,6 +128,7 @@ fs_close:
 
 # SEEK FROM FILE (Syscall 62)
 # Example: Seek to 1024 bytes from the beginning of the file (SEEK_SET)
+# seek_set (0) = start, seek_cur (1) = actual, seek_end (2) = end
 # ( pos fd -- n )
 fs_seek:
         # mv a0, tos        	# fd file descriptor)
@@ -171,4 +194,91 @@ unmap:
 				        
 # Check return value in a0 (0 means success)
 # Exit or continue execution from here...
+
+#----------------------------------------------------------------------
+
+.equ hash_FDCREATE, 0x3D82507C #; ( FD_CREATE ) 
+.equ hash_FDERASE, 0x405941D8 #; ( FD_ERASE ) 
+.equ hash_FDOPEN, 0x19337D2C #; ( FD_OPEN ) 
+.equ hash_FDCLOSE, 0x3FF2400E #; ( FD_CLOSE ) 
+.equ hash_FDREAD, 0x192ED68A #; ( FD_READ ) 
+.equ hash_FDWRITE, 0x3F24DDE5 #; ( FD_WRITE ) 
+.equ hash_FDSEEK, 0x192D39A0 #; ( FD_SEEK ) 
+.equ hash_FDCNTL, 0x1935E84D #; ( FD_CNTL ) 
+
+#----------------------------------------------------------------------
+
+# ( arg cmd fd -- w ) #; ( FD_ERASE )
+def_word "fileerase" hash_FDERASE
+end_word
+
+# ( cname n mode fd -- w ) #; ( FD_CREATE )
+def_word "filecreate" hash_FDCREATE
+end_word
+
+# ( cname n mode fd -- fd ) #; ( FD_OPEN ), open or create
+def_word "fileopen" hash_FDOPEN
+end_word
+
+# ( fd -- w ) #; ( FD_CLOSE )
+def_word "fileclose" hash_FDCLOSE
+end_word
+
+# ( size buffer fd -- w ) #; ( FD_READ )
+def_word "fileread" hash_FDREAD
+end_word
+
+# ( size buffer fd -- w ) #; ( FD_WRITE )
+def_word "filewrite" hash_FDWRITE
+end_word
+
+# ( whence offset fd -- w ) #; ( FD_SEEK )
+# whence=0, offset=0, results in zero position at file 
+# whence=1, offset=0, results in actual position at file 
+# whence=2, offset=0, results in size of file 
+def_word "fileseek" hash_FDSEEK
+end_word
+
+# ( arg cmd fd -- w ) #; ( FD_CNTL )
+def_word "filecntl" hash_FDCNTL
+end_word
+
+#----------------------------------------------------------------------
+
+/*
+
+\ Forth 2012 file set
+
+11.6.1.0080 (
+11.6.1.0765 BIN
+11.6.1.0900 CLOSE-FILE
+11.6.1.1010 CREATE-FILE
+11.6.1.1190 DELETE-FILE
+11.6.1.1520 FILE-POSITION
+11.6.1.1522 FILE-SIZE
+11.6.1.1717 INCLUDE-FILE
+11.6.1.1718 INCLUDED
+11.6.1.1970 OPEN-FILE
+11.6.1.2054 R/O
+11.6.1.2056 R/W
+11.6.1.2080 READ-FILE
+11.6.1.2090 READ-LINE
+11.6.1.2142 REPOSITION-FILE
+11.6.1.2147 RESIZE-FILE
+11.6.1.2165 S"
+11.6.1.2218 SOURCE-ID
+11.6.1.2425 W/O
+11.6.1.2480 WRITE-FILE
+11.6.1.2485 WRITE-LINE
+
+11.6.2.1524 FILE-STATUS
+11.6.2.1560 FLUSH-FILE
+11.6.2.1714 INCLUDE
+11.6.2.2125 REFILL
+11.6.2.2130 RENAME-FILE
+11.6.2.2144.10 REQUIRE
+11.6.2.2144.50 REQUIRED
+11.6.2.2266 S\"
+
+*/
 

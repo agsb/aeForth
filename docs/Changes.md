@@ -25,11 +25,21 @@
 
 ## Done
 
+03/11/2026
+
+    Using s0/spt s1/rpt s2/ipt s3/usr s4/nib 
+
+    Using tos/a0 nos/a1 trd/a2 a3 a4 a5 a6 a7 as scratchs
+
+    Using t0, t1, t2 as counters of total, primitive, composed executed words
+
+    NOT using sp 
+
 02/11/2026
 
-    many ideas from https://github.com/8l/ff/blob/master/ff-arm.s
+    Many ideas from https://github.com/8l/ff/blob/master/ff-arm.s
 
-    focus in linux systems ecalls for directories and files
+    focus in expand linux systems ecalls for directories and files
 
 25/10/2026
 
@@ -39,10 +49,10 @@
 
 Regroup of control words :
 
-	- begin mark back fore 
-	- again until whilst
-	- aft while repeat
-	- if else then
+	- begin mark back fore (does offsets)
+	- again until whilst (goes backward branches)
+	- aft while repeat (goes forward branches)
+	- if else then ( zbranch to A, ..., branch to B, A, ..., B, ... )
 
 	whilst goes to begin if TOS is greater than zero, as a while to backwards.
 

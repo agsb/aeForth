@@ -75,27 +75,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define rpt s1
 
 # forth instruction pointer, reserved
-#define ipt a4
+#define ipt s2
 
 # forth top of stack, reserved, for easy
-#define tos a3
+#define tos a0
 
 # forth second on stack, not reserved
-#define nos a5
+#define nos a1
 
 # forth third on stack, not reserved, not for reduced opcodes
-#define trd a6
+#define trd a2
 
 # forth fourth on stack, not reserved, not for reduced opcodes
-#define fth a7
+#define fth a3
 
-# a0, a1, a2, a7 could be used as scratch, preserved inside ecalls
+#  a4, a5, a6 could be used as scratch, preserved inside ecalls
 
 # fixed memory pointers, for offset and compares
 
-#define usr s2
+#define usr s3
 
-#define nib s3 
+#define nib s4 
 
 # the t0, t1, t2 are used to count forth word executions
 
