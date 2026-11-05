@@ -69,8 +69,8 @@ _char:
 
 # load system call for exit
 _exit:
+        # li a0, _ZERO
         li a7, _EXIT
-        li a0, _ZERO
         ecall
 
 # load system call for init
@@ -116,8 +116,13 @@ _putc:
         ret
 
 #---------------------------------------------------------------------
+# minimal system ecalls 
 
-# ( -- ) #; ( BYE )
+.equ hash_BYE, 0x0B87C61B #; ( BYE ) 
+.equ hash_KEY, 0x0B87F112 #; ( KEY ) 
+.equ hash_EMIT, 0x7C7C87D0 #; ( EMIT ) 
+ 
+# ( return -- ) #; ( BYE )
 def_word "bye" hash_BYE
 	call _exit
 	j next
@@ -133,4 +138,6 @@ def_word "emit" hash_EMIT
 	call _putc
 	pull tos spt
 	j next
+
+#---------------------------------------------------------------------
 

@@ -325,7 +325,7 @@ def_word "loop" hash_LOOP IMMEDIATE
 	.word xt_exit
 
 # ( w -- ; w2 w1 -- w2 w1 ) ;# ( +LOOP ) 
-def_word "ploop" hash_LOOP IMMEDIATE 
+def_word "ploop" hash_PLOOP IMMEDIATE 
 	# limit 
 	.word xt_lit, xt_rto, xt_comma 
 	# increment
@@ -596,16 +596,20 @@ def_word "is" hash_IS
 	.word xt_tick, xt_store
 	.word xt_exit
 
-# ( c -- ) #; ( SKIPK ) skip while not equal key 
+#---------------------------------------------------------------------- 
+
+# ( c -- ) #; ( SKIPK ) skip while equal key 
 def_word "skipk" hash_SKIPK
-	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
-	.word xt_until
+	.word xt_begin, xt_key, xt_over, xt_over, xt_equ
+	.word xt_if, xt_drop, xt_false xt_else, xt_true, xt_then
+	.word xt_until 
 	.word xt_exit
 
-# ( c -- ) #; ( SCANK ) scan while equal key
+# ( c -- ) #; ( SCANK ) scan while not equal key
 def_word "scank" hash_SCANK
-	.word xt_begin, xt_key, xt_over, xt_minus, xt_nil, xt_equ
-	.word xt_inverse, xt_until 
+	.word xt_begin, xt_key, xt_over, xt_over, xt_equ, xt_inverse
+	.word xt_if, xt_drop, xt_false xt_else, xt_true, xt_then
+	.word xt_until 
 	.word xt_exit
 
 # ( -- ) #; ( ( ) scan while not ')
@@ -671,27 +675,13 @@ def_word "tworat" hash_2RAT
 	.word xt_rto, xt_rto, xt_twodup, xt_tor, xt_tor, xt_swap
 	.word xt_exit
 
+
 #---------------------------------------------------------------------- 
-.equ hash_FALSE, 0x0C3C6778 #; ( FALSE )
-.equ hash_TRUE, 0x7C879BF3 #; ( TRUE )
+
 .equ hash_ON, 0x00597364 #; ( ON )
 .equ hash_OFF, 0x0B87E0AA #; ( OFF )
-.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
 .equ hash_BL, 0x0059728B #; ( BL )
 .equ hash_QU, 0x00597421 #; ( QU )
-.equ hash_TWODIV, 0x00596858 #; ( 2/ )
-.equ hash_TWOMUL, 0x0059685D #; ( 2* )
-.equ hash_ZEQU, 0x00596808 #; ( 0= )
-.equ hash_ZLESS, 0x00596809 #; ( 0< )
-.equ hash_ZGREAT, 0x0059680B #; ( 0> )
-
-def_word "false" hash_FALSE
-	.word xt_lit, FALSE
-	.word xt_exit
-
-def_word "true" hash_TRUE
-	.word xt_lit, TRUE
-	.word xt_exit
 
 def_word "bl" hash_BL
 	.word xt_lit, BL
@@ -711,6 +701,12 @@ def_word "off" hash_OFF
 	.word xt_swap, xt_store
 	.word xt_exit
 
+#---------------------------------------------------------------------- 
+
+.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
+.equ hash_TWODIV, 0x00596858 #; ( 2/ )
+.equ hash_TWOMUL, 0x0059685D #; ( 2* )
+
 def_word "cells" hash_CELLS
 	.word xt_lit, 2
 	.word xt_lshift
@@ -728,6 +724,68 @@ def_word "twodiv" hash_TWODIV
 	.word xt_rshift
 	.word xt_exit
 
+#---------------------------------------------------------------------- 
+#\ E.10 The optional Exception word set
+
+.equ hash_HANDLER, 0x37B8B03D #; ( HANDLER ) 
+.equ hash_CATCH, 0x0CB9F7F8 #; ( CATCH ) 
+.equ hash_TROW, 0x7C879A3B #; ( TROW ) 
+.equ hash_ABORT, 0x0C4FFEAF #; ( ABORT ) 
+
+def_word "handler" hash_HANDLER
+	.word xt_dovar, 0
+	.word xt_exit
+
+def_word "catch" hash_CATCH
+	.word xt_spat, xt_tor
+	.word xt_handler, xt_fetch, xt_tor
+	.word xt_execute # ????
+	.word xt_rto, xt_handler, xt_store
+	.word xt_rto, xt_drop
+	.word xt_nil
+	.word xt_exit
+
+def_word "throw" hash_THROW
+	.word xt_qdup, xt_if
+	.word x_handler, xt_fetch, xt_rpto
+	.word xt_rto, xt_handler, xt_store
+	.word xt_rto, xt_swap, xt_tor
+	.word xt_spto, xt_drop, xt_tor
+	.word xt_then
+	.word xt_exit
+	
+def_word "abort" hash_ABORT
+	.word xt_lit, -1, xt_throw
+	.word xt_exit
+
+#---------------------------------------------------------------------- 
+#\ E.12 The optional Facility word set
+
+.equ hash_PLUSFIELD, 0x4D63F1AC #; ( +FIELD )
+.equ hash_BEGIN_STRUCTURE, 0x2C8D7E9A #; ( BEGIN-STRUCTURE ) 
+.equ hash_END_STRUCTURE, 0x51515D12 #; ( END-STRUCTURE )
+
+def_word "plusfield" hash_PLUSFIELD
+	.word xt_create, xt_over, xt_comma, xt_plus
+	.word xt_does, xt_fetch, xt_plus
+	.word xt_exit
+
+def_word "begin_structure" hash_BEGIN_STRUCTURE
+   	.word xt_create, xt_here, xt_nil, xt_nil, xt_comma
+	.word xt_does, xt_fetch
+	.word xt_exit
+
+def_word "end_structure" hash_END_STRUCTURE
+	.word xt_swap, xt_store
+	.word xt_exit
+
+#---------------------------------------------------------------------- 
+
+/*
+.equ hash_ZEQU, 0x00596808 #; ( 0= )
+.equ hash_ZLESS, 0x00596809 #; ( 0< )
+.equ hash_ZGREAT, 0x0059680B #; ( 0> )
+
 # ( w -- f ) #; ( 0= )
 def_word "zequ" hash_ZEQU
 	.word xt_lit, 0
@@ -741,19 +799,22 @@ def_word "zless" hash_ZLESS
 	.word xt_exit
 
 # ( w -- f ) #; ( 0> )
-def_word "zgreat" hash_ZGREAT
+def_word "zmore" hash_ZMORE
 	.word xt_lit, 0
 	.word xt_greather
 	.word xt_exit
+*/
 
-# ( w1 w2 -- f ) #; ( <> )
-def_word "dife" hash_DIFE
-	.word xt_equ, xt_invert
+/*
+.equ hash_FALSE, 0x0C3C6778 #; ( FALSE )
+.equ hash_TRUE, 0x7C879BF3 #; ( TRUE )
+
+def_word "false" hash_FALSE
+	.word xt_lit, FALSE
 	.word xt_exit
 
-# ( w -- f ) #; ( 0<> )
-def_word "zdife" hash_ZDIFE
-	.word xt_lit, 0
-	.word xt_dife, xt_invert
+def_word "true" hash_TRUE
+	.word xt_lit, TRUE
 	.word xt_exit
+*/
 

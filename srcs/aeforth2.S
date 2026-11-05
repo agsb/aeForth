@@ -58,7 +58,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #        hash of words in uppercase
 #        no buffer input.
 #
-# s0, s1, a0, a2, a3, a7 used in ecalls
+# a0, a2, a3, a4, a5, a7 used in ecalls
 #
 # s0, s1, a0, a2, a3, a4, a5 used in 16 bits opcodes
 #
@@ -68,6 +68,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # -st -nd -rd -th 
 
+# forth top of stack, reserved, for easy
+#define tos a0
+
+# forth second on stack, not reserved
+#define nos a1
+
+# forth third on stack, not reserved
+#define trd a2
+
+# forth fourth on stack, not reserved
+#define fth a3
+
+#----------------------------------------------------------------------
+
 # forth parameter stack pointer, reserved
 #define spt s0
 
@@ -75,27 +89,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define rpt s1
 
 # forth instruction pointer, reserved
-#define ipt a4
+#define ipt s2
 
-# forth top of stack, reserved, for easy
-#define tos a3
+# forth start of user area variables
+#define usr s3
 
-# forth second on stack, not reserved
-#define nos a5
-
-# forth third on stack, not reserved, not for reduced opcodes
-#define trd a6
-
-# forth fourth on stack, not reserved, not for reduced opcodes
-#define fth a7
-
-# a0, a1, a2, a7 could be used as scratch, preserved inside ecalls
-
-# fixed memory pointers, for offset and compares
-
-#define usr s2
-
-#define nib s3 
+# forth start of compiled dictionary
+#define nib s4 
 
 # the t0, t1, t2 are used to count forth word executions
 
@@ -386,34 +386,6 @@ quit:
         ret 
 
 #---------------------------------------------------------------------
-_test:
-	jalr zero, 0 (ra)
-
-	call 100f
-	.word 0x0
-100:
-	ret
-	
-	call 100f
-	.word 0x0
-	.word 0x0
-100:
-	ret
-	
-	call 100f
-	.word 0x0
-	.word 0x0
-	.word 0x0
-100:
-	ret
-	
-	call 100f
-	.word 0x0
-	.word 0x0
-	.word 0x0
-	.word 0x0
-100:
-	ret
 
 #---------------------------------------------------------------------
 # A fake header at end of dictionary linked list
@@ -464,5 +436,7 @@ _start:
 .set compiled_last, 9999b - 8
 #---------------------------------------------------------------------
 
+_end_of_code:
+#	.word 0
 .end
 

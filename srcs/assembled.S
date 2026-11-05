@@ -125,21 +125,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_ONE, 0x0002B594 #; ( 1 ) 
 .equ hash_TWO, 0x0002B597 #; ( 2 ) 
  
-# variables, user array start at USER memory address
+# user array start at USER memory address
+
+# constants
 .equ hash_USER, 0x7C84F154 #; ( USER )
 .equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
 .equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
+# variables
 .equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
 .equ hash_HEAP, 0x00597251 #; ( DP ) 
 .equ hash_LAST, 0x2ADAAFBE #; ( LATEST ) 
 .equ hash_PIKE, 0x7C8A12B2 #; ( PIKE ) 
 .equ hash_BASE, 0x7C8025F0 #; ( BASE ) 
 .equ hash_TEMP, 0x7C87D1E9 #; ( TEMP ) 
- 
-# dictionary 
-#.equ hash_COLON, 0x0002B59F #; ( : ) 
-#.equ hash_SEMIS, 0x0002B59E #; ( ; ) 
-#.equ hash_NAMET, 0x07669CB8 #; ( :NAME ) 
  
 # system ecalls 
 .equ hash_BYE, 0x0B87C61B #; ( BYE ) 

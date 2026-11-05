@@ -23,6 +23,8 @@
 
 __WORDS :) IN PROGRESS__
 
+** STILL NOT FOR USE **
+
 from https://github.com/agsb/ff/blob/master/ff-arm.s
 
 https://github.com/scotws/RISC-V-tests/blob/master/docs/riscv_linux_system_calls.md
@@ -170,32 +172,6 @@ fs_fcntl:
 	ret
 
 #----------------------------------------------------------------------
-# need more info for use
-alloc_memory_stub:
-mmap:                           
-        # mv a0, tos              # a0 = addr: 0 (Let the kernel choose the virtual address destination)
-        li a1, 4096             # a1 = length: 4096 bytes (1 page)
-        li a2, 3                # a2 = prot: PROT_READ (1) | PROT_WRITE (2) = 3
-        li a3, 34               # a3 = flags: MAP_PRIVATE (2) | MAP_ANONYMOUS (32) = 34
-        li a4, -1               # a4 = fd: -1 (Required for anonymous memory allocations)
-        li a5, 0                # a5 = offset: 0
-        li a7, 222              # a7 = syscall number for sys_mmap
-        ecall                   #  Returns allocated address pointer or -1 in a0.
-	ret
-
-# need more info for use
-free_memory_stub:
-unmap:
-        # mv a0, tos 		# valid memory pointer address returned by a previous mmap
-        li a1, 4096             # a1 = length: must match the exact allocation size (4096 bytes)
-        li a7, 215              # a7 = syscall number for sys_munmap
-        ecall                   # Returns 0 on success, or -1 in a0
-	ret
-				        
-# Check return value in a0 (0 means success)
-# Exit or continue execution from here...
-
-#----------------------------------------------------------------------
 
 .equ hash_FDCREATE, 0x3D82507C #; ( FD_CREATE ) 
 .equ hash_FDERASE, 0x405941D8 #; ( FD_ERASE ) 
@@ -243,6 +219,72 @@ def_word "fileseek" hash_FDSEEK
 def_word "filecntl" hash_FDCNTL
         j next
 
+#---------------------------------------------------------------------
+# memory extras 
+
+#----------------------------------------------------------------------
+.equ SYS_MMAP, 222
+.equ SYS_UMMAP, 215
+.equ SYS_MREMAP, 216
+
+# Constantes do Linux
+.equ PROT_READ, 0x1
+.equ PROT_WRITE, 0x2
+.equ MAP_PRIVATE, 0x02
+.equ MAP_ANONYMOUS, 0x20
+.equ MREMAP_MAYMOVE, 0x1
+
+# need more info for use
+alloc_memory_stub:
+mmap:                           
+        # mv a0, tos              # a0 = addr: 0 (Let the kernel choose the virtual address destination)
+        li a1, 4096             # a1 = length: 4096 bytes (1 page)
+        li a2, 3                # a2 = prot: PROT_READ (1) | PROT_WRITE (2) = 3
+        li a3, 34               # a3 = flags: MAP_PRIVATE (2) | MAP_ANONYMOUS (32) = 34
+        li a4, -1               # a4 = fd: -1 (Required for anonymous memory allocations)
+        li a5, 0                # a5 = offset: 0
+        li a7, 222              # a7 = syscall number for sys_mmap
+        ecall                   #  Returns allocated address pointer or -1 in a0.
+	ret
+
+realloc_memory_stub:
+mremap:
+        # mv a0, tos                         # old_address = endereço que estava em s1
+        li a1, 4096                        # old_size = 4096 bytes
+        li a2, 8192                        # new_size = 8192 bytes (2 páginas)
+        li a3, MREMAP_MAYMOVE              # flags = Permite mover o bloco se necessário
+        li a7, SYS_MREMAP                  # Carrega código da syscall mremap (216)
+        ecall                              # Executa a chamada do sistema
+
+# need more info for use
+free_memory_stub:
+unmap:
+        # mv a0, tos 		# valid memory pointer address returned by a previous mmap
+        li a1, 4096             # a1 = length: must match the exact allocation size (4096 bytes)
+        li a7, 215              # a7 = syscall number for sys_munmap
+        ecall                   # Returns 0 on success, or -1 in a0
+	ret
+				        
+# Check return value in a0 (0 means success)
+# Exit or continue execution from here...
+
+#----------------------------------------------------------------------
+
+# for sake all memomy allocations are in pages of 4k bytes !
+
+.equ hash_ALLOCATE, 0x1D4EF358 #; ( ALLOCATE ) 
+.equ hash_FREE, 0x7C7E42B1 #; ( FREE ) 
+.equ hash_RESIZE, 0x421A29B7 #; ( RESIZE ) 
+
+def_word "allocate" hash_ALLOCATE
+	j next
+
+def_word "free" hash_FREE
+	j next
+
+def_word "resize" hash_RESIZE
+	j next
+
 #----------------------------------------------------------------------
 
 /*
@@ -280,5 +322,8 @@ def_word "filecntl" hash_FDCNTL
 11.6.2.2144.50 REQUIRED
 11.6.2.2266 S\"
 
+Note: Forth 1994 ANSI have same words
+
 */
+
 
