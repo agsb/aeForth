@@ -86,7 +86,7 @@ compiled.S:def_word "then" hash_THEN IMMEDIATE
 compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
 compiled.S:def_word "do" hash_DO IMMEDIATE 
 compiled.S:def_word "loop" hash_LOOP IMMEDIATE 
-compiled.S:def_word "ploop" hash_LOOP IMMEDIATE 
+compiled.S:def_word "ploop" hash_PLOOP IMMEDIATE 
 compiled.S:def_word "i" hash_I IMMEDIATE 
 compiled.S:def_word "j" hash_J IMMEDIATE 
 compiled.S:def_word "leave" hash_LEAVE IMMEDIATE 
@@ -100,10 +100,10 @@ compiled.S:def_word "colon" hash_COLON
 compiled.S:def_word "semis" hash_SEMIS IMMEDIATE 
 compiled.S:def_word "hash" hash_HASH
 compiled.S:def_word "find" hash_FIND 
-compiled.S:def_word "tick" hash_TICK IMMEDIATE 
-compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE 
 compiled.S:def_word "isname" hash_ISNAME
 compiled.S:def_word "noname" hash_NONAME
+compiled.S:def_word "tick" hash_TICK IMMEDIATE 
+compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE 
 compiled.S:def_word "immediate" hash_IMMEDIATE
 compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE
 compiled.S:def_word "djb2" hash_DJB2 

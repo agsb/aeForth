@@ -120,6 +120,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_TRUE, 0x7C879BF3 #; ( TRUE ) 
 .equ hash_FALSE, 0x0C3C6778 #; ( FALSE ) 
 .equ hash_NAN, 0x0B87D404 #; ( NAN ) 
+
 .equ hash_CELL, 0x7C81B0A3 #; ( CELL ) 
 .equ hash_NIL, 0x0002B595 #; ( 0 ) 
 .equ hash_ONE, 0x0002B594 #; ( 1 ) 

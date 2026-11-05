@@ -90,21 +90,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_FOR, 0x0B87B3DE #; ( FOR ) 
 .equ hash_NEXT, 0x7C826702 #; ( NEXT ) 
 
+.equ hash_TOKEN, 0x0D8960FE #; ( TOKEN ) 
+.equ hash_HEADER, 0x33DCB49A #; ( HEADER ) 
+
+.equ hash_PAGE, 0x7C89F136 #; ( PAGE ) 
+.equ hash_LINE, 0x7C833C8B #; ( LINE ) 
+.equ hash_WORD, 0x7C888E6B #; ( WORD )
+
 .equ hash_COLON, 0x0002B59F #; ( : ) 
 .equ hash_SEMIS, 0x0002B59E #; ( ; ) 
-.equ hash_HEADER, 0x33DCB49A #; ( HEADER ) 
-.equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
-.equ hash_TOKEN, 0x0D8960FE #; ( TOKEN ) 
-.equ hash_WORD, 0x7C888E6B #; ( WORD )
 .equ hash_HASH, 0x7C8590B7 #; ( HASH )
 .equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
+.equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
+.equ hash_ISNAME, 0x05BEEF42 #; ( :ISNAME )
+.equ hash_NONAME, 0x7C2B3679 #; ( :NONAME )
+
 .equ hash_POSTPONE, 0x7A137C29 #; ( POSTPONE ) 
+
 .equ hash_ABORT, 0x0C4FFEAF #; ( ABORT )
+.equ hash_QUIT, 0x7C86F95C #; ( QUIT ) 
 
 .equ hash_LBRACK, 0x0002B5FE #; ( [ )
 .equ hash_RBRACK, 0x0002B5F8 #; ( ] )
-.equ hash_ISNAME, 0x05BEEF42 #; ( :ISNAME )
-.equ hash_NONAME, 0x7C2B3679 #; ( :NONAME )
 .equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
 .equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 
@@ -453,20 +460,39 @@ def_word "hash" hash_HASH
 	.word xt_nan, xt_inverse, xt_rto, xt_and 
 	.word xt_exit 
  
-# ( h -- h ) #; ( FIND ) 
+.equ IMMD_FLAG 0x80000000
+.equ MASK_FLAG 0x7FFFFFFF
+
+# ( h -- h v ) #; ( FIND ) 0 not found, 1 immediate, -1 common 
 def_word "find" hash_FIND 
-	.word xt_latest 
+	.word xt_tor
+	.word xt_latest, xt_fetch 
 	# find the hash 
-	.word xt_begin, xt_over, xt_over 
-	.word xt_cell, xt_plus, xt_fetch, xt_equ 
-	.word xt_while, xt_fetch 
-	.word xt_dup, xt_if, xt_else, xt_then
-	.word xt_repeat 
-	# discard hash, keep last link 
-	# .word xt_zzzz 
-	.word xt_cell, xt_plus, xt_dup, xt_fetch, xt_nan, xt_and 
-	.word xt_if, xt_lit, 1, xt_else, xt_lit, -1, xt_then 
-	.word xt_then 
+	.word xt_begin 
+	.word xt_dup, xt_cell, xt_plus, xt_fetch
+	.word xt_dup, xt_lit, MASK_FLAG, xt_and
+	.word xt_rat, xt_equ, xt_if
+	.word xt_rto, xt_drop, xt_nip
+	.word xt_dup, xt_cell, xt_plus, xt_fetch
+	.word xt_lit, IMMD_FLAG, xt_and
+	# immediate word
+	.word xt_if, xt_lit, 1
+	# common word
+	.word xt_else, xt_lit, -1
+	.word xt_then, xt_exit
+	.word xt_then, xt_fetch
+	.word xt_repeat
+	.word xt_exit 
+ 
+# ( -- ) #; ( :ISNAME ) makes a header  
+def_word "isname" hash_ISNAME
+	.word xt_latest, xt_fetch, xt_comma 
+	.word xt_hash, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) #; ( :NONAME ) makes a content 
+def_word "noname" hash_NONAME
+	.word xt_here, xt_lbrack 
 	.word xt_exit 
  
 # ( -- h ) #; ( ' ) tick, return the xt of a word 
@@ -480,17 +506,6 @@ def_word "tick" hash_TICK IMMEDIATE
 # ( -- ) #; ( POSTPONE ) 
 def_word "postpone" hash_POSTPONE IMMEDIATE 
 	.word xt_tick, xt_comma 
-	.word xt_exit 
- 
-# ( -- ) #; ( :ISNAME ) makes a header with next word 
-def_word "isname" hash_ISNAME
-	.word xt_latest, xt_fetch, xt_comma 
-	.word xt_hash, xt_comma 
-	.word xt_exit 
- 
-# ( -- ) #; ( :NONAME ) makes a header with next word 
-def_word "noname" hash_NONAME
-	.word xt_here, xt_lbrack 
 	.word xt_exit 
  
 # ( -- ) #; ( IMMEDIATE ) makes a word immediate 

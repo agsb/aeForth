@@ -117,7 +117,7 @@ compiled.S:def_word "noname" hash_NONAME
 compiled.S:def_word "off" hash_OFF
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "on" hash_ON
-compiled.S:def_word "ploop" hash_LOOP IMMEDIATE 
+compiled.S:def_word "ploop" hash_PLOOP IMMEDIATE 
 compiled.S:def_word "plusfield" hash_PLUSFIELD
 compiled.S:def_word "plustore" hash_PLUSTORE
 compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE 
