@@ -80,20 +80,18 @@ _init:
 
 # linux ecall for getc
 _getc:
-	esave 
 
         li a0, _STDIN
         la a1, _char
         li a2, _ONE
         li a7, _GETC
+
         ecall
 
         lb tos, 0 (a1)
 
-        eload
-
-        #EOF?
-        beq a0, zero, _exit
+        # EOF?
+        # beq a0, zero, _exit
 
 .ifndef echoo
 
@@ -103,18 +101,17 @@ _getc:
 
 # linux ecall for putc
 _putc:
-	esave
 
-        li a0, _STDOUT
+
         la a1, _char
-        li a2, _ONE
-        li a7, _PUTC
 
         sb tos, 0 (a1)
 
-        ecall
+        li a0, _STDOUT
+        li a2, _ONE
+        li a7, _PUTC
 
-	eload
+        ecall
 
         ret
 
@@ -123,17 +120,17 @@ _putc:
 # ( -- ) #; ( BYE )
 def_word "bye" hash_BYE
 	call _exit
-end_word
+	j next
 
 # ( -- c ) #; ( KEY )
 def_word "key" hash_KEY
 	push tos spt
 	call _getc
-end_word
+	j next
 
 # ( c -- ) #; ( EMIT )
 def_word "emit" hash_EMIT
 	call _putc
 	pull tos spt
-end_word
+	j next
 

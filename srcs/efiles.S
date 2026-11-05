@@ -210,38 +210,38 @@ unmap:
 
 # ( arg cmd fd -- w ) #; ( FD_ERASE )
 def_word "fileerase" hash_FDERASE
-end_word
+        j next
 
 # ( cname n mode fd -- w ) #; ( FD_CREATE )
 def_word "filecreate" hash_FDCREATE
-end_word
+        j next
 
 # ( cname n mode fd -- fd ) #; ( FD_OPEN ), open or create
 def_word "fileopen" hash_FDOPEN
-end_word
+        j next
 
 # ( fd -- w ) #; ( FD_CLOSE )
 def_word "fileclose" hash_FDCLOSE
-end_word
+        j next
 
 # ( size buffer fd -- w ) #; ( FD_READ )
 def_word "fileread" hash_FDREAD
-end_word
+        j next
 
 # ( size buffer fd -- w ) #; ( FD_WRITE )
 def_word "filewrite" hash_FDWRITE
-end_word
+        j next
 
 # ( whence offset fd -- w ) #; ( FD_SEEK )
 # whence=0, offset=0, results in zero position at file 
 # whence=1, offset=0, results in actual position at file 
 # whence=2, offset=0, results in size of file 
 def_word "fileseek" hash_FDSEEK
-end_word
+        j next
 
 # ( arg cmd fd -- w ) #; ( FD_CNTL )
 def_word "filecntl" hash_FDCNTL
-end_word
+        j next
 
 #----------------------------------------------------------------------
 

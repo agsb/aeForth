@@ -105,11 +105,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_LESS, 0x0002B599 #; ( < ) 
 .equ hash_ULESS, 0x005973CC #; (U< ) 
 
-.equ hash_MORE, 0x2D802BBF #; ( > ) 
-.equ hash_UMORE, 0x005973CE #; ( U> ) 
-
-.equ hash_ZEQU, 0x00596808 #;  ( 0= ) 
-.equ hash_ZLESS, 0x00596809 #; ( 0< ) 
+.equ hash_MORE, 0x0002B59B #; ( > )
+.equ hash_UMORE, 0x005973CE #; ( U> )
+.equ hash_ZEQU, 0x00596808 #; ( 0= )
+.equ hash_ZLESS, 0x00596809 #; ( 0< )
 .equ hash_ZMORE, 0x0059680B #; ( 0> )
  
 # address 
@@ -171,7 +170,7 @@ next:
 .endif
 	# no round-robin limit
 	lw nos, 0 (ipt)
-	addi ipt, ipt, CELL
+	addi ipt, ipt,CELL
 
 # this is the tipping point, above nib only lives compiled words 
 pick: 
@@ -196,8 +195,7 @@ move:
 	j next 
  
 #---------------------------------------------------------------------- 
-# branchs always by offset not by absolute
-
+ 
 # ( -- ) #; ( EXIT ) 
 def_word "exit" hash_EXIT 
 	j unnest 
@@ -207,7 +205,7 @@ def_word "branch" hash_BRANCH
 branch: 
 	lw nos, 0 (ipt) 
 	add ipt, ipt, nos 
-end_word 
+        j next 
  
 # ( w -- ) #; ( ZBRANCH ) equal than zero 
 def_word "zbranch" hash_ZBRANCH 
@@ -215,7 +213,7 @@ def_word "zbranch" hash_ZBRANCH
 	pull tos spt 
 	beq nos, zero, branch 
 	addi ipt, ipt, CELL 
-end_word 
+        j next 
  
 # ( w -- ) #; ( GBRANCH ) greater than zero 
 def_word "gbranch" hash_GBRANCH 
@@ -223,23 +221,21 @@ def_word "gbranch" hash_GBRANCH
 	pull tos spt 
 	blt zero, nos, branch 
 	addi ipt, ipt, CELL 
-end_word 
- 
-#---------------------------------------------------------------------- 
+        j next 
  
 # ( -- w ) #; ( DOCON ), also is LIT 
 def_word "docon" hash_DOCON 
 	push tos spt 
 	lw tos, 0 (ipt) 
 	addi ipt, ipt, CELL 
-end_word 
+        j next 
  
 # ( -- w ) #; ( DOVAR ) 
 def_word "dovar" hash_DOVAR 
 	push tos spt 
 	mv tos, ipt 
 	addi ipt, ipt, CELL 
-end_word 
+        j next 
  
 #---------------------------------------------------------------------- 
  
@@ -247,70 +243,68 @@ end_word
 def_word "tor" hash_TOR 
 	push tos rpt 
 	pull tos spt 
-end_word 
+        j next 
  
 # ( -- w ; w -- ) #; ( R> ) 
 def_word "rto" hash_RTO 
 	push tos spt 
 	pull tos rpt 
-end_word 
+        j next 
  
 # ( -- w ; w -- w ) #; ( R@ ) 
 def_word "rat" hash_RAT 
 	push tos spt 
 	lw tos, 0 (rpt) 
-end_word 
+        j next 
  
-#---------------------------------------------------------------------- 
-
 # ( -- rpt ) #; ( RP@ ) 
 def_word "rpat" hash_RPAT 
 	push tos spt 
 	mv tos, rpt 
-end_word 
+        j next 
  
 # ( -- spt ) #; ( SP@ ) 
 def_word "spat" hash_SPAT 
 	push tos spt 
 	mv tos, spt 
-end_word 
+        j next 
  
 # ( rpt -- ) #; ( RP! ) 
 def_word "rpto" hash_RPTO 
 	mv rpt, tos 
 	pull tos spt 
-end_word 
+        j next 
  
 # ( spt -- ) #; ( SP! ) 
 def_word "spto" hash_SPTO 
 	mv spt, tos 
 	pull tos spt 
-end_word 
+        j next 
  
 #---------------------------------------------------------------------- 
  
 # ( w -- ) #; ( DROP ) 
 def_word "drop" hash_DROP 
 	pull tos spt 
-end_word 
+        j next 
  
 # ( w -- w w ) #; ( DUP ) 
 def_word "dup" hash_DUP 
 	push tos spt 
-end_word 
+        j next 
  
 # ( w1 w2 -- w1 w2 w1 ) #; ( OVER ) 
 def_word "over" hash_OVER 
 	push tos spt 
 	lw tos, CELL (spt) 
-end_word 
+        j next 
  
 # ( w1 w2  -- w2 w1 ) #; ( SWAP ) 
 def_word "swap" hash_SWAP 
 	lw nos, 0 (spt) 
 	sw tos, 0 (spt) 
 	mv tos, nos 
-end_word 
+        j next 
  
 # ( w1 w2 W3 -- w3 w1 w2 ) #; ( ROT ) 
 def_word "rot" hash_ROT 
@@ -319,132 +313,131 @@ def_word "rot" hash_ROT
 	sw trd, 0 (spt) 
 	sw tos, 4 (spt) 
 	mv tos, nos 
-end_word 
+        j next 
  
-#---------------------------------------------------------------------- 
-
 # ( a -- w ) #; ( @ ) 
 def_word "fetch" hash_FETCH 
 	lw tos, 0 (tos) 
-end_word 
+        j next 
  
 # ( w a -- ) #; ( ! ) 
 def_word "store" hash_STORE 
 	pull nos spt 
 	sw nos, 0 (tos) 
 	pull tos spt 
-end_word 
+        j next 
  
 # ( a -- c ) #; ( C@ ) 
 def_word "cfetch" hash_CFETCH 
 	lb tos, 0 (tos) 
-end_word 
+        j next 
  
 # ( c a -- ) #; ( C! ) 
 def_word "cstore" hash_CSTORE 
 	pull nos spt 
 	sb nos, 0 (tos) 
 	pull tos spt 
-end_word 
+        j next 
  
 #---------------------------------------------------------------------- 
  
-# ( w1 w2 -- w3 ) #; ( + ) 
+# ( w1 w2 -- w3 ) #; ( + ) addiction w1 + w2
 def_word "plus" hash_PLUS 
 	pull nos spt 
 	add tos, nos, tos 
-end_word 
+        j next 
  
-# ( w1 w2 -- w3 ) #; ( - ) 
+# ( w1 w2 -- w3 ) #; ( - ) subtract w1 - w2
 def_word "minus" hash_MINUS 
 	pull nos spt 
-	sub tos, nos, tos 
-end_word 
+	add tos, nos, tos 
+        j next 
  
-# ( w1 w2 -- w3 w4 ) multiply, result result_high
+# ( w1 w2 -- w3 w4 ) multiply w1 * w2, double result 
 def_word "bymul", hash_BYMUL 
     	pull nos spt 
-    	mulh trd, tos, nos 
-    	mul nos, tos, nos 
+    	mulh trd, nos, tos 
+    	mul nos, nos, tos
 push2: 
     	push nos spt 
     	mv tos, trd 
-end_word 
+        j next 
  
-# ( w1 w2 -- w3 w4 ) divide: -- reminder quontient 
+# ( w1 w2 -- w3 w4 ) divide w1 / w2, reminder and quontient 
 def_word "bymod", hash_BYMOD 
+    	beqz tos, by_zero 
     	pull nos spt 
-    	beqz nos, by_zero 
-    	div trd, tos, nos 
-    	rem nos, tos, nos 
+    	div trd, nos, tos 
+    	rem nos, nos, tos 
     	j push2 
  
 #---------------------------------------------------------------------- 
  
-# ( w1 w2 -- w3 ) #; ( AND ) 
+# ( w1 w2 -- w3 ) #; ( AND ) w1 AND w2 
 def_word "and" hash_AND 
 	pull nos spt 
 	and tos, nos, tos 
-end_word 
+        j next 
  
-# ( w1 w2 -- w3 ) #; ( OR ) 
+# ( w1 w2 -- w3 ) #; ( OR ) w1 OR w2
 def_word "or" hash_ORR 
 	pull nos spt 
 	or tos, nos, tos 
-end_word 
+        j next 
  
-# ( w1 w2 -- w3 ) #; ( XOR ) 
+# ( w1 w2 -- w3 ) #; ( XOR ) w1 XOR w2
 def_word "xor" hash_XOR 
 	pull nos spt 
 	xor tos, nos, tos 
-end_word 
+        j next 
  
-# ( w1 -- w2 ) #; ( INVERSE) 
+# ( w1 -- w2 ) #; ( INVERSE) w1
 def_word "inverse", hash_INVERSE 
         # xori fst, fst, -1 
         not tos, tos 
-end_word 
+        j next 
  
 # ( w1 -- w2 ) #; ( NEGATE ), arithmetic inverse 
 def_word "negate", hash_NEGATE 
         # sub fst, zero, fst 
         neg tos, tos 
-end_word 
+        j next 
  
-# ( w1 w2 -- w1<<w2 ) #; ( LSHIFT ) shift left some bits 
+# ( w1 w2 -- w1<<w2 ) #; ( LSHIFT ) w1 << W2 shift left some bits 
 def_word "lshift", hash_LSHIFT 
          pull nos spt 
          sll tos, nos, tos 
-end_word 
+        j next 
  
-# ( w1 w2 -- w1>>w2 ) #; ( RSHIFT ) shift right some bits 
+# ( w1 w2 -- w1>>w2 ) #; ( RSHIFT ) w1 >> w2 shift right some bits 
 def_word "rshift", hash_RSHIFT 
          pull nos spt 
          srl tos, nos, tos 
-end_word 
+        j next 
  
 # ( w1 -- w2 ) #; ( ALIGN ) align to cell, word is 4 bytes 
 def_word "align", hash_ALIGN 
         addi tos, tos,  (CELL-1) 
         andi tos, tos, ~(CELL-1) 
-end_word 
+        j next 
  
 #--------------------------------------------------------------------- 
 
 # ( w1 -- ; -- w2 ) #; ( EXECUTE ), execute a word in Forth
+#  will do next ipt before ?
 def_word "execute", hash_EXECUTE 
         push tos rpt 
 	pull tos spt 
-end_word 
+        j next 
 
-# ( w -- ) #; ( PERFORM ), does a native jump 
+# ( w -- ) #; #; ( PERFORM ), does a native jump 
 # at end do: ' jalr zero, 0 (ra) ' to return at j next
 # must preserve ra ipt spt rpt tos usr nib 
 def_word "perform", hash_PERFORM 
 	mv nos, tos 
 	pull tos spt 
         jalr ra, 0 (nos) 
-end_word 
+        j next 
 
 /* 
 
@@ -459,7 +452,6 @@ entry_point:
         sw tos, 12(sp)
         sw usr, 16(sp)
         sw nib, 20(sp)
-        sw ra,  24(sp)
 
 	~~~~~~~~~~~~~~~~~~~
 	~~DO_WHAT_IS_NEED~~
@@ -472,7 +464,6 @@ entry_point:
         lw tos, 12(sp)
         lw usr, 16(sp)
         lw nib, 20(sp)
-        lw ra,  24(sp)
         addi sp, sp, 32
 
 # return
@@ -487,55 +478,55 @@ def_word "equ" hash_EQU
     	pull nos spt 
 	beq tos, nos, istrue 
 	j isfalse 
-end_word 
+        j next 
  
 # ( w1 w2 -- T|F ) #; ( < ) w1 < w2 
 def_word "less" hash_LESS 
     pull nos spt 
 	blt nos, tos, istrue 
 	j isfalse 
-end_word 
+        j next 
  
 # ( u1 u2 -- T|F ) #; ( U< ) u1 < u2 
 def_word "uless" hash_ULESS 
     	pull nos spt 
 	bltu nos, tos, istrue 
 	j isfalse 
-end_word 
-
-#--------------------------------------------------------------------- 
+        j next 
  
 # ( w1 w2 -- T|F ) #; ( > ) w1 > w2 
-def_word "more" hash_MORE 
+def_word "more" hash_MORE
     	pull nos spt 
 	blt tos, nos, istrue 
 	j isfalse 
-end_word 
+        j next 
  
-# ( u1 u2 -- T|F ) #; ( U> ) u1 > u2 
-def_word "umore" hash_UMORE 
+# ( u1 u2 -- T|F ) #; ( U< ) u1 < u2 
+def_word "umore" hash_UMORE
     	pull nos spt 
 	bltu tos, nos, istrue 
 	j isfalse 
-end_word 
-
-# ( w1 -- T|F ) #; ( = ) w1 == 0 
+        j next 
+ 
+# ( w1 -- T|F ) #; ( 0= ) 
 def_word "zequ" hash_ZEQU 
 	beq tos, zero, istrue 
 	j isfalse 
-end_word 
+        j next 
  
-# ( w1 -- T|F ) #; ( 0< ) w1 < 0
+# ( w1 -- T|F ) #; ( 0< ) w1 < w2 
 def_word "zless" hash_ZLESS 
+    pull nos spt 
 	blt tos, zero, istrue 
 	j isfalse 
-end_word 
+        j next 
  
-# ( w1 -- T|F ) #; ( 0> ) w1 > 0 
-def_word "zmore" hash_ZMORE 
+# ( w1 -- T|F ) #; ( 0> ) w1 > w2 
+def_word "zmore" hash_ZMORE
+    	pull nos spt 
 	blt zero, tos, istrue 
 	j isfalse 
-end_word 
+        j next 
  
 #--------------------------------------------------------------------- 
 # constants 
@@ -545,14 +536,14 @@ def_word "true" hash_TRUE
 	push tos spt 
 istrue: 
 	addi tos, zero, TRUE 
-end_word 
+        j next 
  
 # ( -- 0x00000000 ) #; ( FALSE ) 
 def_word "false" hash_TRUE 
 	push tos spt 
 isfalse: 
 	addi tos, zero, FALSE	 
-end_word 
+        j next 
  
 # ( -- 0x80000000 ) #; ( NAN ) #; return error and flag IMMEDIATE 
 def_word "nan" hash_NAN 
@@ -562,86 +553,84 @@ by_under:
 by_over: 
 	push tos spt 
 	lui tos, 0x8000 
-end_word 
+        j next 
  
-#--------------------------------------------------------------------- 
-
 # ( -- 0) #; ( 0 ) #; 
 def_word "nil" hash_NIL 
 	push tos spt 
 	lui tos, 0x0 
-end_word 
+        j next 
  
 # ( -- 1) #; ( 1 ) #; 
 def_word "one" hash_ONE 
 	push tos spt 
 	lui tos, 0x1 
-end_word 
+        j next 
  
 # ( -- 2) #; ( 2 ) #; 
 def_word "two" hash_TWO 
 	push tos spt 
 	lui tos, 0x2 
-end_word 
+        j next 
  
 # ( -- 4) #; ( CELL ) #; sizeof a CELL, usualy 32 bits 
 def_word "cell" hash_CELL 
 	push tos spt 
 	lui tos, 0x4 
-end_word 
+        j next 
  
 #--------------------------------------------------------------------- 
-# variables 
- 
+
 # ( -- usr ) #; ( USER ) 
 def_word "user" hash_RPZ 
 	push tos spt 
 	mv tos, usr 
-end_word 
+        j next 
 
 # ( -- rp0 ) #; ( RPZ ) 
 def_word "rp0" hash_RPZ 
 	push tos spt 
 	lw tos, RPTR  * CELL ( usr ) 
-end_word 
+        j next 
  
 # ( -- sp0 ) #; ( SPZ ) 
 def_word "sp0" hash_SPZ 
 	push tos spt 
 	lw tos, SPTR  * CELL ( usr ) 
-end_word 
+        j next 
  
 #--------------------------------------------------------------------- 
-
+# variables 
+ 
 # ( -- state ) #; ( STATE ) 
 def_word "state" hash_STAT 
 	push tos spt 
-	lw tos, STAT  * CELL ( usr ) 
-end_word 
+	addi tos, usr, STAT * CELL
+        j next 
  
 # ( -- last ) #; ( LATEST ) 
 def_word "latest" hash_LAST 
 	push tos spt 
-	lw tos, LAST  * CELL ( usr ) 
-end_word 
+	addi tos, usr, LAST * CELL
+        j next 
  
 # ( -- heap ) #; ( DP ) 
 def_word "heap" hash_HEAP 
 	push tos spt 
-	lw tos, HEAP  * CELL ( usr ) 
-end_word 
- 
-# ( -- pike ) #; ( PIKE ) 
-def_word "pike" hash_PIKE 
-	push tos spt 
-	lw tos, PIKE  * CELL ( usr ) 
-end_word 
+	addi tos, usr, HEAP * CELL
+        j next 
  
 # ( -- base ) #; ( BASE ) 
 def_word "base" hash_BASE 
 	push tos spt 
-	lw tos, BASE  * CELL ( usr ) 
-end_word 
+	addi tos, usr, BASE * CELL
+        j next 
+ 
+# ( -- pike ) #; ( PIKE ) 
+def_word "pike" hash_PIKE 
+	push tos spt 
+	addi tos, usr, PIKE * CELL
+        j next 
  
 #--------------------------------------------------------------------- 
 # counts forth heart beats
@@ -661,7 +650,7 @@ def_word "tobeats" hash_TOBEATS
 	pull tos spt
 	mv t2, tos
 	pull tos spt
-end_word
+        j next
 
 # ( -- t2 t1 t0 ) #; ( BASE ) 
 def_word "beatsto" hash_BEATSTO 
@@ -671,16 +660,17 @@ def_word "beatsto" hash_BEATSTO
 	mv tos, t1
 	push tos spt
 	mv tos, t2
-end_word
+        j next
 
 # ( -- ) #; ( BEATSASE ) 
 def_word "zbeats" hash_ZBEATS
 	mv t0, zero
 	mv t1, zero
 	mv t2, zero
-end_word
+        j next
 
 .endif
+
 
 #--------------------------------------------------------------------- 
 

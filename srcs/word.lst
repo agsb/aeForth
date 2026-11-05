@@ -38,11 +38,11 @@ assembled.S:def_word "perform", hash_PERFORM
 assembled.S:def_word "equ" hash_EQU 
 assembled.S:def_word "less" hash_LESS 
 assembled.S:def_word "uless" hash_ULESS 
-assembled.S:def_word "more" hash_MORE 
-assembled.S:def_word "umore" hash_UMORE 
+assembled.S:def_word "more" hash_MORE
+assembled.S:def_word "umore" hash_UMORE
 assembled.S:def_word "zequ" hash_ZEQU 
 assembled.S:def_word "zless" hash_ZLESS 
-assembled.S:def_word "zmore" hash_ZMORE 
+assembled.S:def_word "zmore" hash_ZMORE
 assembled.S:def_word "true" hash_TRUE 
 assembled.S:def_word "false" hash_TRUE 
 assembled.S:def_word "nan" hash_NAN 
@@ -56,8 +56,8 @@ assembled.S:def_word "sp0" hash_SPZ
 assembled.S:def_word "state" hash_STAT 
 assembled.S:def_word "latest" hash_LAST 
 assembled.S:def_word "heap" hash_HEAP 
-assembled.S:def_word "pike" hash_PIKE 
 assembled.S:def_word "base" hash_BASE 
+assembled.S:def_word "pike" hash_PIKE 
 assembled.S:def_word "tobeats" hash_TOBEATS 
 assembled.S:def_word "beatsto" hash_BEATSTO 
 assembled.S:def_word "zbeats" hash_ZBEATS

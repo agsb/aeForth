@@ -75,27 +75,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define rpt s1
 
 # forth instruction pointer, reserved
-#define ipt s2
+#define ipt a4
 
 # forth top of stack, reserved, for easy
-#define tos a0
+#define tos a3
 
 # forth second on stack, not reserved
-#define nos a1
+#define nos a5
 
 # forth third on stack, not reserved, not for reduced opcodes
-#define trd a2
+#define trd a6
 
 # forth fourth on stack, not reserved, not for reduced opcodes
-#define fth a3
+#define fth a7
 
-#  a4, a5, a6 could be used as scratch, preserved inside ecalls
+# a0, a1, a2, a7 could be used as scratch, preserved inside ecalls
 
 # fixed memory pointers, for offset and compares
 
-#define usr s3
+#define usr s2
 
-#define nib s4 
+#define nib s3 
 
 # the t0, t1, t2 are used to count forth word executions
 
@@ -206,10 +206,18 @@ ht_\label:
 xt_\label:
 .endm
 
+#
 # gcc handles big long jumps by relaxation :)
 #
-.macro end_word
+
+# primitives resumes to next
+.macro end_primitive
     j next
+.endm
+
+# compiled resumes to unnest
+.macro end_compose
+    j xt_exit
 .endm
 
 #----------------------------------------------------------------------
@@ -433,7 +441,7 @@ _start:
 
         la ipt, compiled_last
 
-        j next
+        end_primitive
 
 #----------------------------------------------------------------------i
 
