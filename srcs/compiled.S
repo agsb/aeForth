@@ -67,10 +67,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
 .equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
 .equ hash_WHILST, 0x40B17B78 #; ( WHILST )
+
+.equ hash_AHEAD, 0x0C555E0C #; ( AHEAD )
 .equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
 .equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
 
-.equ hash_AFT, 0x0B87B636 #; ( AFT ) 
 .equ hash_IF, 0x0059732A #; ( IF ) 
 .equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
 .equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
@@ -132,24 +133,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_BUFFER, 0x1DF37CE5 #; ( BUFFER )
 .equ hash_ARRAY, 0x0C587A5C #; ( ARRAY )
 
-.equ hash_2DUP, 0x7C5447D6 #; ( 2DUP )
-.equ hash_2DROP, 0x06DD1C3E #; ( 2DROP )
-.equ hash_2SWAP, 0x06D56D02 #; ( 2SWAP )
-.equ hash_2OVER, 0x06E00A99 #; ( 2OVER )
-.equ hash_2STORE, 0x00596856 #; ( 2! )
-.equ hash_2FETCH, 0x00596837 #; ( 2@ )
-.equ hash_2TOR, 0x0B86713B #; ( 2>R )
-.equ hash_2RTO, 0x0B866CFB #; ( 2R> )
-.equ hash_2RAT, 0x0B866C85 #; ( 2R@ )
-.equ hash_2NIP, 0x7C545140 #; ( 2NIP )
-
 .equ hash_TOCODE, 0x076E91B2 #; ( :CODE )
 .equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
-
-.equ hash_PLUSTORE, 0x0059676F #; ( +! )
-.equ hash_NIP, 0x0B87D312 #; ( NIP )
-.equ hash_TUCK, 0x7C878D2C #; ( TUCK )
-.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
 
 #.equ hash_DIGIT, 0x0C62B132 #; ( DIGIT )
 .equ hash_TODIGIT, 0x6C6CCCEC #; ( >DIGIT ) 
@@ -255,8 +240,8 @@ def_word "whilst" hash_WHILST IMMEDIATE
 
 #---------------------------------------------------------------------- 
 
-# ( -- a ) ;# ( AFT ) goes forward always
-def_word "aft" hash_AFT IMMEDIATE 
+# ( -- a ) ;# ( AHEAD ) goes forward always
+def_word "aft" hash_AHEAD IMMEDIATE 
 	.word xt_drop
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_mark 
@@ -282,6 +267,11 @@ def_word "if" hash_IF IMMEDIATE
 	.word xt_mark 
 	.word xt_exit 
  
+# ( -- ) ;# ( ENDIF ) 
+def_word "endif" hash_ENDIF IMMEDIATE 
+	.word xt_fore
+	.word xt_exit 
+ 
 # ( -- ) ;# ( ELSE ) 
 def_word "else" hash_ELSE IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
@@ -293,15 +283,10 @@ def_word "then" hash_THEN IMMEDIATE
 	.word xt_fore
 	.word xt_exit 
  
-# ( -- ) ;# ( ENDIF ) 
-def_word "endif" hash_ENDIF IMMEDIATE 
-	.word xt_fore
-	.word xt_exit 
- 
 #---------------------------------------------------------------------- 
  
 # ( w1 w2 -- ; -- w2 w1 ) ;# ( DO ) makes a count up
-# limit start DO
+# limit index DO
 def_word "do" hash_DO IMMEDIATE 
 	.word xt_here 
 	.word xt_lit, xt_tor, xt_comma 
@@ -310,12 +295,16 @@ def_word "do" hash_DO IMMEDIATE
 
 # as :noname 
 do_pass:
+	# counter
+	.word xt_lit, xt_rto, xt_comma 
 	.word xt_lit, xt_plus, xt_comma 
 	.word xt_lit, xt_over, xt_comma 
 	.word xt_lit, xt_over, xt_comma 
 	.word xt_lit, xt_equ, xt_comma 
+
 	.word xt_lit, xt_zbranch, xt_comma 
 	.word xt_here, xt_minus, xt_comma 
+do_drops:
 	.word xt_lit, xt_drop, xt_comma 
 	.word xt_lit, xt_drop, xt_comma 
 	.word xt_exit 
@@ -326,8 +315,6 @@ def_word "loop" hash_LOOP IMMEDIATE
 	.word xt_lit, xt_rto, xt_comma 
 	# increment
 	.word xt_lit, xt_one, xt_comma 
-	# counter
-	.word xt_lit, xt_rto, xt_comma 
 	# do
 	.word do_pass
 	.word xt_exit
@@ -338,8 +325,6 @@ def_word "ploop" hash_PLOOP IMMEDIATE
 	.word xt_lit, xt_rto, xt_comma 
 	# increment
 	.word xt_lit, xt_swap, xt_comma
-	# counter
-	.word xt_lit, xt_rto, xt_comma 
 	# do
 	.word do_pass
 	.word xt_exit
@@ -354,6 +339,7 @@ def_word "j" hash_J IMMEDIATE
  	.word xt_lit, xt_rto, xt_comma 
 	.word xt_lit, xt_rto, xt_comma 
 	.word xt_lit, xt_rat, xt_comma 
+
 	.word xt_lit, xt_swap, xt_comma 
 	.word xt_lit, xt_tor, xt_comma 
 	.word xt_lit, xt_swap, xt_comma 
@@ -364,14 +350,15 @@ def_word "j" hash_J IMMEDIATE
 def_word "leave" hash_LEAVE IMMEDIATE 
 	.word xt_lit, xt_rto, xt_comma 
 	.word xt_lit, xt_rto, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
+	.word do_drops
 	.word xt_exit 
 	 
-# ( w -- ; -- w ) ;# ( FOR ) make a count down
+#---------------------------------------------------------------------- 
+
+# ( w -- ; -- w ) ;# ( FOR ) make a count down to zero
 def_word "for" hash_FOR IMMEDIATE 
-	.word xt_here 
-	.word xt_lit, xt_tor, xt_comma 
+	.word xt_lit, 0x0, xt_comma
+	.word xt_do
 	.word xt_exit 
  
 # ( -- ; w -- w ) ;# ( NEXT ) 
@@ -379,10 +366,12 @@ def_word "next" hash_NEXT IMMEDIATE
 	.word xt_lit, xt_rto, xt_comma 
 	.word xt_lit, xt_one, xt_comma 
 	.word xt_lit, xt_minus, xt_comma 
+
 	.word xt_lit, xt_dup, xt_comma 
 	.word xt_lit, xt_gbranch, xt_comma 
 	.word xt_here, xt_minus, xt_comma 
-	.word xt_lit, xt_drop, xt_comma 
+
+	.word do_drops
 	.word xt_exit 
  
 #---------------------------------------------------------------------- 
@@ -440,9 +429,6 @@ def_word "semis" hash_SEMIS IMMEDIATE
 	.word xt_lit, xt_exit, xt_comma 
 	.word xt_exit 
  
-.equ IMME_FLAG, 0x80000000
-.equ MASK_FLAG, 0x7FFFFFFF
-
 # crude token consumes a word between spaces 
 # return the hash of a token word
 # ( -- h ) #; ( word ) 
@@ -461,39 +447,26 @@ def_word "hash" hash_HASH
 	.word xt_inverse, xt_until 
 	.word xt_drop, xt_drop 
         # clear hash high bit 
-	.word xt_lit, MASK_FLAG, xt_rto, xt_and 
+	.word xt_lit, MASK_IMM, xt_rto, xt_and 
 	.word xt_exit 
  
-# ( h -- h v ) #; ( FIND ) 0 not found, 1 immediate, -1 common 
+# ( h -- a | 0 ) #; ( FIND ) 0 not found 
 def_word "find" hash_FIND 
-	.word xt_tor
 	.word xt_latest, xt_fetch 
 	# find the hash 
 	.word xt_begin 
 	.word xt_dup, xt_while
 	# take the hash
-	.word xt_dup, xt_cell, xt_plus, xt_fetch 
+	.word xt_over, xt_over
+	.word xt_cell, xt_plus, xt_fetch 
 	# mask immediate flag
-	.word xt_lit, MASK_FLAG, xt_and 
-	# compare
-	.word xt_rat, xt_equ, xt_if
-	# found
-	.word xt_rto, xt_drop 
-	# take the hash
-	.word xt_dup, xt_cell, xt_plus, xt_fetch 
-	# check immediate flag
-	.word xt_lit, IMME_FLAG, xt_and 
-	# immediate word
-	.word xt_if, xt_lit, 1
-	# common word
-	.word xt_else, xt_lit, -1
-	.word xt_then, xt_exit
+	.word xt_lit, MASK_IMM, xt_and, xt_equ 
+	# found 
+	.word xt_if, xt_swap, xt_drop, xt_exit 
 	# not found
-	.word xt_then, xt_fetch
-	# next link
-	.word xt_repeat
+	.word xt_then, xt_fetch, xt_repeat
 	# missed 
-	.word xt_drop, xt_rto, xt_lit, 0
+	.word xt_swap, xt_drop 
 	.word xt_exit 
  
 # ( -- ) #; ( :ISNAME ) makes a header  
@@ -507,11 +480,11 @@ def_word "noname" hash_NONAME
 	.word xt_here, xt_lbrack 
 	.word xt_exit 
  
-# ( -- h ) #; ( ' ) tick, return the xt of a word 
+# ( -- xt ) #; ( ' ) tick, return the xt of a word 
 def_word "tick" hash_TICK IMMEDIATE 
-	.word xt_hash, xt_find 
-	.word xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
-	.word xt_else, xt_abort 
+	.word xt_hash, xt_find  
+	.word xt_dup, xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
+	.word xt_else, xt_drop, xt_abort 
 	.word xt_then 
 	.word xt_exit 
  
@@ -545,11 +518,33 @@ def_word "djb2" hash_DJB2
 	.word xt_plus, xt_xor 
 	.word xt_exit 
  
-# ( -- ) #; ( ABORT ) 
-def_word "abort" hash_ABORT  
-	.word xt_lit, -1
-	.word xt_exit 
- 
+#---------------------------------------------------------------------- 
+.equ hash_INTERPRET, 0x217106B2 #; ( INTERPRET )
+def_word "interpret" hash_INTERPRET
+	.word xt_begin, xt_hash, xt_find
+	# found ?
+	.word xt_dup, xt_if 
+	# take the hash
+	.word xt_dup, xt_cell, xt_plus, xt_fetch 
+	# check immediate flag
+	.word xt_lit, FLAG_IMM, xt_and 
+	# immediate word
+	.word xt_if, xt_execute
+	.word xt_else, xt_state, xt_fetch
+	.word xt_if, xt_compile
+	.word xt_then, xt_execute
+	# common word
+	.word xt_then 
+	# check if number ?
+	.word xt_abort
+	.word xt_again
+	.word xt_exit
+
+.equ hash_COMPILE, 0x2FA52C94 #; ( COMPILE )
+def_word "compile" hash_COMPILE
+	.word xt_comma
+	.word xt_exit
+
 #---------------------------------------------------------------------- 
  
 # ( -- ) #; ( CREATE ) 
@@ -596,6 +591,8 @@ def_word "array" hash_ARRAY
 	.word xt_does, xt_plus, xt_fetch
 	.word xt_exit
 
+#---------------------------------------------------------------------- 
+
 # ( w -- ) #; ( VALUE ) 
 def_word "value" hash_VALUE 
 	.word xt_constant
@@ -611,6 +608,8 @@ def_word "to" hash_TO
 	.word xt_else, xt_store
 	.word xt_then
 	.word xt_exit
+
+#---------------------------------------------------------------------- 
 
 # ( -- ) #; ( DEFER ) 
 def_word "defer" hash_DEFER 
@@ -650,64 +649,99 @@ def_word "backslash" hash_BSLASH
 	.word xt_lit, '\n', xt_scank, xt_drop
 	.word xt_exit
 
-# ( -- ) #; ( +! ) plus and store
-def_word "plustore" hash_PLUSTORE
-	.word xt_dup, xt_fetch, xt_plus, xt_swap, xt_store
-	.word xt_exit
-
-# ( -- ) #; ( NIP ) 
-def_word "nip" hash_NIP
-	.word xt_swap, xt_drop
-	.word xt_exit
-
-# ( -- ) #; ( TUCK )
-def_word "tuck" hash_TUCK
-	.word xt_dup, xt_tor, xt_swap, xt_rto
-	.word xt_exit
-
-# ( w -- w | w w  ) #; ( ?DUP ) 
-def_word "qdup" hash_QDUP
-	.word xt_dup, xt_if, xt_dup, xt_then
-	.word xt_exit
-
 #---------------------------------------------------------------------- 
+# \ two cells stuff
 
+.equ hash_2DUP, 0x7C5447D6 #; ( 2DUP )
+.equ hash_2DROP, 0x06DD1C3E #; ( 2DROP )
+.equ hash_2SWAP, 0x06D56D02 #; ( 2SWAP )
+.equ hash_2OVER, 0x06E00A99 #; ( 2OVER )
+
+.equ hash_2STORE, 0x00596856 #; ( 2! )
+.equ hash_2FETCH, 0x00596837 #; ( 2@ )
+
+.equ hash_2TOR, 0x0B86713B #; ( 2>R )
+.equ hash_2RTO, 0x0B866CFB #; ( 2R> )
+.equ hash_2RAT, 0x0B866C85 #; ( 2R@ )
+
+.equ hash_2NIP, 0x7C545140 #; ( 2NIP )
+
+.equ hash_2DIV, 0x00596858 #; ( 2/ )
+.equ hash_2MUL, 0x0059685D #; ( 2* )
+
+# ( w1 w2 -- w1 w2 w1 w2 ) #; ( 2DUP )
 def_word "twodup" hash_2DUP
 	.word xt_over, xt_over
 	.word xt_exit
 
+# ( w1 w2 -- ) #; ( 2DROP )
 def_word "twodrop" hash_2DROP
 	.word xt_drop, xt_drop
 	.word xt_exit
 
+# ( w1 w2 w3 w4 -- w3 w4 w1 w2 ) #; ( 2DROP )
 def_word "twoswap" hash_2SWAP
 	.word xt_rot, xt_tor, xt_rot, xt_rto
 	.word xt_exit
 
-def_word "twonip" hash_2NIP
-	.word xt_nip, xt_nip
+# ( w1 w2 w3 w4 -- w1 w2 w3 w4 w1 w2 ) #; ( 2OVER )
+def_word "twoover" hash_2OVER
+        .word xt_tor, xt_over, xt_over, xt_rto
+        .word xt_swap, xt_tor, xt_swap, xt_rto
 	.word xt_exit
 
+# ( w1 w2 -- u1 u2 ) #; ( 2FETCH )
 def_word "twofetch" hash_2FETCH
 	.word xt_dup, xt_cell, xt_plus, xt_fetch, xt_swap, xt_fetch
 	.word xt_exit
 
+# ( w1 w2 w3 w4 -- ) #; ( 2STORE )
 def_word "twostore" hash_2STORE
 	.word xt_swap, xt_over, xt_store, xt_cell, xt_plus, xt_store
 	.word xt_exit
 
+# ( w1 w2 -- ; -- w2 w1 ) #; ( 2>R )
 def_word "twotor" hash_2TOR
 	.word xt_swap, xt_tor, xt_tor
 	.word xt_exit
 
+# (  -- w1 w2 ; w2 w1 -- ) #; ( 2R> )
 def_word "tworto" hash_2RTO
 	.word xt_rto, xt_rto, xt_swap
 	.word xt_exit
 
+# ( -- w1 w2 ; w2 w1 -- w2 w1 ) #; ( 2R@ )
 def_word "tworat" hash_2RAT
 	.word xt_rto, xt_rto, xt_twodup, xt_tor, xt_tor, xt_swap
 	.word xt_exit
 
+# ( w1 w2 w3 w4 -- w3 w4 ) #; ( 2NIP )
+def_word "twonip" hash_2NIP
+	.word xt_nip, xt_nip
+	.word xt_exit
+
+#---------------------------------------------------------------------- 
+
+# ( w -- w/2 ) #; ( 2/ )
+def_word "twodiv" hash_2DIV
+	.word xt_lit, 1
+	.word xt_rshift
+	.word xt_exit
+
+# ( w -- w*2 ) #; ( 2* )
+def_word "twomul" hash_2MUL
+	.word xt_lit, 1
+	.word xt_lshift
+	.word xt_exit
+
+#---------------------------------------------------------------------- 
+
+.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
+
+def_word "cells" hash_CELLS
+	.word xt_lit, 2
+	.word xt_lshift
+	.word xt_exit
 
 #---------------------------------------------------------------------- 
 
@@ -736,25 +770,29 @@ def_word "off" hash_OFF
 
 #---------------------------------------------------------------------- 
 
-.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
-.equ hash_TWODIV, 0x00596858 #; ( 2/ )
-.equ hash_TWOMUL, 0x0059685D #; ( 2* )
+.equ hash_PLUSTORE, 0x0059676F #; ( +! )
+.equ hash_NIP, 0x0B87D312 #; ( NIP )
+.equ hash_TUCK, 0x7C878D2C #; ( TUCK )
+.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
 
-def_word "cells" hash_CELLS
-	.word xt_lit, 2
-	.word xt_lshift
+# ( -- ) #; ( +! ) plus and store
+def_word "plustore" hash_PLUSTORE
+	.word xt_dup, xt_fetch, xt_plus, xt_swap, xt_store
 	.word xt_exit
 
-# ( w -- w*2 ) #; ( 2* )
-def_word "twomul" hash_TWOMUL
-	.word xt_lit, 1
-	.word xt_lshift
+# ( -- ) #; ( NIP ) 
+def_word "nip" hash_NIP
+	.word xt_swap, xt_drop
 	.word xt_exit
 
-# ( w -- w/2 ) #; ( 2/ )
-def_word "twodiv" hash_TWODIV
-	.word xt_lit, 1
-	.word xt_rshift
+# ( -- ) #; ( TUCK )
+def_word "tuck" hash_TUCK
+	.word xt_dup, xt_tor, xt_swap, xt_rto
+	.word xt_exit
+
+# ( w -- w | w w  ) #; ( ?DUP ) 
+def_word "qdup" hash_QDUP
+	.word xt_dup, xt_if, xt_dup, xt_then
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
@@ -787,7 +825,7 @@ def_word "throw" hash_THROW
 	.word xt_then
 	.word xt_exit
 	
-def_word "abortexp" hash_ABORT
+def_word "abort" hash_ABORT
 	.word xt_lit, -1, xt_throw
 	.word xt_exit
 

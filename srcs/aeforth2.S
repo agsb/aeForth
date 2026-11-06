@@ -52,8 +52,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # aeForth with MITC, 
 #
 # Using 
-#         Minimal Indirect Thread Code
+#        Minimal Indirect Thread Code
 #        ip, sp, rp, tos, in dedicated registers
+#	 usr, nib in dedicated register
 #        nos, trd, fth as generic registers
 #        hash of words in uppercase
 #        no buffer input.
@@ -91,11 +92,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth instruction pointer, reserved
 #define ipt s2
 
+#----------------------------------------------------------------------
+
 # forth start of user area variables
 #define usr s3
 
 # forth start of compiled dictionary
 #define nib s4 
+
+#----------------------------------------------------------------------
 
 # the t0, t1, t2 are used to count forth word executions
 
@@ -109,11 +114,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-# as FORTH 1983
+# essential
 
-.equ FALSE, 0
+.equ FALSE, 0x00000000
 
-.equ TRUE, -1
+.equ TRUE,  0xFFFFFFFF
+
+.equ NAN,   0x80000000
+
+# flag for words 
+
+.equ IMMEDIATE, NAN
 
 # states
 
@@ -137,7 +148,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # +2147483647
 .equ MASK_IMM, 0x7FFFFFFF
 
-# user parameter stack: void sp0 rp0 last heap pike state base temp(8)
+#----------------------------------------------------------------------
+
+# order in user parameter stack
+
+#----------------------------------------------------------------------
 
 # void start
 .equ VOID, 0 
@@ -163,34 +178,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # base radix for numbers, for future use
 .equ BASE, 7 
 
-# allow some 8 cells for extras scratch
+#----------------------------------------------------------------------
 
-.equ params, 16
+# LINK pointer
+.equ LINK, 8
+
+# task pointer
+.equ TASK, 9
+
+# user pointer
+.equ USER, 10
+
+# next pointer
+.equ IPTR, 11
+
+#----------------------------------------------------------------------
+
+# allow more cells for extras scratch
+
+.equ params, 32
 
 # user variables
 
 .equ usr_size, params * CELL
-
-# Moore uses 22 deep stacks, aeForth uses 32 in round-robin
-
-.equ stacks, 32
-
-# data stack
-
-.equ sp_size, stacks * CELL
-
-# return stack
-
-.equ rp_size, stacks * CELL
-
-#----------------------------------------------------------------------
-# essential
-#
-.equ FALSE, 0x00000000
-.equ TRUE,  0xFFFFFFFF
-.equ NAN,   0x80000000
-
-.equ IMMEDIATE, NAN
 
 #----------------------------------------------------------------------
 
@@ -228,6 +238,19 @@ xt_\label:
 # the stack must start at a multiple of it as 1*10000000
 # magics by -1 * 32 * CELL == NOT(32*CELL)
 #
+
+.equ stacks, 32
+
+# data stack
+
+.equ sp_size, stacks * CELL
+
+# return stack
+
+.equ rp_size, stacks * CELL
+
+# moves backwards
+
 .equ stack_deep, (-1 * stacks * CELL) 
 
 # generic push into memory
@@ -249,30 +272,35 @@ xt_\label:
 .section .data
 .p2align 4, 0x0
 
-# There is no spoon.
 
 #----------------------------------------------------------------------
-# but always in RAM :)
+# There is no spoon.
 .section .bss
-
-# common align
-.p2align 4, 0x0
-
-# common user structure and dictionary
-_user:
-.skip usr_size
-
-# for use of round robin, stacks must be 128 bytes align,(deep)*(CELL)
-# 2^7, 32 * 4, deep * CELL. 
-
 .option push
 .option norelax 
 
+#----------------------------------------------------------------------
+# Note:
+#
+# for use of round robin, stacks must be bytes aligned to deep * CELL
+# (deep)*(CELL) is 32 * 4, 128 which is masked by 1*101111111 
+#
+# user_size + sp_size + rp_size must be less than 2024 bytes
+# because code uses addi (+12bits) to setup offset address
+
+#----------------------------------------------------------------------
+# common user structure and some spare space
+_user:
+.p2align 7, 0x0
+.skip usr_size
+
+#----------------------------------------------------------------------
 # data stack grows backward, bottom
 .p2align 7, 0x0
 .skip sp_size
 _sp0:
 
+#----------------------------------------------------------------------
 # return stack grows backward, bottom
 .p2align 7, 0x0
 .skip rp_size
@@ -280,13 +308,11 @@ _rp0:
 
 .option pop
 
+#----------------------------------------------------------------------
+# now the main forth dictionary
 # common align
 .p2align 4, 0x0
 
-#----------------------------------------------------------------------
-# NOTE:
-# user_size + sp_size + rp_size must be less than 2024 bytes
-# because code uses addi (+12bits) to setup offset address
 #----------------------------------------------------------------------
 
 # just for sake
@@ -316,7 +342,6 @@ main:
 #----------------------------------------------------------------------
 # do what need be only once
 
-cold:
 # load constant pointer address
 
         la usr, _user
@@ -340,7 +365,10 @@ cold:
 #----------------------------------------------------------------------
 # do what need for setup
 
-warm:
+# hold void
+        mv tos, zero
+        sw tos, VOID (usr)
+
 # hold sp0
         la tos, _sp0
         sw tos, SPTR (usr)
@@ -369,23 +397,22 @@ warm:
         lui tos, 0x10
         sw tos, BASE (usr)
 
-#---------------------------------------------------------------------
-abort:
 # reset data stack
 
         lw tos, SPTR (usr) 
         mv spt, tos
 
-#---------------------------------------------------------------------
-quit:
 # reset return stack
 
         lw tos, RPTR (usr)
         mv rpt, tos
 
-        ret 
+# state of forth, aka STATE
 
-#---------------------------------------------------------------------
+        lui tos, EXECUTE
+        sw tos, STAT (usr)
+
+        ret 
 
 #---------------------------------------------------------------------
 # A fake header at end of dictionary linked list
@@ -399,31 +426,24 @@ _linked:
 
 .equ hash_RESET, 0x0DA3B330 #; ( RESET )
 def_word "reset" hash_RESET
-
 _start:
 
         call main
         
-# state of forth, aka STATE
-
-        lui tos, EXECUTE
-        sw tos, STAT (usr)
-
-        # zzzz must be the interpreter zzzz
-
-        la ipt, compiled_last
-
-        end_primitive
+        la ipt, xt_interpret
+	
+	j next
 
 #----------------------------------------------------------------------i
 
 # primitives
 #include "assembled.S"
 
-# getc, putc, bye
+#---------------------------------------------------------------------
+# system getc, putc, bye
 #include "ecalls.S"
 
-# memory, file and directory words
+# system memory, file and directory words
 #include "efiles.S"
 
 #---------------------------------------------------------------------
@@ -431,7 +451,7 @@ _start:
 .set assembled_last, 9999b
 #---------------------------------------------------------------------
 
-# compound
+# composed words
 #include "compiled.S"
 
 #---------------------------------------------------------------------
