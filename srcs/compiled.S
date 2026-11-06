@@ -107,7 +107,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ hash_POSTPONE, 0x7A137C29 #; ( POSTPONE ) 
 
-.equ hash_ABORT, 0x0C4FFEAF #; ( ABORT )
 .equ hash_QUIT, 0x7C86F95C #; ( QUIT ) 
 
 .equ hash_LBRACK, 0x0002B5FE #; ( [ )
@@ -142,6 +141,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_2TOR, 0x0B86713B #; ( 2>R )
 .equ hash_2RTO, 0x0B866CFB #; ( 2R> )
 .equ hash_2RAT, 0x0B866C85 #; ( 2R@ )
+.equ hash_2NIP, 0x7C545140 #; ( 2NIP )
 
 .equ hash_TOCODE, 0x076E91B2 #; ( :CODE )
 .equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
@@ -149,6 +149,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_PLUSTORE, 0x0059676F #; ( +! )
 .equ hash_NIP, 0x0B87D312 #; ( NIP )
 .equ hash_TUCK, 0x7C878D2C #; ( TUCK )
+.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
 
 #.equ hash_DIGIT, 0x0C62B132 #; ( DIGIT )
 .equ hash_TODIGIT, 0x6C6CCCEC #; ( >DIGIT ) 
@@ -439,6 +440,9 @@ def_word "semis" hash_SEMIS IMMEDIATE
 	.word xt_lit, xt_exit, xt_comma 
 	.word xt_exit 
  
+.equ IMME_FLAG, 0x80000000
+.equ MASK_FLAG, 0x7FFFFFFF
+
 # crude token consumes a word between spaces 
 # return the hash of a token word
 # ( -- h ) #; ( word ) 
@@ -457,31 +461,39 @@ def_word "hash" hash_HASH
 	.word xt_inverse, xt_until 
 	.word xt_drop, xt_drop 
         # clear hash high bit 
-	.word xt_nan, xt_inverse, xt_rto, xt_and 
+	.word xt_lit, MASK_FLAG, xt_rto, xt_and 
 	.word xt_exit 
  
-.equ IMMD_FLAG 0x80000000
-.equ MASK_FLAG 0x7FFFFFFF
-
 # ( h -- h v ) #; ( FIND ) 0 not found, 1 immediate, -1 common 
 def_word "find" hash_FIND 
 	.word xt_tor
 	.word xt_latest, xt_fetch 
 	# find the hash 
 	.word xt_begin 
-	.word xt_dup, xt_cell, xt_plus, xt_fetch
-	.word xt_dup, xt_lit, MASK_FLAG, xt_and
+	.word xt_dup, xt_while
+	# take the hash
+	.word xt_dup, xt_cell, xt_plus, xt_fetch 
+	# mask immediate flag
+	.word xt_lit, MASK_FLAG, xt_and 
+	# compare
 	.word xt_rat, xt_equ, xt_if
-	.word xt_rto, xt_drop, xt_nip
-	.word xt_dup, xt_cell, xt_plus, xt_fetch
-	.word xt_lit, IMMD_FLAG, xt_and
+	# found
+	.word xt_rto, xt_drop 
+	# take the hash
+	.word xt_dup, xt_cell, xt_plus, xt_fetch 
+	# check immediate flag
+	.word xt_lit, IMME_FLAG, xt_and 
 	# immediate word
 	.word xt_if, xt_lit, 1
 	# common word
 	.word xt_else, xt_lit, -1
 	.word xt_then, xt_exit
+	# not found
 	.word xt_then, xt_fetch
+	# next link
 	.word xt_repeat
+	# missed 
+	.word xt_drop, xt_rto, xt_lit, 0
 	.word xt_exit 
  
 # ( -- ) #; ( :ISNAME ) makes a header  
@@ -535,6 +547,7 @@ def_word "djb2" hash_DJB2
  
 # ( -- ) #; ( ABORT ) 
 def_word "abort" hash_ABORT  
+	.word xt_lit, -1
 	.word xt_exit 
  
 #---------------------------------------------------------------------- 
@@ -616,14 +629,14 @@ def_word "is" hash_IS
 # ( c -- ) #; ( SKIPK ) skip while equal key 
 def_word "skipk" hash_SKIPK
 	.word xt_begin, xt_key, xt_over, xt_over, xt_equ
-	.word xt_if, xt_drop, xt_false xt_else, xt_true, xt_then
+	.word xt_if, xt_drop, xt_false, xt_else, xt_true, xt_then
 	.word xt_until 
 	.word xt_exit
 
 # ( c -- ) #; ( SCANK ) scan while not equal key
 def_word "scank" hash_SCANK
 	.word xt_begin, xt_key, xt_over, xt_over, xt_equ, xt_inverse
-	.word xt_if, xt_drop, xt_false xt_else, xt_true, xt_then
+	.word xt_if, xt_drop, xt_false, xt_else, xt_true, xt_then
 	.word xt_until 
 	.word xt_exit
 
@@ -650,6 +663,11 @@ def_word "nip" hash_NIP
 # ( -- ) #; ( TUCK )
 def_word "tuck" hash_TUCK
 	.word xt_dup, xt_tor, xt_swap, xt_rto
+	.word xt_exit
+
+# ( w -- w | w w  ) #; ( ?DUP ) 
+def_word "qdup" hash_QDUP
+	.word xt_dup, xt_if, xt_dup, xt_then
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
@@ -744,7 +762,7 @@ def_word "twodiv" hash_TWODIV
 
 .equ hash_HANDLER, 0x37B8B03D #; ( HANDLER ) 
 .equ hash_CATCH, 0x0CB9F7F8 #; ( CATCH ) 
-.equ hash_TROW, 0x7C879A3B #; ( TROW ) 
+.equ hash_THROW, 0x0D847D13 #; ( THROW )
 .equ hash_ABORT, 0x0C4FFEAF #; ( ABORT ) 
 
 def_word "handler" hash_HANDLER
@@ -762,14 +780,14 @@ def_word "catch" hash_CATCH
 
 def_word "throw" hash_THROW
 	.word xt_qdup, xt_if
-	.word x_handler, xt_fetch, xt_rpto
+	.word xt_handler, xt_fetch, xt_rpto
 	.word xt_rto, xt_handler, xt_store
 	.word xt_rto, xt_swap, xt_tor
 	.word xt_spto, xt_drop, xt_tor
 	.word xt_then
 	.word xt_exit
 	
-def_word "abort" hash_ABORT
+def_word "abortexp" hash_ABORT
 	.word xt_lit, -1, xt_throw
 	.word xt_exit
 
