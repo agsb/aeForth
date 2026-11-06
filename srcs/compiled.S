@@ -47,7 +47,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */ 
  
- 
 #---------------------------------------------------------------------- 
 # AEFORTH2 pre-compiled words 
 #---------------------------------------------------------------------- 
@@ -56,8 +55,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_HERE, 0x7C857F9F #; ( HERE ) 
 .equ hash_ALLOT, 0x0C53195F #; ( ALLOT ) 
 .equ hash_COMMA, 0x0002B589 #; ( , ) 
-.equ hash_TICK, 0x0002B582 #; ( ' ) 
 .equ hash_LITERAL, 0x738774CE #; ( LITERAL )
+
+.equ hash_LBRACK, 0x0002B5FE #; ( [ )
+.equ hash_RBRACK, 0x0002B5F8 #; ( ] )
+.equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
+.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 
 .equ hash_BEGIN, 0x0C8280A2 #; ( BEGIN ) 
 .equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
@@ -93,37 +96,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ hash_TOKEN, 0x0D8960FE #; ( TOKEN ) 
 .equ hash_HEADER, 0x33DCB49A #; ( HEADER ) 
-
 .equ hash_PAGE, 0x7C89F136 #; ( PAGE ) 
 .equ hash_LINE, 0x7C833C8B #; ( LINE ) 
 .equ hash_WORD, 0x7C888E6B #; ( WORD )
 
-.equ hash_COLON, 0x0002B59F #; ( : ) 
-.equ hash_SEMIS, 0x0002B59E #; ( ; ) 
-.equ hash_HASH, 0x7C8590B7 #; ( HASH )
-.equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
-.equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
 .equ hash_ISNAME, 0x05BEEF42 #; ( :ISNAME )
 .equ hash_NONAME, 0x7C2B3679 #; ( :NONAME )
 
+.equ hash_COLON, 0x0002B59F #; ( : ) 
+.equ hash_SEMIS, 0x0002B59E #; ( ; ) 
+
+.equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
+.equ hash_HASH, 0x7C8590B7 #; ( HASH )
+.equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
+
+.equ hash_TICK, 0x0002B582 #; ( ' ) 
 .equ hash_POSTPONE, 0x7A137C29 #; ( POSTPONE ) 
 
 .equ hash_QUIT, 0x7C86F95C #; ( QUIT ) 
-
-.equ hash_LBRACK, 0x0002B5FE #; ( [ )
-.equ hash_RBRACK, 0x0002B5F8 #; ( ] )
-.equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
-.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
+.equ hash_INTERPRET, 0x217106B2 #; ( INTERPRET )
 
 .equ hash_SCANK, 0x0DDC5111 #; ( SCANK )
 .equ hash_SKIPK, 0x0DE08FCF #; ( SKIPK )
 .equ hash_BSLASH, 0x0002B5F9 #; ( \ )
 .equ hash_LPAREM, 0x0002B58D #; ( ( )
-
-.equ hash_VALUE, 0x0D5DEAAE #; ( VALUE )
-.equ hash_TO, 0x0059745E #; ( TO )
-.equ hash_DEFER, 0x0C605B35 #; ( DEFER )
-.equ hash_IS, 0x0059733F #; ( IS )
 
 .equ hash_CREATE, 0x24DC0181 #; ( CREATE )
 .equ hash_DOES, 0x0C6804C6 #; ( DOES> )
@@ -133,8 +129,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_BUFFER, 0x1DF37CE5 #; ( BUFFER )
 .equ hash_ARRAY, 0x0C587A5C #; ( ARRAY )
 
-.equ hash_TOCODE, 0x076E91B2 #; ( :CODE )
-.equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
+.equ hash_VALUE, 0x0D5DEAAE #; ( VALUE )
+.equ hash_TO, 0x0059745E #; ( TO )
+.equ hash_DEFER, 0x0C605B35 #; ( DEFER )
+.equ hash_IS, 0x0059733F #; ( IS )
 
 #.equ hash_DIGIT, 0x0C62B132 #; ( DIGIT )
 .equ hash_TODIGIT, 0x6C6CCCEC #; ( >DIGIT ) 
@@ -162,6 +160,11 @@ def_word "comma" hash_COMMA
 	.word xt_here, xt_store, xt_cell, xt_allot 
 	.word xt_exit 
  
+# ( -- ) #; ( LITERAL )  
+def_word "literal" hash_LITERAL
+	.word xt_lit, xt_lit, xt_comma, xt_comma
+	.word xt_exit
+
 # ( -- ) #; ( [ )  
 def_word "lbrack" hash_LBRACK IMMEDIATE
 	.word xt_lit, xt_nil, xt_state, xt_store
@@ -172,17 +175,24 @@ def_word "rbrack" hash_RBRACK
 	.word xt_lit, xt_one, xt_state, xt_store
 	.word xt_exit
 
-# ( -- ) #; ( LITERAL )  
-def_word "literal" hash_LITERAL
-	.word xt_lit, xt_lit, xt_comma, xt_comma
-	.word xt_exit
-
 #---------------------------------------------------------------------- 
-/*
-	: SOMEWORD :CODE ~ place opcodes ~ CODE; ;
-*/
 
-# ( w -- ) #; #; ( :CODE ), does a native call 
+.equ hash_DOCODE, 0x7C81D9A8 #; ( CODE )
+.equ hash_END-CODE, 0x4507E16A #; ( END-CODE )
+.equ hash_TOCODE, 0x075D9A73 #; ( ;CODE )
+.equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
+
+# ( -- ) #; #; ( CODE ), starts native code, ZZZZ 
+# enable ASM vocabulary
+def_word "tocode" hash_DOCODE 
+	.word xt_exit 
+
+# ( -- ) #; #; ( END-CODE ), ends native code, ZZZZ 
+# disable ASM vocabulary
+def_word "tocode" hash_ENDCODE 
+	.word xt_exit 
+
+# ( w -- ) #; #; ( ;CODE ), does a native call 
 def_word "tocode" hash_TOCODE 
 	.word xt_rto, xt_perform
 	.word xt_exit 
@@ -190,18 +200,18 @@ def_word "tocode" hash_TOCODE
 # ( w -- ) #; #; ( CODE; ), does a native return 
 # in RISCV ret is jalr zero, 0 (ra) 
 .equ RET, 0x00008067
-def_word "codeto" hash_TOCODE IMMEDIATE
+def_word "codeto" hash_CODETO IMMEDIATE
 	.word xt_lit, RET, xt_comma
 	.word xt_exit 
 
 #---------------------------------------------------------------------- 
  
-# ( -- a ) ;# ( BEGIN ) start 
+# ( -- a ) ;# ( BEGIN ) mark a backward offset
 def_word "begin" hash_BEGIN IMMEDIATE 
 	.word xt_here 
 	.word xt_exit 
  
-# ( -- a ) ;# ( MARK ) 
+# ( -- a ) ;# ( MARK ) mark a forward offset
 def_word "mark" hash_MARK IMMEDIATE 
 	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
@@ -226,13 +236,13 @@ def_word "again" hash_AGAIN IMMEDIATE
 	.word xt_back 
 	.word xt_exit 
  
-# ( a -- ) ;# ( UNTIL ) goes back, TOS is zero
+# ( a -- ) ;# ( UNTIL ) goes back, when TOS is zero
 def_word "until" hash_UNTIL IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
 	.word xt_back 
 	.word xt_exit 
  
-# ( a -- ) ;# ( WHILST ) goes back, TOS greater than zero
+# ( a -- ) ;# ( WHILST ) goes back, when TOS greater than zero
 def_word "whilst" hash_WHILST IMMEDIATE 
 	.word xt_lit, xt_gbranch, xt_comma
 	.word xt_back 
@@ -241,19 +251,19 @@ def_word "whilst" hash_WHILST IMMEDIATE
 #---------------------------------------------------------------------- 
 
 # ( -- a ) ;# ( AHEAD ) goes forward always
-def_word "aft" hash_AHEAD IMMEDIATE 
+def_word "ahead" hash_AHEAD IMMEDIATE 
 	.word xt_drop
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_mark 
 	.word xt_exit 
  
-# ( -- ) ;# ( WHILE ) goes forward, TOS is zero 
+# ( -- ) ;# ( WHILE ) goes forward, when TOS is zero 
 def_word "while" hash_WHILE IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
 	.word xt_mark 
 	.word xt_exit 
  
-# ( -- ) ;# ( REPEAT ) goes backwaed to begin
+# ( -- ) ;# ( REPEAT ) goes backward to begin
 def_word "repeat" hash_REPEAT IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_swap, xt_back, xt_fore 
@@ -375,7 +385,8 @@ def_word "next" hash_NEXT IMMEDIATE
 	.word xt_exit 
  
 #---------------------------------------------------------------------- 
- 
+# note: each case place a reference into data stack !
+
 # ( -- ) #; ( CASE ) 
 def_word "case" hash_CASE IMMEDIATE 
 	.word xt_nil 
@@ -409,6 +420,17 @@ def_word "endcase" hash_ENDCASE IMMEDIATE
  
 #---------------------------------------------------------------------- 
  
+# ( -- ) #; ( :ISNAME ) makes a header  
+def_word "isname" hash_ISNAME
+	.word xt_latest, xt_fetch, xt_comma 
+	.word xt_hash, xt_comma 
+	.word xt_exit 
+ 
+# ( -- ) #; ( :NONAME ) makes a content 
+def_word "noname" hash_NONAME
+	.word xt_here, xt_lbrack 
+	.word xt_exit 
+ 
 # ( -- ) #; ( : ) aka figforth semicolon 
 def_word "colon" hash_COLON 
 	# save here, panic if semis not follow elsewhere 
@@ -429,7 +451,16 @@ def_word "semis" hash_SEMIS IMMEDIATE
 	.word xt_lit, xt_exit, xt_comma 
 	.word xt_exit 
  
-# crude token consumes a word between spaces 
+# classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
+# ( c w -- w ) #; ( DJB2 ) 
+def_word "djb2" hash_DJB2 
+	.word xt_dup, xt_dup, xt_plus 
+	.word xt_dup, xt_plus, xt_dup, xt_plus 
+	.word xt_dup, xt_plus, xt_dup, xt_plus 
+	.word xt_plus, xt_xor 
+	.word xt_exit 
+ 
+# crude token consumes a unlimited word between spaces 
 # return the hash of a token word
 # ( -- h ) #; ( word ) 
 def_word "hash" hash_HASH
@@ -447,10 +478,12 @@ def_word "hash" hash_HASH
 	.word xt_inverse, xt_until 
 	.word xt_drop, xt_drop 
         # clear hash high bit 
-	.word xt_lit, MASK_IMM, xt_rto, xt_and 
+	.word xt_rto, xt_lit, MASK_IMM, xt_and 
 	.word xt_exit 
  
-# ( h -- a | 0 ) #; ( FIND ) 0 not found 
+# ZZZZ
+
+# ( h -- a | 0 ) #; ( FIND ) 0 is not found 
 def_word "find" hash_FIND 
 	.word xt_latest, xt_fetch 
 	# find the hash 
@@ -467,17 +500,6 @@ def_word "find" hash_FIND
 	.word xt_then, xt_fetch, xt_repeat
 	# missed 
 	.word xt_swap, xt_drop 
-	.word xt_exit 
- 
-# ( -- ) #; ( :ISNAME ) makes a header  
-def_word "isname" hash_ISNAME
-	.word xt_latest, xt_fetch, xt_comma 
-	.word xt_hash, xt_comma 
-	.word xt_exit 
- 
-# ( -- ) #; ( :NONAME ) makes a content 
-def_word "noname" hash_NONAME
-	.word xt_here, xt_lbrack 
 	.word xt_exit 
  
 # ( -- xt ) #; ( ' ) tick, return the xt of a word 
@@ -509,17 +531,6 @@ def_word "recurse" hash_RECURSE IMMEDIATE
 	.word xt_comma
 	.word xt_exit 
  
-# classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
-# ( c w -- w ) #; ( DJB2 ) 
-def_word "djb2" hash_DJB2 
-	.word xt_dup, xt_dup, xt_plus 
-	.word xt_dup, xt_plus, xt_dup, xt_plus 
-	.word xt_dup, xt_plus, xt_dup, xt_plus 
-	.word xt_plus, xt_xor 
-	.word xt_exit 
- 
-#---------------------------------------------------------------------- 
-.equ hash_INTERPRET, 0x217106B2 #; ( INTERPRET )
 def_word "interpret" hash_INTERPRET
 	.word xt_begin, xt_hash, xt_find
 	# found ?
