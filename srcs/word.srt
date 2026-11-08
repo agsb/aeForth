@@ -14,7 +14,6 @@ assembled.S:def_word "dovar" hash_DOVAR
 assembled.S:def_word "drop" hash_DROP 
 assembled.S:def_word "dup" hash_DUP 
 assembled.S:def_word "equ" hash_EQU 
-assembled.S:def_word "execute", hash_EXECUTE 
 assembled.S:def_word "exit" hash_EXIT 
 assembled.S:def_word "false" hash_TRUE 
 assembled.S:def_word "fetch" hash_FETCH 
@@ -93,6 +92,7 @@ compiled.S:def_word "endcase" hash_ENDCASE IMMEDIATE
 compiled.S:def_word "endcode" hash_ENDCODE 
 compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
 compiled.S:def_word "endof" hash_ENDOF IMMEDIATE 
+compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "false" hash_FALSE
 compiled.S:def_word "for" hash_FOR IMMEDIATE 
 compiled.S:def_word "handler" hash_HANDLER
@@ -117,6 +117,11 @@ compiled.S:def_word "mark" hash_MARK IMMEDIATE
 compiled.S:def_word "next" hash_NEXT IMMEDIATE 
 compiled.S:def_word "nip" hash_NIP
 compiled.S:def_word "noname" hash_NONAME
+compiled.S:def_word "number_bin" hash_BIN
+compiled.S:def_word "number_dec" hash_DEC
+compiled.S:def_word "number_hex" hash_HEX
+compiled.S:def_word "number_oct" hash_OCT
+compiled.S:def_word "numberq" hash_NUMBERQ
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "off" hash_OFF
 compiled.S:def_word "on" hash_ON
@@ -138,6 +143,7 @@ compiled.S:def_word "throw" hash_THROW
 compiled.S:def_word "tick" hash_TICK IMMEDIATE 
 compiled.S:def_word "to" hash_TO 
 compiled.S:def_word "tocode" hash_TOCODE 
+compiled.S:def_word "tonumber" hash_TONUMBER
 compiled.S:def_word "true" hash_TRUE
 compiled.S:def_word "tuck" hash_TUCK
 compiled.S:def_word "twodiv" hash_2DIV
@@ -153,6 +159,7 @@ compiled.S:def_word "twostore" hash_2STORE
 compiled.S:def_word "twoswap" hash_2SWAP
 compiled.S:def_word "twotor" hash_2TOR
 compiled.S:def_word "until" hash_UNTIL IMMEDIATE 
+compiled.S:def_word "unto" hash_UNTO IMMEDIATE 
 compiled.S:def_word "value" hash_VALUE 
 compiled.S:def_word "variable" hash_VARIABLE 
 compiled.S:def_word "while" hash_WHILE IMMEDIATE 

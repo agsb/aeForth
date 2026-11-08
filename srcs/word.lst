@@ -33,7 +33,6 @@ assembled.S:def_word "negate", hash_NEGATE
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "rshift", hash_RSHIFT 
 assembled.S:def_word "align", hash_ALIGN 
-assembled.S:def_word "execute", hash_EXECUTE 
 assembled.S:def_word "perform", hash_PERFORM 
 assembled.S:def_word "equ" hash_EQU 
 assembled.S:def_word "less" hash_LESS 
@@ -78,11 +77,12 @@ compiled.S:def_word "again" hash_AGAIN IMMEDIATE
 compiled.S:def_word "until" hash_UNTIL IMMEDIATE 
 compiled.S:def_word "whilst" hash_WHILST IMMEDIATE 
 compiled.S:def_word "mark" hash_MARK IMMEDIATE 
-compiled.S:def_word "if" hash_IF IMMEDIATE 
 compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
+compiled.S:def_word "ahead" hash_AHEAD IMMEDIATE 
+compiled.S:def_word "if" hash_IF IMMEDIATE 
+compiled.S:def_word "unto" hash_UNTO IMMEDIATE 
 compiled.S:def_word "else" hash_ELSE IMMEDIATE 
 compiled.S:def_word "then" hash_THEN IMMEDIATE 
-compiled.S:def_word "ahead" hash_AHEAD IMMEDIATE 
 compiled.S:def_word "while" hash_WHILE IMMEDIATE 
 compiled.S:def_word "repeat" hash_REPEAT IMMEDIATE 
 compiled.S:def_word "aft" hash_AFT IMMEDIATE 
@@ -111,7 +111,14 @@ compiled.S:def_word "immediate" hash_IMMEDIATE
 compiled.S:def_word "immediateq" hash_IMMEDIATEQ
 compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE
 compiled.S:def_word "interpret" hash_INTERPRET
+compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "compile" hash_COMPILE
+compiled.S:def_word "numberq" hash_NUMBERQ
+compiled.S:def_word "number_hex" hash_HEX
+compiled.S:def_word "number_dec" hash_DEC
+compiled.S:def_word "number_oct" hash_OCT
+compiled.S:def_word "number_bin" hash_BIN
+compiled.S:def_word "tonumber" hash_TONUMBER
 compiled.S:def_word "create" hash_CREATE  
 compiled.S:def_word "does" hash_DOES 
 compiled.S:def_word "builds" hash_BUILDS 

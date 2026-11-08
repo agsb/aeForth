@@ -60,8 +60,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_LBRACK, 0x0002B5FE #; ( [ )
 .equ hash_RBRACK, 0x0002B5F8 #; ( ] )
 .equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
-.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 .equ hash_IMMEDIATEQ, 0x112AA8AB #; ( IMMEDIATE? )
+
+.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 
 # controls backwards
 
@@ -79,6 +80,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ hash_AHEAD, 0x0C555E0C #; ( AHEAD )
 .equ hash_IF, 0x0059732A #; ( IF ) 
+.equ hash_UNTO, 0x7C855025 #; ( UNTO )
+
 .equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
 .equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
 
@@ -97,12 +100,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # control loops
 
+# counts up to limit
 .equ hash_DO, 0x0059724E #; ( DO ) 
 .equ hash_LOOP, 0x7C836539 #; ( LOOP ) 
 .equ hash_PLOOP, 0x06344572 #; ( +LOOP )
 .equ hash_I, 0x0002B5EC #; ( I ) 
 .equ hash_J, 0x0002B5EF #; ( J ) 
 .equ hash_LEAVE, 0x0CF13D9E #; ( LEAVE ) 
+
+# counts down to zero
 .equ hash_FOR, 0x0B87B3DE #; ( FOR ) 
 .equ hash_NEXT, 0x7C826702 #; ( NEXT ) 
 
@@ -240,6 +246,7 @@ def_word "until" hash_UNTIL IMMEDIATE
 	.word xt_back 
 	.word xt_exit 
  
+# strange word
 # ( a -- ) ;# ( WHILST ) goes back, when TOS greater than zero
 def_word "whilst" hash_WHILST IMMEDIATE 
 	.word xt_lit, xt_gbranch, xt_comma
@@ -252,6 +259,17 @@ def_word "whilst" hash_WHILST IMMEDIATE
 def_word "mark" hash_MARK IMMEDIATE 
 	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
+
+# ( -- ) ;# ( ENDIF ) 
+def_word "endif" hash_ENDIF IMMEDIATE 
+	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
+	.word xt_exit 
+ 
+# ( -- a ) ;# ( AHEAD ) 
+def_word "ahead" hash_AHEAD IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_mark 
+	.word xt_exit 
  
 # ( -- ) ;# ( IF ) 
 def_word "if" hash_IF IMMEDIATE 
@@ -259,9 +277,11 @@ def_word "if" hash_IF IMMEDIATE
 	.word xt_mark 
 	.word xt_exit 
  
-# ( -- ) ;# ( ENDIF ) 
-def_word "endif" hash_ENDIF IMMEDIATE 
-	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
+# strange word
+# ( -- ) ;# ( UNTO ) 
+def_word "unto" hash_UNTO IMMEDIATE 
+	.word xt_lit, xt_gbranch, xt_comma
+	.word xt_mark 
 	.word xt_exit 
  
 # ( -- ) ;# ( ELSE ) 
@@ -279,12 +299,6 @@ def_word "then" hash_THEN IMMEDIATE
  
 #---------------------------------------------------------------------- 
 
-# ( -- a ) ;# ( AHEAD ) 
-def_word "ahead" hash_AHEAD IMMEDIATE 
-	.word xt_lit, xt_branch, xt_comma
-	.word xt_mark 
-	.word xt_exit 
- 
 # ( -- ) ;# ( WHILE ) goes forward, when TOS is zero 
 def_word "while" hash_WHILE IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
@@ -523,7 +537,7 @@ def_word "tick" hash_TICK IMMEDIATE
 	.word xt_then 
 	.word xt_exit 
  
-# ( -- ) #; ( POSTPONE ) 
+# ( -- ) #; ( POSTPONE ) compile the xt of a word 
 def_word "postpone" hash_POSTPONE IMMEDIATE 
 	.word xt_tick, xt_comma 
 	.word xt_exit 
@@ -534,9 +548,9 @@ def_word "immediate" hash_IMMEDIATE
 	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
 	.word xt_exit 
  
-# ( a -- F ) #; ( IMMEDIATE? ) makes a word immediate 
+# ( a -- a F ) #; ( IMMEDIATE? ) is a word immediate ?
 def_word "immediateq" hash_IMMEDIATEQ
-	.word xt_cell, xt_plus, xt_fetch
+	.word xt_dup, xt_cell, xt_plus, xt_fetch
 	.word xt_lit, FLAG_IMM, xt_and
 	.word xt_exit 
  
@@ -562,17 +576,68 @@ def_word "interpret" hash_INTERPRET
 	.word xt_if, xt_execute
 	.word xt_else, xt_state, xt_fetch
 	.word xt_if, xt_compile
-	.word xt_then, xt_execute
-	# common word
-	.word xt_then 
+	.word xt_else, xt_execute
+	.word xt_then
 	# check if number ?
-	.word xt_abort
+	.word xt_else, xt_numberq, xt_nan, xt_equ
+	.word xt_if, xt_abort
+	.word xt_else, xt_state, xt_fetch
+	.word xt_if, xt_literal
+	.word xt_then 
+	.word xt_then 
+	# next word
 	.word xt_again
+	.word xt_exit
+
+.equ hash_EXECUTE, 0x69224E1A #; ( EXECUTE )
+# ( w1 -- ; -- w2 ) #; ( EXECUTE ), execute a word in Forth
+def_word "execute", hash_EXECUTE
+	.word xt_tor
 	.word xt_exit
 
 .equ hash_COMPILE, 0x2FA52C94 #; ( COMPILE )
 def_word "compile" hash_COMPILE
 	.word xt_comma
+	.word xt_exit
+
+#----------------------------------------------------------------------
+#
+# All numbers are prefixed. but with a space :) $NNN is $ NNN 
+#
+
+.equ hash_NUMBERQ, 0x21C1BA39 #; ( NUMBER? )
+def_word "numberq" hash_NUMBERQ
+	.word xt_exit
+
+.equ hash_HEX, 0x0002B581 #; ( $ )
+def_word "number_hex" hash_HEX
+	.word xt_lit, 16, xt_base, xt_store
+	.word xt_tonumber
+	.word xt_exit
+
+.equ hash_DEC, 0x0002B583 #; ( & )
+def_word "number_dec" hash_DEC
+	.word xt_lit, 10, xt_base, xt_store
+	.word xt_tonumber
+	.word xt_exit
+
+.equ hash_BIN, 0x0002B580 #; ( % )
+.equ hash_NUMBER_BIN, 0x21C1BA39 #; ( % )
+def_word "number_bin" hash_BIN
+	.word xt_lit, 2, xt_base, xt_store
+	.word xt_tonumber
+	.word xt_exit
+
+/* 
+.equ hash_OCT, 0x0002B586 #; ( # )
+def_word "number_dec" hash_OCT
+	.word xt_lit, 8, xt_base, xt_store
+	.word xt_tonumber
+	.word xt_exit
+*/
+
+.equ hash_TONUMBER, 0x58D73858 #; ( >NUMBER )
+def_word "tonumber" hash_TONUMBER
 	.word xt_exit
 
 #---------------------------------------------------------------------- 

@@ -111,10 +111,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_ZLESS, 0x00596809 #; ( 0< )
 .equ hash_ZMORE, 0x0059680B #; ( 0> )
  
-# address 
-.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN ) 
-.equ hash_EXECUTE, 0x69224E1A #; ( EXECUTE ) 
+.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
 .equ hash_PERFORM, 0x15EEB854 #; ( PERFORM ) 
+
+# convert numbers
+
  
 # constants 
 .equ hash_TRUE, 0x7C879BF3 #; ( TRUE ) 
@@ -169,7 +170,7 @@ next:
 .endif
 	# no round-robin limit
 	lw nos, 0 (ipt)
-	addi ipt, ipt,CELL
+	addi ipt, ipt, CELL
 
 # this is the tipping point, above nib only lives compiled words 
 pick: 
@@ -184,12 +185,12 @@ jump:
  
 # aka DOCOL 
 nest: 
-.ifdef beats
-	addi t2, t2, 1
-.endif
 	push ipt rpt 
  
 move: 
+.ifdef beats
+	addi t2, t2, 1
+.endif
 	mv ipt, nos 
 	j next 
  
@@ -413,6 +414,8 @@ def_word "rshift", hash_RSHIFT
          pull nos spt 
          srl tos, nos, tos 
         j next 
+
+#--------------------------------------------------------------------- 
  
 # ( w1 -- w2 ) #; ( ALIGN ) align to cell, word is 4 bytes 
 def_word "align", hash_ALIGN 
@@ -420,15 +423,6 @@ def_word "align", hash_ALIGN
         andi tos, tos, ~(CELL-1) 
         j next 
  
-#--------------------------------------------------------------------- 
-
-# ( w1 -- ; -- w2 ) #; ( EXECUTE ), execute a word in Forth
-#  will do next ipt before ?
-def_word "execute", hash_EXECUTE 
-        push tos rpt 
-	pull tos spt 
-        j next 
-
 # ( w -- ) #; #; ( PERFORM ), does a native jump 
 # at end do: ' jalr zero, 0 (ra) ' to return at j next
 # must preserve ra ipt spt rpt tos usr nib 
@@ -673,3 +667,137 @@ def_word "zbeats" hash_ZBEATS
 
 #--------------------------------------------------------------------- 
 
+/* 
+<ref>
+
+#----------------------------------------------------------------------
+# code a ASCII $0-9A-F hexadecimal to value
+# safe inside Forth words, direct use getc
+# >number
+tonumber:
+
+        save_ra
+
+        # clear result
+
+        li trd, 0
+
+        # load NaN
+
+        lui snd, NAN
+
+        # load word separator, BL is space
+
+        li spc, BL
+
+        # skip spaces
+nskip:
+
+        call _getc
+
+        bleu fst, spc, nskip
+ndigit:
+
+        call digit
+
+        beq fst, snd, nodigit
+
+        slli trd, trd, 4
+
+        add trd, trd, fst
+
+        # scan spaces
+nscan:
+
+        call _getc
+
+        bltu fst, spc, nscan
+
+        bne fst, spc, ndigit
+
+isdigit:
+
+        mv fst, trd
+
+nodigit:
+
+        load_ra
+
+        ret
+
+#---------------------------------------------------------------------
+
+# verify valid digit and convert it
+digit:
+
+100:
+        #; valid digit, 0-9 and A-F
+        addi fst, fst, -48
+        blt fst, zero, 400f
+
+        #; 0-9 ?
+        li hsh, 10
+        blt fst, hsh, 200f
+
+        #; normalize gap ascii 9 to A
+        addi fst, fst, -7
+
+        #; A to F ? No esoteric bases !
+        li hsh, 16
+        bgt fst, hsh, 400f
+
+200:
+# is_digit, okey
+        ret
+
+400:
+# is_error, NaN
+
+        lui fst, NAN
+
+        ret
+
+#---------------------------------------------------------------------
+# code a 32-bit word in 0-9A-F ASCII hexadecimal
+# safe inside Forth words, direct putc
+#
+# number>
+numberto:
+
+        save_ra
+
+        mv t3, fst
+
+        li t4, 58
+
+        li t5, 32
+
+        # rolls
+100:
+        beqz t5, 300f
+
+        addi t5, t5, -4
+
+        srl  a3, t3, t5
+
+        andi a3, a3, 15
+
+        ori  a3, a3, 48
+
+        blt  a3, t4, 200f
+
+        addi a3, a3, 7
+
+200:
+        call _putc
+
+        j 100b
+300:
+
+        load_ra
+
+        ret
+
+#---------------------------------------------------------------------
+
+</ref> */
