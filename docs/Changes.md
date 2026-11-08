@@ -25,6 +25,21 @@
 
 ## Done
 
+07/11/2026
+
+    Using style reference as in 
+        https://github.com/ForthHub/discussion/issues/73
+
+    No more words using names FIND, WORD, TOKEN, FIND-NAME etc
+
+    Using SEEK for find a hash inside dictionary. HASH and SEEK. 
+
+    Review of **begin while repeat** to allow extra
+        multiple **while then**
+        as **begin while while ... repeat then**
+        while is a **if swap** and repeat is a **again then**
+        note to self, its beautiful.
+
 03/11/2026
 
     Using s0/spt s1/rpt s2/ipt s3/usr s4/nib 

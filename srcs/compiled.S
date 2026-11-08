@@ -61,29 +61,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_RBRACK, 0x0002B5F8 #; ( ] )
 .equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
 .equ hash_RECURSE, 0x06761000 #; ( RECURSE )
+.equ hash_IMMEDIATEQ, 0x112AA8AB #; ( IMMEDIATE? )
+
+# controls backwards
 
 .equ hash_BEGIN, 0x0C8280A2 #; ( BEGIN ) 
 .equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
-.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
-.equ hash_FORE, 0x7C7E2FDB #; ( FORE )
 
 .equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
 .equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
 .equ hash_WHILST, 0x40B17B78 #; ( WHILST )
 
-.equ hash_AHEAD, 0x0C555E0C #; ( AHEAD )
-.equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
-.equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
+# controls forwards
 
+.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
+.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
+
+.equ hash_AHEAD, 0x0C555E0C #; ( AHEAD )
 .equ hash_IF, 0x0059732A #; ( IF ) 
 .equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
 .equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
-.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
+
+# controls forward and backward
+
+.equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
+.equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
+.equ hash_AFT, 0x0B87B636 #; ( AFT )
+
+# cases, mind the data stack deep while compiling
 
 .equ hash_CASE, 0x7C81C251 #; ( CASE )
 .equ hash_OF, 0x0059736C #; ( OF )
 .equ hash_ENDOF, 0x0DD0C22E #; ( END-OF )
 .equ hash_ENDCASE, 0x4507B893 #; ( END-CASE )
+
+# control loops
 
 .equ hash_DO, 0x0059724E #; ( DO ) 
 .equ hash_LOOP, 0x7C836539 #; ( LOOP ) 
@@ -94,24 +106,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_FOR, 0x0B87B3DE #; ( FOR ) 
 .equ hash_NEXT, 0x7C826702 #; ( NEXT ) 
 
-.equ hash_TOKEN, 0x0D8960FE #; ( TOKEN ) 
-.equ hash_HEADER, 0x33DCB49A #; ( HEADER ) 
-.equ hash_PAGE, 0x7C89F136 #; ( PAGE ) 
-.equ hash_LINE, 0x7C833C8B #; ( LINE ) 
-.equ hash_WORD, 0x7C888E6B #; ( WORD )
-
 .equ hash_ISNAME, 0x05BEEF42 #; ( :ISNAME )
 .equ hash_NONAME, 0x7C2B3679 #; ( :NONAME )
 
 .equ hash_COLON, 0x0002B59F #; ( : ) 
 .equ hash_SEMIS, 0x0002B59E #; ( ; ) 
-
 .equ hash_DJB2, 0x7C7F393B #; ( DJB2 ) 
 .equ hash_HASH, 0x7C8590B7 #; ( HASH )
-.equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
+.equ hash_SEEK, 0x7C8A759D #; ( SEEK )
 
 .equ hash_TICK, 0x0002B582 #; ( ' ) 
 .equ hash_POSTPONE, 0x7A137C29 #; ( POSTPONE ) 
+
+.equ hash_PAGE, 0x7C89F136 #; ( PAGE ) 
+.equ hash_LINE, 0x7C833C8B #; ( LINE ) 
+.equ hash_WORD, 0x7C888E6B #; ( WORD )
+.equ hash_FIND, 0x7C7E13C0 #; ( FIND ) 
 
 .equ hash_QUIT, 0x7C86F95C #; ( QUIT ) 
 .equ hash_INTERPRET, 0x217106B2 #; ( INTERPRET )
@@ -178,18 +188,18 @@ def_word "rbrack" hash_RBRACK
 #---------------------------------------------------------------------- 
 
 .equ hash_DOCODE, 0x7C81D9A8 #; ( CODE )
-.equ hash_END-CODE, 0x4507E16A #; ( END-CODE )
+.equ hash_ENDCODE, 0x4507E16A #; ( END-CODE )
 .equ hash_TOCODE, 0x075D9A73 #; ( ;CODE )
 .equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
 
 # ( -- ) #; #; ( CODE ), starts native code, ZZZZ 
 # enable ASM vocabulary
-def_word "tocode" hash_DOCODE 
+def_word "iscode" hash_DOCODE 
 	.word xt_exit 
 
 # ( -- ) #; #; ( END-CODE ), ends native code, ZZZZ 
 # disable ASM vocabulary
-def_word "tocode" hash_ENDCODE 
+def_word "endcode" hash_ENDCODE 
 	.word xt_exit 
 
 # ( w -- ) #; #; ( ;CODE ), does a native call 
@@ -200,36 +210,24 @@ def_word "tocode" hash_TOCODE
 # ( w -- ) #; #; ( CODE; ), does a native return 
 # in RISCV ret is jalr zero, 0 (ra) 
 .equ RET, 0x00008067
-def_word "codeto" hash_CODETO IMMEDIATE
+def_word "codeto" hash_CODETO 
 	.word xt_lit, RET, xt_comma
 	.word xt_exit 
 
 #---------------------------------------------------------------------- 
- 
+#
+# remember 0x0 is FALSE, ever  
+#
 # ( -- a ) ;# ( BEGIN ) mark a backward offset
 def_word "begin" hash_BEGIN IMMEDIATE 
 	.word xt_here 
 	.word xt_exit 
  
-# ( -- a ) ;# ( MARK ) mark a forward offset
-def_word "mark" hash_MARK IMMEDIATE 
-	.word xt_here, xt_nil, xt_comma 
-	.word xt_exit 
- 
-#---------------------------------------------------------------------- 
-
 # ( -- ) ;# ( BACK ) goes backward 
 def_word "back" hash_BACK IMMEDIATE 
 	.word xt_here, xt_minus, xt_comma 
 	.word xt_exit 
  
-# ( -- ) ;# ( FORE ) goes forward 
-def_word "fore" hash_FORE IMMEDIATE 
-	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
-	.word xt_exit 
- 
-#---------------------------------------------------------------------- 
-
 # ( a -- ) ;# ( AGAIN ) goes back always
 def_word "again" hash_AGAIN IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
@@ -250,27 +248,11 @@ def_word "whilst" hash_WHILST IMMEDIATE
 
 #---------------------------------------------------------------------- 
 
-# ( -- a ) ;# ( AHEAD ) goes forward always
-def_word "ahead" hash_AHEAD IMMEDIATE 
-	.word xt_drop
-	.word xt_lit, xt_branch, xt_comma
-	.word xt_mark 
+# ( -- a ) ;# ( MARK ) mark a forward offset
+def_word "mark" hash_MARK IMMEDIATE 
+	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
  
-# ( -- ) ;# ( WHILE ) goes forward, when TOS is zero 
-def_word "while" hash_WHILE IMMEDIATE 
-	.word xt_lit, xt_zbranch, xt_comma
-	.word xt_mark 
-	.word xt_exit 
- 
-# ( -- ) ;# ( REPEAT ) goes backward to begin
-def_word "repeat" hash_REPEAT IMMEDIATE 
-	.word xt_lit, xt_branch, xt_comma
-	.word xt_swap, xt_back, xt_fore 
-	.word xt_exit 
- 
-#---------------------------------------------------------------------- 
-
 # ( -- ) ;# ( IF ) 
 def_word "if" hash_IF IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
@@ -279,18 +261,47 @@ def_word "if" hash_IF IMMEDIATE
  
 # ( -- ) ;# ( ENDIF ) 
 def_word "endif" hash_ENDIF IMMEDIATE 
-	.word xt_fore
+	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
 	.word xt_exit 
  
 # ( -- ) ;# ( ELSE ) 
 def_word "else" hash_ELSE IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
-	.word xt_mark, xt_swap, xt_fore 
+	.word xt_mark
+	.word xt_swap
+	.word xt_endif 
 	.word xt_exit 
  
 # ( -- ) ;# ( THEN ) 
 def_word "then" hash_THEN IMMEDIATE 
-	.word xt_fore
+	.word xt_endif
+	.word xt_exit 
+ 
+#---------------------------------------------------------------------- 
+
+# ( -- a ) ;# ( AHEAD ) 
+def_word "ahead" hash_AHEAD IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_mark 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( WHILE ) goes forward, when TOS is zero 
+def_word "while" hash_WHILE IMMEDIATE 
+	.word xt_lit, xt_zbranch, xt_comma
+	.word xt_mark, xt_swap 
+	.word xt_exit 
+ 
+# ( -- ) ;# ( REPEAT ) goes backward to begin
+def_word "repeat" hash_REPEAT IMMEDIATE 
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_back, xt_endif 
+	.word xt_exit 
+ 
+# ( -- a ) ;# ( AFT ) goes forward 
+def_word "aft" hash_AFT IMMEDIATE 
+	.word xt_drop
+	.word xt_lit, xt_branch, xt_comma
+	.word xt_mark, xt_here, xt_swap
 	.word xt_exit 
  
 #---------------------------------------------------------------------- 
@@ -314,6 +325,7 @@ do_pass:
 
 	.word xt_lit, xt_zbranch, xt_comma 
 	.word xt_here, xt_minus, xt_comma 
+
 do_drops:
 	.word xt_lit, xt_drop, xt_comma 
 	.word xt_lit, xt_drop, xt_comma 
@@ -481,31 +493,32 @@ def_word "hash" hash_HASH
 	.word xt_rto, xt_lit, MASK_IMM, xt_and 
 	.word xt_exit 
  
-# ZZZZ
-
-# ( h -- a | 0 ) #; ( FIND ) 0 is not found 
-def_word "find" hash_FIND 
-	.word xt_latest, xt_fetch 
+# ( h -- a | 0 ) #; ( SEEK ) 0 is not found 
+def_word "seek" hash_SEEK
+	.word xt_latest 
 	# find the hash 
-	.word xt_begin 
-	.word xt_dup, xt_while
+	.word xt_begin
+	.word xt_fetch, xt_dup
+	# missed ?
+	.word xt_while
 	# take the hash
 	.word xt_over, xt_over
 	.word xt_cell, xt_plus, xt_fetch 
 	# mask immediate flag
 	.word xt_lit, MASK_IMM, xt_and, xt_equ 
-	# found 
-	.word xt_if, xt_swap, xt_drop, xt_exit 
+	# found ?
+	.word xt_while
 	# not found
-	.word xt_then, xt_fetch, xt_repeat
-	# missed 
+	.word xt_repeat
+	.word xt_then
+	# leave only the result
 	.word xt_swap, xt_drop 
 	.word xt_exit 
  
 # ( -- xt ) #; ( ' ) tick, return the xt of a word 
 def_word "tick" hash_TICK IMMEDIATE 
-	.word xt_hash, xt_find  
-	.word xt_dup, xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
+	.word xt_hash, xt_seek, xt_dup  
+	.word xt_if, xt_cell, xt_plus, xt_cell, xt_plus 
 	.word xt_else, xt_drop, xt_abort 
 	.word xt_then 
 	.word xt_exit 
@@ -521,6 +534,12 @@ def_word "immediate" hash_IMMEDIATE
 	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
 	.word xt_exit 
  
+# ( a -- F ) #; ( IMMEDIATE? ) makes a word immediate 
+def_word "immediateq" hash_IMMEDIATEQ
+	.word xt_cell, xt_plus, xt_fetch
+	.word xt_lit, FLAG_IMM, xt_and
+	.word xt_exit 
+ 
 # ( -- ) #; ( RECURSE ) compiles the word been compiled, could cause dead loops
 def_word "recurse" hash_RECURSE IMMEDIATE
 	# drop return
@@ -532,7 +551,7 @@ def_word "recurse" hash_RECURSE IMMEDIATE
 	.word xt_exit 
  
 def_word "interpret" hash_INTERPRET
-	.word xt_begin, xt_hash, xt_find
+	.word xt_begin, xt_hash, xt_seek
 	# found ?
 	.word xt_dup, xt_if 
 	# take the hash
