@@ -70,11 +70,11 @@
 
         c unsigned 8-bit character, 
         a 32-bit address,
-        w signed 32-bit, 
+        w 32-bit signed, 
+        x 32-bit execution address,
         u unsigned 32-bit, 
         f flag TRUE or FALSE, 
         h hash 31-bit value,
-        x 32-bit execution address
  
 ## For RiscV
  
@@ -119,6 +119,12 @@ The hash over 0x00000000 to 0x7FFFFFFF, reserve -1 to IMMEDIATE flag
 _" there is no spoon "_
 
 ## For Numbers
+
+Any number must be preceded by a *$* and decoded using BASE value radix.
+
+TOS is printed with *.* and also uses BASE value radix.
+
+## For Not a Number (NaN)
 
 Make the integer range of values simetric to zero.
 

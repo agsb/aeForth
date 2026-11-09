@@ -121,10 +121,10 @@ compiled.S:def_word "number_bin" hash_BIN
 compiled.S:def_word "number_dec" hash_DEC
 compiled.S:def_word "number_hex" hash_HEX
 compiled.S:def_word "number_oct" hash_OCT
-compiled.S:def_word "numberq" hash_NUMBERQ
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "off" hash_OFF
 compiled.S:def_word "on" hash_ON
+compiled.S:def_word "pick" hash_PICK
 compiled.S:def_word "ploop" hash_PLOOP IMMEDIATE 
 compiled.S:def_word "plusfield" hash_PLUSFIELD
 compiled.S:def_word "plustore" hash_PLUSTORE
@@ -134,6 +134,7 @@ compiled.S:def_word "qu" hash_QU
 compiled.S:def_word "rbrack" hash_RBRACK
 compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE
 compiled.S:def_word "repeat" hash_REPEAT IMMEDIATE 
+compiled.S:def_word "roll" hash_ROLL
 compiled.S:def_word "scank" hash_SCANK
 compiled.S:def_word "seek" hash_SEEK
 compiled.S:def_word "semis" hash_SEMIS IMMEDIATE 

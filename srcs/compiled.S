@@ -550,7 +550,7 @@ def_word "immediate" hash_IMMEDIATE
  
 # ( a -- a F ) #; ( IMMEDIATE? ) is a word immediate ?
 def_word "immediateq" hash_IMMEDIATEQ
-	.word xt_dup, xt_cell, xt_plus, xt_fetch
+	.word xt_cell, xt_plus, xt_fetch
 	.word xt_lit, FLAG_IMM, xt_and
 	.word xt_exit 
  
@@ -564,26 +564,21 @@ def_word "recurse" hash_RECURSE IMMEDIATE
 	.word xt_comma
 	.word xt_exit 
  
+# ( -- ) #; ( INTERPRET )
 def_word "interpret" hash_INTERPRET
 	.word xt_begin, xt_hash, xt_seek
 	# found ?
-	.word xt_dup, xt_if 
-	# take the hash
-	.word xt_dup, xt_cell, xt_plus, xt_fetch 
-	# check immediate flag
-	.word xt_lit, FLAG_IMM, xt_and 
-	# immediate word
+	.word xt_dup, xt_if
+	# immediate ?
+	.word xt_immediateq 
 	.word xt_if, xt_execute
 	.word xt_else, xt_state, xt_fetch
 	.word xt_if, xt_compile
 	.word xt_else, xt_execute
 	.word xt_then
-	# check if number ?
-	.word xt_else, xt_numberq, xt_nan, xt_equ
-	.word xt_if, xt_abort
-	.word xt_else, xt_state, xt_fetch
-	.word xt_if, xt_literal
 	.word xt_then 
+	.word xt_else
+	.word xt_abort
 	.word xt_then 
 	# next word
 	.word xt_again
@@ -605,39 +600,29 @@ def_word "compile" hash_COMPILE
 # All numbers are prefixed. but with a space :) $NNN is $ NNN 
 #
 
-.equ hash_NUMBERQ, 0x21C1BA39 #; ( NUMBER? )
-def_word "numberq" hash_NUMBERQ
+.equ hash_TONUMBER, 0x58D73858 #; ( $ )
+def_word "tonumber" hash_TONUMBER
 	.word xt_exit
 
-.equ hash_HEX, 0x0002B581 #; ( $ )
+.equ hash_HEX, 0x0B87EC90 #; ( HEX )
+.equ hash_DEC, 0x0B87BA87 #; ( DEC )
+.equ hash_OCT, 0x0B87E0DD #; ( OCT )
+.equ hash_BIN, 0x0B87C400 #; ( BIN )
+
 def_word "number_hex" hash_HEX
 	.word xt_lit, 16, xt_base, xt_store
-	.word xt_tonumber
 	.word xt_exit
 
-.equ hash_DEC, 0x0002B583 #; ( & )
 def_word "number_dec" hash_DEC
 	.word xt_lit, 10, xt_base, xt_store
-	.word xt_tonumber
 	.word xt_exit
 
-.equ hash_BIN, 0x0002B580 #; ( % )
-.equ hash_NUMBER_BIN, 0x21C1BA39 #; ( % )
+def_word "number_oct" hash_OCT
+	.word xt_lit, 8, xt_base, xt_store
+	.word xt_exit
+
 def_word "number_bin" hash_BIN
 	.word xt_lit, 2, xt_base, xt_store
-	.word xt_tonumber
-	.word xt_exit
-
-/* 
-.equ hash_OCT, 0x0002B586 #; ( # )
-def_word "number_dec" hash_OCT
-	.word xt_lit, 8, xt_base, xt_store
-	.word xt_tonumber
-	.word xt_exit
-*/
-
-.equ hash_TONUMBER, 0x58D73858 #; ( >NUMBER )
-def_word "tonumber" hash_TONUMBER
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
@@ -866,28 +851,42 @@ def_word "off" hash_OFF
 #---------------------------------------------------------------------- 
 
 .equ hash_PLUSTORE, 0x0059676F #; ( +! )
-.equ hash_NIP, 0x0B87D312 #; ( NIP )
-.equ hash_TUCK, 0x7C878D2C #; ( TUCK )
-.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
-
 # ( -- ) #; ( +! ) plus and store
 def_word "plustore" hash_PLUSTORE
 	.word xt_dup, xt_fetch, xt_plus, xt_swap, xt_store
 	.word xt_exit
 
+.equ hash_NIP, 0x0B87D312 #; ( NIP )
 # ( -- ) #; ( NIP ) 
 def_word "nip" hash_NIP
 	.word xt_swap, xt_drop
 	.word xt_exit
 
+.equ hash_TUCK, 0x7C878D2C #; ( TUCK )
 # ( -- ) #; ( TUCK )
 def_word "tuck" hash_TUCK
 	.word xt_dup, xt_tor, xt_swap, xt_rto
 	.word xt_exit
 
+.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
 # ( w -- w | w w  ) #; ( ?DUP ) 
 def_word "qdup" hash_QDUP
 	.word xt_dup, xt_if, xt_dup, xt_then
+	.word xt_exit
+
+.equ hash_PICK, 0x7C8A13B4 #; ( PICK )
+# ( u -- ) #; ( PICK ) 
+def_word "pick" hash_PICK
+	.word xt_cells, xt_spat, xt_plus, xt_fetch
+	.word xt_exit
+
+.equ hash_ROLL, 0x7C890218 #; ( ROLL )
+# ( u -- ) #; ( ROLL ) ZZZZ
+def_word "roll" hash_ROLL
+	.word xt_dup, xt_cells, xt_spat, xt_plus, xt_fetch, xt_tor
+	.word xt_begin, xt_one, xt_minus, xt_while  
+	.word xt_dup, xt_cell, xt_minus, xt_fetch, xt_swap, xt_store
+	.word xt_repeat 
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
