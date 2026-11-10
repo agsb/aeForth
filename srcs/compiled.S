@@ -647,6 +647,22 @@ def_word "compile" hash_COMPILE
 	.word xt_exit
 
 #----------------------------------------------------------------------
+.equ hash_PDOTQUOP, 0x7C4F2F48 #; ( (.") )
+def_word "pdotquop" hash_PDOTQUOP
+	.word xt_rto, xt_begin, xt_dup, xt_fetch
+	.word xt_while, xt_dup, xt_fetch, xt_emit, xt_one, xt_plus
+	.word xt_repeat, xt_tor
+	.word xt_exit
+
+.equ hash_DOTQUO, 0x005966C9 #; ( ." )
+def_word "dotquo" hash_DOTQUO
+	.word xt_state, xt_fetch, xt_if
+	.word xt_lit, xt_pdotquop, xt_comma
+	.word xt_lit, xt_space, 
+	.word xt_else, xt_type, # zzzzz
+	.word xt_exit
+
+#----------------------------------------------------------------------
 #
 # All numbers are prefixed by a dollar :) $ NNN  
 #
