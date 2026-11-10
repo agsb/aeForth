@@ -4,9 +4,9 @@ _still a Stub_
 
 ## What is MITC
 
-Forth is a virtual machine that uses stack operations (pushing and popping) and jumps to execute routines on a physical CPU.
+Forth is a virtual machine that uses stack operations, pushing and popping, and jumps to execute routines on a physical CPU.
 
-Forth employs two types of "words": primitives—implemented in native machine code and containing no references to other words—and compiled words, which consist of a sequence of references to other words. Only primitive words are actually executed by the host CPU.
+Forth employs two types of "words": primitives—implemented in native machine code and containing no references to other words, and compiled words, which consist of a sequence of references to other words. Only primitive words are actually executed by the host CPU.
 
 *Minimal Indirect Threaded Code* is an alternative to the classic *Indirect Threaded Code*, it saves space in the dictionary and allows for faster execution of Forth words.
 
@@ -51,7 +51,7 @@ Next:
         pull W, IP ; 
         jump (W) ;
 
-All instructions could be mixed anywhere.
+Any word  could be at anywhere in dictionary.
 
 Every word must start with *Enter*. 
 
