@@ -1,0 +1,7 @@
+compiled.S: Assembler messages:
+compiled.S:658: Warning: zero assumed for missing expression
+compiled.S:659: Warning: zero assumed for missing expression
+/usr/lib/gcc-cross/riscv64-linux-gnu/13/../../../../riscv64-linux-gnu/bin/ld: /tmp/cc5JIkoK.o: in function `xt_pdotquop':
+(.text+0x10d4): undefined reference to `xt_space'
+/usr/lib/gcc-cross/riscv64-linux-gnu/13/../../../../riscv64-linux-gnu/bin/ld: (.text+0x10e0): undefined reference to `xt_type'
+collect2: error: ld returned 1 exit status

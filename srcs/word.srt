@@ -26,11 +26,11 @@ assembled.S:def_word "latest" hash_LAST
 assembled.S:def_word "less" hash_LESS 
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "minus" hash_MINUS 
-assembled.S:def_word "nan" hash_NAN 
 assembled.S:def_word "nand" hash_NAND
+assembled.S:def_word "nan" hash_NAN 
 assembled.S:def_word "negate", hash_NEGATE 
 assembled.S:def_word "nilq", hash_NILQ
-assembled.S:def_word "or" hash_ORR 
+assembled.S:def_word "orr" hash_ORR 
 assembled.S:def_word "over" hash_OVER 
 assembled.S:def_word "perform", hash_PERFORM 
 assembled.S:def_word "pike" hash_PIKE 
@@ -80,22 +80,23 @@ compiled.S:def_word "constant" hash_CONSTANT
 compiled.S:def_word "create" hash_CREATE  
 compiled.S:def_word "defer" hash_DEFER 
 compiled.S:def_word "djb2" hash_DJB2 
-compiled.S:def_word "do" hash_DO IMMEDIATE 
 compiled.S:def_word "docode" hash_DOCODE 
 compiled.S:def_word "does" hash_DOES 
+compiled.S:def_word "do" hash_DO IMMEDIATE 
+compiled.S:def_word "dotquo" hash_DOTQUO
 compiled.S:def_word "else" hash_ELSE IMMEDIATE 
-compiled.S:def_word "end_structure" hash_END_STRUCTURE
 compiled.S:def_word "endcase" hash_ENDCASE IMMEDIATE 
 compiled.S:def_word "endcode" hash_ENDCODE 
 compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
 compiled.S:def_word "endof" hash_ENDOF IMMEDIATE 
+compiled.S:def_word "end_structure" hash_END_STRUCTURE
 compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "for" hash_FOR IMMEDIATE 
 compiled.S:def_word "handler" hash_HANDLER
 compiled.S:def_word "hash" hash_HASH
 compiled.S:def_word "here" hash_HERE 
-compiled.S:def_word "i" hash_I IMMEDIATE 
 compiled.S:def_word "if" hash_IF IMMEDIATE 
+compiled.S:def_word "i" hash_I IMMEDIATE 
 compiled.S:def_word "immediate" hash_IMMEDIATE
 compiled.S:def_word "immediateq" hash_IMMEDIATEQ
 compiled.S:def_word "interpret" hash_INTERPRET
@@ -104,8 +105,8 @@ compiled.S:def_word "isname" hash_ISNAME
 compiled.S:def_word "j" hash_J IMMEDIATE 
 compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
 compiled.S:def_word "leave" hash_LEAVE IMMEDIATE 
-compiled.S:def_word "lit" hash_LIT 
 compiled.S:def_word "literal" hash_LITERAL
+compiled.S:def_word "lit" hash_LIT 
 compiled.S:def_word "loop" hash_LOOP IMMEDIATE 
 compiled.S:def_word "lparen" hash_LPAREM
 compiled.S:def_word "mark" hash_MARK IMMEDIATE 
@@ -117,10 +118,11 @@ compiled.S:def_word "number_bin" hash_BIN
 compiled.S:def_word "number_dec" hash_DEC
 compiled.S:def_word "number_hex" hash_HEX
 compiled.S:def_word "number_oct" hash_OCT
-compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "off" hash_OFF
-compiled.S:def_word "on" hash_ON
+compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "one" hash_ONE 
+compiled.S:def_word "on" hash_ON
+compiled.S:def_word "pdotquop" hash_PDOTQUOP
 compiled.S:def_word "pick" hash_PICK
 compiled.S:def_word "ploop" hash_PLOOP IMMEDIATE 
 compiled.S:def_word "plusfield" hash_PLUSFIELD
@@ -140,14 +142,14 @@ compiled.S:def_word "ten" hash_TEN
 compiled.S:def_word "then" hash_THEN IMMEDIATE 
 compiled.S:def_word "throw" hash_THROW
 compiled.S:def_word "tick" hash_TICK IMMEDIATE 
-compiled.S:def_word "to" hash_TO 
 compiled.S:def_word "tocode" hash_TOCODE 
+compiled.S:def_word "to" hash_TO 
 compiled.S:def_word "tuck" hash_TUCK
-compiled.S:def_word "two" hash_TWO 
 compiled.S:def_word "twodiv" hash_2DIV
 compiled.S:def_word "twodrop" hash_2DROP
 compiled.S:def_word "twodup" hash_2DUP
 compiled.S:def_word "twofetch" hash_2FETCH
+compiled.S:def_word "two" hash_TWO 
 compiled.S:def_word "twomul" hash_2MUL
 compiled.S:def_word "twonip" hash_2NIP
 compiled.S:def_word "twoover" hash_2OVER

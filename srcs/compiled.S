@@ -231,20 +231,20 @@ def_word "literal" hash_LITERAL
 # ( -- ) #; ( [ )  
 .equ hash_LBRACK, 0x0002B5FE #; ( [ )
 def_word "lbrack" hash_LBRACK IMMEDIATE
-	.word xt_lit, xt_nil, xt_state, xt_store
+	.word xt_lit, EXECUTE, xt_state, xt_store
 	.word xt_exit
 
 # ( -- ) #; ( ] )  
 .equ hash_RBRACK, 0x0002B5F8 #; ( ] )
 def_word "rbrack" hash_RBRACK
-	.word xt_lit, xt_one, xt_state, xt_store
+	.word xt_lit, COMPILE, xt_state, xt_store
 	.word xt_exit
 
 # ( -- ) #; ( IMMEDIATE ) makes a word immediate 
 .equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
 def_word "immediate" hash_IMMEDIATE
 	.word xt_latest, xt_fetch, xt_cell, xt_plus
-	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
+	.word xt_dup, xt_fetch, xt_nan, xt_orr, xt_swap, xt_store
 	.word xt_exit 
 
 # ( a -- a F ) #; ( IMMEDIATE? ) is a word immediate ?
@@ -534,8 +534,8 @@ def_word "noname" hash_NONAME
 def_word "colon" hash_COLON 
 	# save here, panic if semis not follow elsewhere 
 	.word xt_heap, xt_fetch, xt_pike, xt_store 
-	# stat is xt_compile == 1 
-	.word xt_one, xt_state, xt_store 
+	# stat is compile
+	.word xt_lit, COMPILE, xt_state, xt_store 
 	# make a header 
 	.word xt_isname 
 	.word xt_exit 
@@ -544,8 +544,8 @@ def_word "colon" hash_COLON
 def_word "semis" hash_SEMIS IMMEDIATE 
 	# load last, panic if colon not lead elsewhere 
 	.word xt_pike, xt_fetch, xt_latest, xt_store 
-	# stat is xt_execute == 0 
-	.word xt_nil, xt_state, xt_store 
+	# state is execute 
+	.word xt_lit, EXECUTE, xt_state, xt_store 
 	# make a footer 
 	.word xt_lit, xt_exit, xt_comma 
 	.word xt_exit 
@@ -620,13 +620,10 @@ def_word "interpret" hash_INTERPRET
 	.word xt_begin, xt_hash, xt_seek
 	# found ?
 	.word xt_dup, xt_if
-	# immediate ?
-	.word xt_immediateq 
+	# eval ?
+	.word xt_immediateq, xt_state, xt_fetch, xt_orr
 	.word xt_if, xt_execute
-	.word xt_else, xt_state, xt_fetch
-	.word xt_if, xt_compile
-	.word xt_else, xt_execute
-	.word xt_then
+	.word xt_else, xt_compile
 	.word xt_then 
 	.word xt_else
 	.word xt_abort

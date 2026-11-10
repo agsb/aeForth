@@ -26,7 +26,7 @@ assembled.S:def_word "minus" hash_MINUS
 assembled.S:def_word "bymul", hash_BYMUL 
 assembled.S:def_word "bymod", hash_BYMOD 
 assembled.S:def_word "and" hash_AND 
-assembled.S:def_word "or" hash_ORR 
+assembled.S:def_word "orr" hash_ORR 
 assembled.S:def_word "xor" hash_XOR 
 assembled.S:def_word "inverse", hash_INVERSE 
 assembled.S:def_word "negate", hash_NEGATE 
@@ -117,6 +117,8 @@ compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE
 compiled.S:def_word "interpret" hash_INTERPRET
 compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "compile" hash_COMPILE
+compiled.S:def_word "pdotquop" hash_PDOTQUOP
+compiled.S:def_word "dotquo" hash_DOTQUO
 compiled.S:def_word "number_hex" hash_HEX
 compiled.S:def_word "number_dec" hash_DEC
 compiled.S:def_word "number_oct" hash_OCT

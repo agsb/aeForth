@@ -45,7 +45,7 @@ There are some primitive words in native code, some in pre-compiled code and a f
   
     simulator of RISCV: qemu 
     
-    the heap and stack: .heap at end of .bss, .stack elsewhere.
+    besides primitives at .text, all aeForth lives at .bss.
 
     systems calls of core functions: linux ecalls
 
@@ -58,7 +58,7 @@ the RISCV is a 4 bytes (32-bit) cell CPU with 32-bit
 or 
     [ISA](https://dejazzer.com/coen2710/lectures/RISC-V-Reference-Data-Green-Card.pdf)
 
-The aeForth is a ELF program called by 'elsewhere operational system', 
+The aeForth is a ELF program called by 'elsewhere operational system', depends on systems, 
 and use registers r0, ra, sp, s0, s1, a0-a7, s2, s3, t0-t2. 
 
 ## Coding
@@ -78,6 +78,8 @@ contains the user variables for Forth
 
 ## Colon and Semis
 
+AeForth does not uses SMUDGE. 
+
 The colon **:** makes a header by:
       
       1. copy HERE to PIKE
@@ -86,12 +88,12 @@ The colon **:** makes a header by:
       4. copy hash to second cell;
       5. change STATE to compile (1);
 
-In compile state, all non immediate words are compiled, 
-        and the immediate words are executed. 
+In compile state, a immediate words is executed, 
+otherwise is compiled, 
     
 The semis **;** ends the word by:
       
-      1. place a 'EXIT into last cell
+      1. place a reference to 'EXIT into last cell
       2. copy PIKE to LATEST
       3. change STATE to execute (0);
 
@@ -101,10 +103,15 @@ When the compilation of a word breaks, the LATEST are keepd in order
 
 To clean it just copy PIKE to HERE at error or missing.
 
-## Internals
+## Dictionary Internals
 
-This aeForth only uses 31-bit DJB2 hash for dictionary entries, with LINK and HASH, 
-   as header, followed by code or list of references .  
+The header is composed with LINK, HASH, followed by code or list of references.
+
+the LINK is a 32-bit reference to previous word entry.
+
+The HASH only uses 31-bit DJB2 hash for dictionary entries.
+
+The IMMEDIATE flag is at high 32-bit of HASH  
 
 ## the Language
 

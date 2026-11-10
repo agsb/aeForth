@@ -128,9 +128,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # states
 
-.equ EXECUTE, 0
+.equ EXECUTE, 1
 
-.equ COMPILE, 1
+.equ COMPILE, 0
 
 # usefull
 

@@ -326,7 +326,7 @@ def_word "and" hash_AND
  
 # ( w1 w2 -- w3 ) #; ( OR ) w1 OR w2
 .equ hash_ORR, 0x0B87E22A #; ( OR ) 
-def_word "or" hash_ORR 
+def_word "orr" hash_ORR 
 	pull nos spt 
 	or tos, nos, tos 
         j next 

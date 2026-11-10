@@ -25,6 +25,10 @@
 
 ## Done
 
+10/11/2026
+
+    Following Moore in POL, for STATE, COMPILING is now 0, and EXECUTE id now 1. 
+	
 07/11/2026
 
     Using style reference as in 
