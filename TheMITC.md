@@ -49,6 +49,12 @@ All compiled words must ends with *Unnest*
 
 The register IP is pushed or pulled at ever word, it does not need be preserved inside words
 
+The next instruction to be executed is always at top of return stack
+
+The branches uses the value at top of return stack as reference of offsets.
+
+### Code version 1.0
+
 Unnest:
 
         pull IP, RP ;
@@ -82,6 +88,10 @@ All primitive words are bellow reference V and must ends with **jump** *Next*.
 All compiled words are over reference V and must ends with *Unnest*.
 
 No push or pull of IP within primitive words, the register IP must be preserved.
+
+The branches uses the value of IP as reference for offsets
+
+### code 2.0
 
 Unnest:
 
