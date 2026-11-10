@@ -27,7 +27,7 @@
 
 10/11/2026
 
-    Following Moore in POL, for STATE, COMPILING is now 0, and EXECUTE id now 1. 
+    Following Moore in POL, for STATE, COMPILE is now 0, and EXECUTE id now 1. 
 	
 07/11/2026
 
