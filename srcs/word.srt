@@ -7,9 +7,11 @@ assembled.S:def_word "branch" hash_BRANCH
 assembled.S:def_word "bymod", hash_BYMOD 
 assembled.S:def_word "bymul", hash_BYMUL 
 assembled.S:def_word "cell" hash_CELL 
+assembled.S:def_word "cells" hash_CELLS
 assembled.S:def_word "cfetch" hash_CFETCH 
 assembled.S:def_word "cstore" hash_CSTORE 
 assembled.S:def_word "docon" hash_DOCON 
+assembled.S:def_word "dot" hash_DOT
 assembled.S:def_word "dovar" hash_DOVAR 
 assembled.S:def_word "drop" hash_DROP 
 assembled.S:def_word "dup" hash_DUP 
@@ -24,11 +26,10 @@ assembled.S:def_word "latest" hash_LAST
 assembled.S:def_word "less" hash_LESS 
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "minus" hash_MINUS 
-assembled.S:def_word "more" hash_MORE
 assembled.S:def_word "nan" hash_NAN 
+assembled.S:def_word "nand" hash_NAND
 assembled.S:def_word "negate", hash_NEGATE 
-assembled.S:def_word "nil" hash_NIL 
-assembled.S:def_word "one" hash_ONE 
+assembled.S:def_word "nilq", hash_NILQ
 assembled.S:def_word "or" hash_ORR 
 assembled.S:def_word "over" hash_OVER 
 assembled.S:def_word "perform", hash_PERFORM 
@@ -48,18 +49,14 @@ assembled.S:def_word "state" hash_STAT
 assembled.S:def_word "store" hash_STORE 
 assembled.S:def_word "swap" hash_SWAP 
 assembled.S:def_word "tobeats" hash_TOBEATS 
+assembled.S:def_word "tonumber" hash_TONUMBER
 assembled.S:def_word "tor" hash_TOR 
 assembled.S:def_word "true" hash_TRUE 
-assembled.S:def_word "two" hash_TWO 
 assembled.S:def_word "uless" hash_ULESS 
-assembled.S:def_word "umore" hash_UMORE
-assembled.S:def_word "user" hash_RPZ 
+assembled.S:def_word "user" hash_USER 
 assembled.S:def_word "xor" hash_XOR 
 assembled.S:def_word "zbeats" hash_ZBEATS
 assembled.S:def_word "zbranch" hash_ZBRANCH 
-assembled.S:def_word "zequ" hash_ZEQU 
-assembled.S:def_word "zless" hash_ZLESS 
-assembled.S:def_word "zmore" hash_ZMORE
 compiled.S:def_word "abort" hash_ABORT
 compiled.S:def_word "aft" hash_AFT IMMEDIATE 
 compiled.S:def_word "again" hash_AGAIN IMMEDIATE 
@@ -75,7 +72,6 @@ compiled.S:def_word "buffer" hash_BUFFER
 compiled.S:def_word "builds" hash_BUILDS 
 compiled.S:def_word "case" hash_CASE IMMEDIATE 
 compiled.S:def_word "catch" hash_CATCH
-compiled.S:def_word "cells" hash_CELLS
 compiled.S:def_word "codeto" hash_CODETO 
 compiled.S:def_word "colon" hash_COLON 
 compiled.S:def_word "comma" hash_COMMA 
@@ -85,6 +81,7 @@ compiled.S:def_word "create" hash_CREATE
 compiled.S:def_word "defer" hash_DEFER 
 compiled.S:def_word "djb2" hash_DJB2 
 compiled.S:def_word "do" hash_DO IMMEDIATE 
+compiled.S:def_word "docode" hash_DOCODE 
 compiled.S:def_word "does" hash_DOES 
 compiled.S:def_word "else" hash_ELSE IMMEDIATE 
 compiled.S:def_word "end_structure" hash_END_STRUCTURE
@@ -93,7 +90,6 @@ compiled.S:def_word "endcode" hash_ENDCODE
 compiled.S:def_word "endif" hash_ENDIF IMMEDIATE 
 compiled.S:def_word "endof" hash_ENDOF IMMEDIATE 
 compiled.S:def_word "execute", hash_EXECUTE
-compiled.S:def_word "false" hash_FALSE
 compiled.S:def_word "for" hash_FOR IMMEDIATE 
 compiled.S:def_word "handler" hash_HANDLER
 compiled.S:def_word "hash" hash_HASH
@@ -104,7 +100,6 @@ compiled.S:def_word "immediate" hash_IMMEDIATE
 compiled.S:def_word "immediateq" hash_IMMEDIATEQ
 compiled.S:def_word "interpret" hash_INTERPRET
 compiled.S:def_word "is" hash_IS 
-compiled.S:def_word "iscode" hash_DOCODE 
 compiled.S:def_word "isname" hash_ISNAME
 compiled.S:def_word "j" hash_J IMMEDIATE 
 compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
@@ -115,6 +110,7 @@ compiled.S:def_word "loop" hash_LOOP IMMEDIATE
 compiled.S:def_word "lparen" hash_LPAREM
 compiled.S:def_word "mark" hash_MARK IMMEDIATE 
 compiled.S:def_word "next" hash_NEXT IMMEDIATE 
+compiled.S:def_word "nil" hash_NIL 
 compiled.S:def_word "nip" hash_NIP
 compiled.S:def_word "noname" hash_NONAME
 compiled.S:def_word "number_bin" hash_BIN
@@ -124,6 +120,7 @@ compiled.S:def_word "number_oct" hash_OCT
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "off" hash_OFF
 compiled.S:def_word "on" hash_ON
+compiled.S:def_word "one" hash_ONE 
 compiled.S:def_word "pick" hash_PICK
 compiled.S:def_word "ploop" hash_PLOOP IMMEDIATE 
 compiled.S:def_word "plusfield" hash_PLUSFIELD
@@ -139,14 +136,14 @@ compiled.S:def_word "scank" hash_SCANK
 compiled.S:def_word "seek" hash_SEEK
 compiled.S:def_word "semis" hash_SEMIS IMMEDIATE 
 compiled.S:def_word "skipk" hash_SKIPK
+compiled.S:def_word "ten" hash_TEN
 compiled.S:def_word "then" hash_THEN IMMEDIATE 
 compiled.S:def_word "throw" hash_THROW
 compiled.S:def_word "tick" hash_TICK IMMEDIATE 
 compiled.S:def_word "to" hash_TO 
 compiled.S:def_word "tocode" hash_TOCODE 
-compiled.S:def_word "tonumber" hash_TONUMBER
-compiled.S:def_word "true" hash_TRUE
 compiled.S:def_word "tuck" hash_TUCK
+compiled.S:def_word "two" hash_TWO 
 compiled.S:def_word "twodiv" hash_2DIV
 compiled.S:def_word "twodrop" hash_2DROP
 compiled.S:def_word "twodup" hash_2DUP
@@ -182,9 +179,4 @@ efiles.S:def_word "fileseek" hash_FDSEEK
 efiles.S:def_word "filewrite" hash_FDWRITE
 efiles.S:def_word "free" hash_FREE
 efiles.S:def_word "resize" hash_RESIZE
-nowords.S:def_word "false" hash_FALSE
-nowords.S:def_word "true" hash_TRUE
-nowords.S:def_word "zequ" hash_ZEQU
-nowords.S:def_word "zless" hash_ZLESS
-nowords.S:def_word "zmore" hash_ZMORE
 test.S:def_word "reset" hash_RESET

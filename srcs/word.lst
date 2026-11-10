@@ -32,24 +32,19 @@ assembled.S:def_word "inverse", hash_INVERSE
 assembled.S:def_word "negate", hash_NEGATE 
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "rshift", hash_RSHIFT 
+assembled.S:def_word "nand" hash_NAND
 assembled.S:def_word "align", hash_ALIGN 
 assembled.S:def_word "perform", hash_PERFORM 
+assembled.S:def_word "nilq", hash_NILQ
 assembled.S:def_word "equ" hash_EQU 
 assembled.S:def_word "less" hash_LESS 
 assembled.S:def_word "uless" hash_ULESS 
-assembled.S:def_word "more" hash_MORE
-assembled.S:def_word "umore" hash_UMORE
-assembled.S:def_word "zequ" hash_ZEQU 
-assembled.S:def_word "zless" hash_ZLESS 
-assembled.S:def_word "zmore" hash_ZMORE
 assembled.S:def_word "true" hash_TRUE 
 assembled.S:def_word "false" hash_TRUE 
 assembled.S:def_word "nan" hash_NAN 
-assembled.S:def_word "nil" hash_NIL 
-assembled.S:def_word "one" hash_ONE 
-assembled.S:def_word "two" hash_TWO 
 assembled.S:def_word "cell" hash_CELL 
-assembled.S:def_word "user" hash_RPZ 
+assembled.S:def_word "cells" hash_CELLS
+assembled.S:def_word "user" hash_USER 
 assembled.S:def_word "rp0" hash_RPZ 
 assembled.S:def_word "sp0" hash_SPZ 
 assembled.S:def_word "state" hash_STAT 
@@ -60,6 +55,15 @@ assembled.S:def_word "pike" hash_PIKE
 assembled.S:def_word "tobeats" hash_TOBEATS 
 assembled.S:def_word "beatsto" hash_BEATSTO 
 assembled.S:def_word "zbeats" hash_ZBEATS
+assembled.S:def_word "tonumber" hash_TONUMBER
+assembled.S:def_word "dot" hash_DOT
+compiled.S:def_word "nil" hash_NIL 
+compiled.S:def_word "one" hash_ONE 
+compiled.S:def_word "two" hash_TWO 
+compiled.S:def_word "ten" hash_TEN
+compiled.S:def_word "zequ" hash_ZEQU
+compiled.S:def_word "zless" hash_ZLESS
+compiled.S:def_word "zmore" hash_ZMORE
 compiled.S:def_word "lit" hash_LIT 
 compiled.S:def_word "here" hash_HERE 
 compiled.S:def_word "allot" hash_ALLOT 
@@ -67,7 +71,10 @@ compiled.S:def_word "comma" hash_COMMA
 compiled.S:def_word "literal" hash_LITERAL
 compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
 compiled.S:def_word "rbrack" hash_RBRACK
-compiled.S:def_word "iscode" hash_DOCODE 
+compiled.S:def_word "immediate" hash_IMMEDIATE
+compiled.S:def_word "immediateq" hash_IMMEDIATEQ
+compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE
+compiled.S:def_word "docode" hash_DOCODE 
 compiled.S:def_word "endcode" hash_ENDCODE 
 compiled.S:def_word "tocode" hash_TOCODE 
 compiled.S:def_word "codeto" hash_CODETO 
@@ -107,13 +114,9 @@ compiled.S:def_word "hash" hash_HASH
 compiled.S:def_word "seek" hash_SEEK
 compiled.S:def_word "tick" hash_TICK IMMEDIATE 
 compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE 
-compiled.S:def_word "immediate" hash_IMMEDIATE
-compiled.S:def_word "immediateq" hash_IMMEDIATEQ
-compiled.S:def_word "recurse" hash_RECURSE IMMEDIATE
 compiled.S:def_word "interpret" hash_INTERPRET
 compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "compile" hash_COMPILE
-compiled.S:def_word "tonumber" hash_TONUMBER
 compiled.S:def_word "number_hex" hash_HEX
 compiled.S:def_word "number_dec" hash_DEC
 compiled.S:def_word "number_oct" hash_OCT
@@ -145,7 +148,6 @@ compiled.S:def_word "tworat" hash_2RAT
 compiled.S:def_word "twonip" hash_2NIP
 compiled.S:def_word "twodiv" hash_2DIV
 compiled.S:def_word "twomul" hash_2MUL
-compiled.S:def_word "cells" hash_CELLS
 compiled.S:def_word "bl" hash_BL
 compiled.S:def_word "qu" hash_QU
 compiled.S:def_word "on" hash_ON
@@ -163,11 +165,6 @@ compiled.S:def_word "abort" hash_ABORT
 compiled.S:def_word "plusfield" hash_PLUSFIELD
 compiled.S:def_word "begin_structure" hash_BEGIN_STRUCTURE
 compiled.S:def_word "end_structure" hash_END_STRUCTURE
-compiled.S:def_word "zequ" hash_ZEQU
-compiled.S:def_word "zless" hash_ZLESS
-compiled.S:def_word "zmore" hash_ZMORE
-compiled.S:def_word "false" hash_FALSE
-compiled.S:def_word "true" hash_TRUE
 ecalls.S:def_word "bye" hash_BYE
 ecalls.S:def_word "key" hash_KEY
 ecalls.S:def_word "emit" hash_EMIT
@@ -182,9 +179,4 @@ efiles.S:def_word "filecntl" hash_FDCNTL
 efiles.S:def_word "allocate" hash_ALLOCATE
 efiles.S:def_word "free" hash_FREE
 efiles.S:def_word "resize" hash_RESIZE
-nowords.S:def_word "zequ" hash_ZEQU
-nowords.S:def_word "zless" hash_ZLESS
-nowords.S:def_word "zmore" hash_ZMORE
-nowords.S:def_word "false" hash_FALSE
-nowords.S:def_word "true" hash_TRUE
 test.S:def_word "reset" hash_RESET

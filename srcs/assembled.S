@@ -53,99 +53,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
 # DJB2 hash for UPPERCASE Forth words inside ( ) 
  
-# changes ip 
-.equ hash_EXIT, 0x7C7CC745 #; ( EXIT ) 
-.equ hash_BRANCH, 0x1E6C4191 #; ( BRANCH ) 
-.equ hash_ZBRANCH, 0x7D28616B #; ( ZBRANCH ) 
-.equ hash_GBRANCH, 0x689E2DB6 #; ( GBRANCH ) 
-.equ hash_DOVAR, 0x0C682A6B #; ( DOVAR ) 
-.equ hash_DOCON, 0x0C67F9AC #; ( DOCON ) 
- 
-# moves pointers 
-.equ hash_RPAT, 0x7C88A9B2 #; ( RP@ ) 
-.equ hash_SPAT, 0x7C8A4E93 #; ( SP@ ) 
-.equ hash_RPTO, 0x7C88ABDC #; ( RP! ) 
-.equ hash_SPTO, 0x7C8A507D #; ( SP! ) 
- 
-# moves return stack 
-.equ hash_TOR, 0x0B88004C #; ( >R ) 
-.equ hash_RTO, 0x0B8804AC #; ( R> ) 
-.equ hash_RAT, 0x0B880702 #; ( R@ ) 
- 
-# moves data stack 
-.equ hash_DROP, 0x7C7F5C2C #; ( DROP ) 
-.equ hash_DUP, 0x0B87BC84 #; ( DUP ) 
-.equ hash_OVER, 0x7C84398B #; ( OVER ) 
-.equ hash_SWAP, 0x7C8A3910 #; ( SWAP ) 
-.equ hash_ROT, 0x0B8807CC #; ( ROT ) 
- 
-# memory 
-.equ hash_FETCH, 0x0C3E96F9 #; ( @ ) 
-.equ hash_STORE, 0x0DD22B7A #; ( ! ) 
-.equ hash_CFETCH, 0x2376B3FA #; ( C@ ) 
-.equ hash_CSTORE, 0x252B26F9 #; ( C! ) 
- 
-# arithmetic 
-.equ hash_PLUS, 0x7C8A057F #; ( + ) 
-.equ hash_MINUS, 0x0002B588 #; ( - ) 
-.equ hash_BYMUL, 0x005972C2 #; ( M* ) 
-.equ hash_BYMOD, 0x7C4D1C6C #; ( /MOD ) 
- 
-# logics 
-.equ hash_AND, 0x0B87B72E #; ( AND ) 
-.equ hash_ORR, 0x0B87E22A #; ( OR ) 
-.equ hash_XOR, 0x0B883040 #; ( XOR ) 
-.equ hash_LSHIFT, 0x2C5784C9 #; ( LSHIFT ) 
-.equ hash_RSHIFT, 0x416E6B97 #; ( RSHIFT ) 
-.equ hash_INVERSE, 0x2D6AA2B5 #; ( INVERSE ) 
-.equ hash_NEGATE, 0x26B37A79 #; ( NEGATE ) 
- 
-# comparation 
-.equ hash_EQU, 0x0002B598  #; ( = ) 
-.equ hash_LESS, 0x0002B599 #; ( < ) 
-.equ hash_ULESS, 0x005973CC #; (U< ) 
-
-.equ hash_MORE, 0x0002B59B #; ( > )
-.equ hash_UMORE, 0x005973CE #; ( U> )
-.equ hash_ZEQU, 0x00596808 #; ( 0= )
-.equ hash_ZLESS, 0x00596809 #; ( 0< )
-.equ hash_ZMORE, 0x0059680B #; ( 0> )
- 
-.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
-.equ hash_PERFORM, 0x15EEB854 #; ( PERFORM ) 
-
-# convert numbers
-
- 
-# constants 
-.equ hash_TRUE, 0x7C879BF3 #; ( TRUE ) 
-.equ hash_FALSE, 0x0C3C6778 #; ( FALSE ) 
-.equ hash_NAN, 0x0B87D404 #; ( NAN ) 
-
-.equ hash_CELL, 0x7C81B0A3 #; ( CELL ) 
-.equ hash_NIL, 0x0002B595 #; ( 0 ) 
-.equ hash_ONE, 0x0002B594 #; ( 1 ) 
-.equ hash_TWO, 0x0002B597 #; ( 2 ) 
- 
-# user array start at USER memory address
-
-# constants
-.equ hash_USER, 0x7C84F154 #; ( USER )
-.equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
-.equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
-# variables
-.equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
-.equ hash_HEAP, 0x00597251 #; ( DP ) 
-.equ hash_LAST, 0x2ADAAFBE #; ( LATEST ) 
-.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE ) 
-.equ hash_BASE, 0x7C8025F0 #; ( BASE ) 
-.equ hash_TEMP, 0x7C87D1E9 #; ( TEMP ) 
- 
-# system ecalls 
-.equ hash_BYE, 0x0B87C61B #; ( BYE ) 
-.equ hash_KEY, 0x0B87F112 #; ( KEY ) 
-.equ hash_EMIT, 0x7C7C87D0 #; ( EMIT ) 
- 
 #---------------------------------------------------------------------- 
 .section .text
 .p2align 2, 0x0
@@ -195,12 +102,15 @@ move:
 	j next 
  
 #---------------------------------------------------------------------- 
+# changes ip 
  
 # ( -- ) #; ( EXIT ) 
+.equ hash_EXIT, 0x7C7CC745 #; ( EXIT ) 
 def_word "exit" hash_EXIT 
 	j unnest 
  
 # ( -- ) #; ( BRANCH ) 
+.equ hash_BRANCH, 0x1E6C4191 #; ( BRANCH ) 
 def_word "branch" hash_BRANCH 
 branch: 
 	lw nos, 0 (ipt) 
@@ -208,6 +118,7 @@ branch:
         j next 
  
 # ( w -- ) #; ( ZBRANCH ) equal than zero 
+.equ hash_ZBRANCH, 0x7D28616B #; ( ZBRANCH ) 
 def_word "zbranch" hash_ZBRANCH 
 	mv nos, tos 
 	pull tos spt 
@@ -216,6 +127,7 @@ def_word "zbranch" hash_ZBRANCH
         j next 
  
 # ( w -- ) #; ( GBRANCH ) greater than zero 
+.equ hash_GBRANCH, 0x689E2DB6 #; ( GBRANCH ) 
 def_word "gbranch" hash_GBRANCH 
 	mv nos, tos 
 	pull tos spt 
@@ -224,6 +136,7 @@ def_word "gbranch" hash_GBRANCH
         j next 
  
 # ( -- w ) #; ( DOCON ), also is LIT 
+.equ hash_DOCON, 0x0C67F9AC #; ( DOCON ) 
 def_word "docon" hash_DOCON 
 	push tos spt 
 	lw tos, 0 (ipt) 
@@ -231,6 +144,7 @@ def_word "docon" hash_DOCON
         j next 
  
 # ( -- w ) #; ( DOVAR ) 
+.equ hash_DOVAR, 0x0C682A6B #; ( DOVAR ) 
 def_word "dovar" hash_DOVAR 
 	push tos spt 
 	mv tos, ipt 
@@ -238,68 +152,84 @@ def_word "dovar" hash_DOVAR
         j next 
  
 #---------------------------------------------------------------------- 
+# moves return stack 
  
 # ( w -- ; -- w ) #; ( >R ) 
+.equ hash_TOR, 0x0B88004C #; ( >R ) 
 def_word "tor" hash_TOR 
 	push tos rpt 
 	pull tos spt 
         j next 
  
 # ( -- w ; w -- ) #; ( R> ) 
+.equ hash_RTO, 0x0B8804AC #; ( R> ) 
 def_word "rto" hash_RTO 
 	push tos spt 
 	pull tos rpt 
         j next 
  
 # ( -- w ; w -- w ) #; ( R@ ) 
+.equ hash_RAT, 0x0B880702 #; ( R@ ) 
 def_word "rat" hash_RAT 
 	push tos spt 
 	lw tos, 0 (rpt) 
         j next 
  
+#---------------------------------------------------------------------- 
+# moves pointers 
+
 # ( -- rpt ) #; ( RP@ ) 
+.equ hash_RPAT, 0x7C88A9B2 #; ( RP@ ) 
 def_word "rpat" hash_RPAT 
 	push tos spt 
 	mv tos, rpt 
         j next 
  
 # ( -- spt ) #; ( SP@ ) 
+.equ hash_SPAT, 0x7C8A4E93 #; ( SP@ ) 
 def_word "spat" hash_SPAT 
 	push tos spt 
 	mv tos, spt 
         j next 
  
 # ( rpt -- ) #; ( RP! ) 
+.equ hash_RPTO, 0x7C88ABDC #; ( RP! ) 
 def_word "rpto" hash_RPTO 
 	mv rpt, tos 
 	pull tos spt 
         j next 
  
 # ( spt -- ) #; ( SP! ) 
+.equ hash_SPTO, 0x7C8A507D #; ( SP! ) 
 def_word "spto" hash_SPTO 
 	mv spt, tos 
 	pull tos spt 
         j next 
  
 #---------------------------------------------------------------------- 
+# moves data stack 
  
 # ( w -- ) #; ( DROP ) 
+.equ hash_DROP, 0x7C7F5C2C #; ( DROP ) 
 def_word "drop" hash_DROP 
 	pull tos spt 
         j next 
  
 # ( w -- w w ) #; ( DUP ) 
+.equ hash_DUP, 0x0B87BC84 #; ( DUP ) 
 def_word "dup" hash_DUP 
 	push tos spt 
         j next 
  
 # ( w1 w2 -- w1 w2 w1 ) #; ( OVER ) 
+.equ hash_OVER, 0x7C84398B #; ( OVER ) 
 def_word "over" hash_OVER 
 	push tos spt 
 	lw tos, CELL (spt) 
         j next 
  
 # ( w1 w2  -- w2 w1 ) #; ( SWAP ) 
+.equ hash_SWAP, 0x7C8A3910 #; ( SWAP ) 
 def_word "swap" hash_SWAP 
 	lw nos, 0 (spt) 
 	sw tos, 0 (spt) 
@@ -307,6 +237,7 @@ def_word "swap" hash_SWAP
         j next 
  
 # ( w1 w2 W3 -- w3 w1 w2 ) #; ( ROT ) 
+.equ hash_ROT, 0x0B8807CC #; ( ROT ) 
 def_word "rot" hash_ROT 
 	lw nos, 0 (spt) 
 	lw trd, 4 (spt) 
@@ -315,12 +246,17 @@ def_word "rot" hash_ROT
 	mv tos, nos 
         j next 
  
+#---------------------------------------------------------------------- 
+# memory 
+
 # ( a -- w ) #; ( @ ) 
+.equ hash_FETCH, 0x0C3E96F9 #; ( @ ) 
 def_word "fetch" hash_FETCH 
 	lw tos, 0 (tos) 
         j next 
  
 # ( w a -- ) #; ( ! ) 
+.equ hash_STORE, 0x0DD22B7A #; ( ! ) 
 def_word "store" hash_STORE 
 	pull nos spt 
 	sw nos, 0 (tos) 
@@ -328,11 +264,13 @@ def_word "store" hash_STORE
         j next 
  
 # ( a -- c ) #; ( C@ ) 
+.equ hash_CFETCH, 0x2376B3FA #; ( C@ ) 
 def_word "cfetch" hash_CFETCH 
 	lb tos, 0 (tos) 
         j next 
  
 # ( c a -- ) #; ( C! ) 
+.equ hash_CSTORE, 0x252B26F9 #; ( C! ) 
 def_word "cstore" hash_CSTORE 
 	pull nos spt 
 	sb nos, 0 (tos) 
@@ -340,20 +278,24 @@ def_word "cstore" hash_CSTORE
         j next 
  
 #---------------------------------------------------------------------- 
+# arithmetic 
  
 # ( w1 w2 -- w3 ) #; ( + ) addiction w1 + w2
+.equ hash_PLUS, 0x7C8A057F #; ( + ) 
 def_word "plus" hash_PLUS 
 	pull nos spt 
 	add tos, nos, tos 
         j next 
  
 # ( w1 w2 -- w3 ) #; ( - ) subtract w1 - w2
+.equ hash_MINUS, 0x0002B588 #; ( - ) 
 def_word "minus" hash_MINUS 
 	pull nos spt 
-	add tos, nos, tos 
+	sub tos, nos, tos 
         j next 
  
 # ( w1 w2 -- w3 w4 ) multiply w1 * w2, double result 
+.equ hash_BYMUL, 0x005972C2 #; ( M* ) 
 def_word "bymul", hash_BYMUL 
     	pull nos spt 
     	mulh trd, nos, tos 
@@ -364,6 +306,7 @@ push2:
         j next 
  
 # ( w1 w2 -- w3 w4 ) divide w1 / w2, reminder and quontient 
+.equ hash_BYMOD, 0x7C4D1C6C #; ( /MOD ) 
 def_word "bymod", hash_BYMOD 
     	beqz tos, by_zero 
     	pull nos spt 
@@ -372,52 +315,69 @@ def_word "bymod", hash_BYMOD
     	j push2 
  
 #---------------------------------------------------------------------- 
- 
+# logics 
+
 # ( w1 w2 -- w3 ) #; ( AND ) w1 AND w2 
+.equ hash_AND, 0x0B87B72E #; ( AND ) 
 def_word "and" hash_AND 
 	pull nos spt 
 	and tos, nos, tos 
         j next 
  
 # ( w1 w2 -- w3 ) #; ( OR ) w1 OR w2
+.equ hash_ORR, 0x0B87E22A #; ( OR ) 
 def_word "or" hash_ORR 
 	pull nos spt 
 	or tos, nos, tos 
         j next 
  
 # ( w1 w2 -- w3 ) #; ( XOR ) w1 XOR w2
+.equ hash_XOR, 0x0B883040 #; ( XOR ) 
 def_word "xor" hash_XOR 
 	pull nos spt 
 	xor tos, nos, tos 
         j next 
  
 # ( w1 -- w2 ) #; ( INVERSE) w1
+.equ hash_INVERSE, 0x2D6AA2B5 #; ( INVERSE ) 
 def_word "inverse", hash_INVERSE 
         # xori fst, fst, -1 
         not tos, tos 
         j next 
  
 # ( w1 -- w2 ) #; ( NEGATE ), arithmetic inverse 
+.equ hash_NEGATE, 0x26B37A79 #; ( NEGATE ) 
 def_word "negate", hash_NEGATE 
         # sub fst, zero, fst 
         neg tos, tos 
         j next 
  
 # ( w1 w2 -- w1<<w2 ) #; ( LSHIFT ) w1 << W2 shift left some bits 
+.equ hash_LSHIFT, 0x2C5784C9 #; ( LSHIFT ) 
 def_word "lshift", hash_LSHIFT 
          pull nos spt 
          sll tos, nos, tos 
         j next 
  
 # ( w1 w2 -- w1>>w2 ) #; ( RSHIFT ) w1 >> w2 shift right some bits 
+.equ hash_RSHIFT, 0x416E6B97 #; ( RSHIFT ) 
 def_word "rshift", hash_RSHIFT 
          pull nos spt 
          srl tos, nos, tos 
         j next 
 
+# ( w1 w2 -- w), NOT(w1 AND w2)
+.equ hash_NAND, 0x7C8254C0 #; ( NAND )
+def_word "nand" hash_NAND
+    	pull nos spt 
+        and tos, tos, nos
+	not tos, tos
+	j next
+
 #--------------------------------------------------------------------- 
  
 # ( w1 -- w2 ) #; ( ALIGN ) align to cell, word is 4 bytes 
+.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
 def_word "align", hash_ALIGN 
         addi tos, tos,  (CELL-1) 
         andi tos, tos, ~(CELL-1) 
@@ -426,6 +386,7 @@ def_word "align", hash_ALIGN
 # ( w -- ) #; #; ( PERFORM ), does a native jump 
 # at end do: ' jalr zero, 0 (ra) ' to return at j next
 # must preserve ra ipt spt rpt tos usr nib 
+.equ hash_PERFORM, 0x15EEB854 #; ( PERFORM ) 
 def_word "perform", hash_PERFORM 
 	mv nos, tos 
 	pull tos spt 
@@ -465,66 +426,44 @@ entry_point:
 */
 
 #--------------------------------------------------------------------- 
- 
+
+# comparation 
+
+# ( 0 -- FALSE) | ( n -- TRUE), not zero at top ?
+.equ hash_NILQ, 0x00596816 #; ( 0# )
+def_word "nilq", hash_NILQ
+        beqz tos, isfalse
+        j istrue
+
 # ( w1 w2 -- T|F ) #; ( = ) 
+.equ hash_EQU, 0x0002B598  #; ( = ) 
 def_word "equ" hash_EQU 
     	pull nos spt 
 	beq tos, nos, istrue 
 	j isfalse 
-        j next 
  
 # ( w1 w2 -- T|F ) #; ( < ) w1 < w2 
+.equ hash_LESS, 0x0002B599 #; ( < ) 
 def_word "less" hash_LESS 
     pull nos spt 
 	blt nos, tos, istrue 
 	j isfalse 
-        j next 
  
 # ( u1 u2 -- T|F ) #; ( U< ) u1 < u2 
+.equ hash_ULESS, 0x005973CC #; (U< ) 
 def_word "uless" hash_ULESS 
     	pull nos spt 
 	bltu nos, tos, istrue 
 	j isfalse 
-        j next 
- 
-# ( w1 w2 -- T|F ) #; ( > ) w1 > w2 
-def_word "more" hash_MORE
-    	pull nos spt 
-	blt tos, nos, istrue 
-	j isfalse 
-        j next 
- 
-# ( u1 u2 -- T|F ) #; ( U< ) u1 < u2 
-def_word "umore" hash_UMORE
-    	pull nos spt 
-	bltu tos, nos, istrue 
-	j isfalse 
-        j next 
- 
-# ( w1 -- T|F ) #; ( 0= ) 
-def_word "zequ" hash_ZEQU 
-	beq tos, zero, istrue 
-	j isfalse 
-        j next 
- 
-# ( w1 -- T|F ) #; ( 0< ) w1 < w2 
-def_word "zless" hash_ZLESS 
-    pull nos spt 
-	blt tos, zero, istrue 
-	j isfalse 
-        j next 
- 
-# ( w1 -- T|F ) #; ( 0> ) w1 > w2 
-def_word "zmore" hash_ZMORE
-    	pull nos spt 
-	blt zero, tos, istrue 
-	j isfalse 
-        j next 
- 
+
+#--------------------------------------------------------------------- 
+# implementation dependent stuff 
+
 #--------------------------------------------------------------------- 
 # constants 
  
 # ( -- 0xFFFFFFFF ) #; ( TRUE ) 
+.equ hash_TRUE, 0x7C879BF3 #; ( TRUE ) 
 def_word "true" hash_TRUE 
 	push tos spt 
 istrue: 
@@ -532,6 +471,7 @@ istrue:
         j next 
  
 # ( -- 0x00000000 ) #; ( FALSE ) 
+.equ hash_FALSE, 0x0C3C6778 #; ( FALSE ) 
 def_word "false" hash_TRUE 
 	push tos spt 
 isfalse: 
@@ -539,47 +479,40 @@ isfalse:
         j next 
  
 # ( -- 0x80000000 ) #; ( NAN ) #; return error and flag IMMEDIATE 
+.equ hash_NAN, 0x0B87D404 #; ( NAN ) 
 def_word "nan" hash_NAN 
-by_erro: 
 by_zero: 
-by_under: 
 by_over: 
+by_under: 
+by_error: 
 	push tos spt 
 	lui tos, 0x8000 
         j next 
  
-# ( -- 0) #; ( 0 ) #; 
-def_word "nil" hash_NIL 
-	push tos spt 
-	lui tos, 0x0 
-        j next 
- 
-# ( -- 1) #; ( 1 ) #; 
-def_word "one" hash_ONE 
-	push tos spt 
-	lui tos, 0x1 
-        j next 
- 
-# ( -- 2) #; ( 2 ) #; 
-def_word "two" hash_TWO 
-	push tos spt 
-	lui tos, 0x2 
-        j next 
- 
 # ( -- 4) #; ( CELL ) #; sizeof a CELL, usualy 32 bits 
+.equ hash_CELL, 0x7C81B0A3 #; ( CELL ) 
 def_word "cell" hash_CELL 
 	push tos spt 
 	lui tos, 0x4 
         j next 
  
+# ( u -- u*4 ) #; ( CELLS ) #; sized to CELL 
+.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
+def_word "cells" hash_CELLS
+	sll tos, tos, 0x4 
+        j next 
+ 
 #--------------------------------------------------------------------- 
 
-# ( -- usr ) #; ( USER ) 
-def_word "user" hash_RPZ 
+# constants
+.equ hash_USER, 0x7C84F154 #; ( USER )
+# ( -- usr ) #; ( USER ) pointer to user array, milliforth: U@ 
+def_word "user" hash_USER 
 	push tos spt 
 	mv tos, usr 
         j next 
 
+.equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
 # ( -- rp0 ) #; ( RPZ ) 
 def_word "rp0" hash_RPZ 
 	push tos spt 
@@ -587,6 +520,7 @@ def_word "rp0" hash_RPZ
         j next 
  
 # ( -- sp0 ) #; ( SPZ ) 
+.equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
 def_word "sp0" hash_SPZ 
 	push tos spt 
 	lw tos, SPTR  * CELL ( usr ) 
@@ -595,31 +529,38 @@ def_word "sp0" hash_SPZ
 #--------------------------------------------------------------------- 
 # variables 
  
+.equ hash_TEMP, 0x7C87D1E9 #; ( TEMP ) 
+
 # ( -- state ) #; ( STATE ) 
+.equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
 def_word "state" hash_STAT 
 	push tos spt 
 	addi tos, usr, STAT * CELL
         j next 
  
 # ( -- last ) #; ( LATEST ) 
+.equ hash_LAST, 0x2ADAAFBE #; ( LATEST ) 
 def_word "latest" hash_LAST 
 	push tos spt 
 	addi tos, usr, LAST * CELL
         j next 
  
 # ( -- heap ) #; ( DP ) 
+.equ hash_HEAP, 0x00597251 #; ( DP ) 
 def_word "heap" hash_HEAP 
 	push tos spt 
 	addi tos, usr, HEAP * CELL
         j next 
  
 # ( -- base ) #; ( BASE ) 
+.equ hash_BASE, 0x7C8025F0 #; ( BASE ) 
 def_word "base" hash_BASE 
 	push tos spt 
 	addi tos, usr, BASE * CELL
         j next 
  
 # ( -- pike ) #; ( PIKE ) 
+.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE ) 
 def_word "pike" hash_PIKE 
 	push tos spt 
 	addi tos, usr, PIKE * CELL
@@ -665,108 +606,119 @@ def_word "zbeats" hash_ZBEATS
 .endif
 
 
-#--------------------------------------------------------------------- 
-
-/* 
-<ref>
 
 #----------------------------------------------------------------------
-# code a ASCII $0-9A-F hexadecimal to value
-# safe inside Forth words, direct use getc
+# code a ASCII $0-9A-Z to value, conform radix of BASE
+.equ hash_TONUMBER, 0x0002B581 #; ( $ )
+# ( -- w ) #; ( $ ) 
+def_word "tonumber" hash_TONUMBER
+
+	push tos spt
+
+	call tonumber
+
+	j next
+
+#----------------------------------------------------------------------
 # >number
 tonumber:
-
-        save_ra
+# safe inside Forth words, direct use getc
+# strict to use a0, a1, a2 in getc 
+# using a3 a4 a5 as extras for easy
 
         # clear result
 
-        li trd, 0
+        li a3, 0
 
-        # load NaN
+        # load space
 
-        lui snd, NAN
+        li a4, BL
 
-        # load word separator, BL is space
+	# load radix 
 
-        li spc, BL
+        lw a5, BASE * CELL (usr)
 
         # skip spaces
 nskip:
 
         call _getc
 
-        bleu fst, spc, nskip
+	# escape allow controls
+
+        bltu tos, a4, nskip
+
+	# while space
+
+        bleu tos, a4, nskip
+
+# verify ASCII valid digit and convert it
+
 ndigit:
 
-        call digit
+        #; valid digit, 0-9 and A-F
+        addi tos, tos, -48
+        blt tos, zero, nodigit
 
-        beq fst, snd, nodigit
+        #; 0-9 ?
+        li nos, 10
+        blt tos, tos, isradix
 
-        slli trd, trd, 4
+        #; normalize gap ascii 9 to A
+        addi tos, tos, -7
 
-        add trd, trd, fst
+isradix:
+
+        bgt tos, a5, nodigit
+
+isdigit:
+
+        mul a3, a3, a5
+
+        add a3, a3, tos
 
         # scan spaces
 nscan:
 
         call _getc
 
-        bltu fst, spc, nscan
+	# escape allow controls
 
-        bne fst, spc, ndigit
+        bltu tos, a4, nscan
 
-isdigit:
+	# until space
 
-        mv fst, trd
+        bne tos, a4, ndigit
+
+resume:
+
+        mv tos, a3
+
+        ret
 
 nodigit:
 
-        load_ra
+        mv tos, a5
 
         ret
 
 #---------------------------------------------------------------------
-
-# verify valid digit and convert it
-digit:
-
-100:
-        #; valid digit, 0-9 and A-F
-        addi fst, fst, -48
-        blt fst, zero, 400f
-
-        #; 0-9 ?
-        li hsh, 10
-        blt fst, hsh, 200f
-
-        #; normalize gap ascii 9 to A
-        addi fst, fst, -7
-
-        #; A to F ? No esoteric bases !
-        li hsh, 16
-        bgt fst, hsh, 400f
-
-200:
-# is_digit, okey
-        ret
-
-400:
-# is_error, NaN
-
-        lui fst, NAN
-
-        ret
-
-#---------------------------------------------------------------------
-# code a 32-bit word in 0-9A-F ASCII hexadecimal
+# code a 32-bit value in 0-9A-Z ASCII, conform radix value
 # safe inside Forth words, direct putc
-#
+# ( w -- ) #; ( . ) 
+.equ hash_DOT, 0x0002B58B #; ( . )
+def_word "dot" hash_DOT
+
+	call num2hex
+
+	pull tos spt
+
+	j next
+
+#---------------------------------------------------------------------
 # number>
-numberto:
+num2hex:
 
-        save_ra
-
-        mv t3, fst
+        mv t3, tos
 
         li t4, 58
 
@@ -779,6 +731,8 @@ numberto:
         addi t5, t5, -4
 
         srl  a3, t3, t5
+
+# mask
 
         andi a3, a3, 15
 
@@ -794,10 +748,7 @@ numberto:
         j 100b
 300:
 
-        load_ra
-
         ret
 
 #---------------------------------------------------------------------
 
-</ref> */

@@ -51,18 +51,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # AEFORTH2 pre-compiled words 
 #---------------------------------------------------------------------- 
  
-.equ hash_LIT, 0x0B87DB14 #; ( LIT ) 
-.equ hash_HERE, 0x7C857F9F #; ( HERE ) 
-.equ hash_ALLOT, 0x0C53195F #; ( ALLOT ) 
-.equ hash_COMMA, 0x0002B589 #; ( , ) 
-.equ hash_LITERAL, 0x738774CE #; ( LITERAL )
-
-.equ hash_LBRACK, 0x0002B5FE #; ( [ )
-.equ hash_RBRACK, 0x0002B5F8 #; ( ] )
-.equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
-.equ hash_IMMEDIATEQ, 0x112AA8AB #; ( IMMEDIATE? )
-
-.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 
 # controls backwards
 
@@ -155,66 +143,151 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_TONUMBER, 0x58D73858 #; ( >NUMBER ) 
 
 #---------------------------------------------------------------------- 
+
+.equ hash_NIL, 0x0002B595 #; ( 0 ) 
+# ( -- 0) #; ( 0 ) #; 
+def_word "nil" hash_NIL 
+	push tos spt 
+	lui tos, 0x0 
+        j next 
+ 
+.equ hash_ONE, 0x0002B594 #; ( 1 ) 
+# ( -- 1) #; ( 1 ) #; 
+def_word "one" hash_ONE 
+	push tos spt 
+	lui tos, 1 
+        j next 
+ 
+.equ hash_TWO, 0x0002B597 #; ( 2 ) 
+# ( -- 2) #; ( 2 ) #; 
+def_word "two" hash_TWO 
+	push tos spt 
+	lui tos, 2 
+        j next 
+
+.equ hash_TEN, 0x00596824 #; ( 10 )
+# ( -- 10) #; ( 10 ) #; 
+def_word "ten" hash_TEN
+	push tos spt 
+	lui tos, 10 
+        j next 
+ 
+#---------------------------------------------------------------------- 
+
+.equ hash_ZEQU, 0x00596808 #; ( 0= )
+# ( w -- f ) #; ( 0= )
+def_word "zequ" hash_ZEQU
+	.word xt_lit, 0
+	.word xt_equ
+	.word xt_exit
+
+.equ hash_ZLESS, 0x00596809 #; ( 0< )
+# ( w -- f ) #; ( 0< )
+def_word "zless" hash_ZLESS
+	.word xt_lit, 0
+	.word xt_less
+	.word xt_exit
+
+.equ hash_ZMORE, 0x0059680B #; ( 0> )
+# ( w -- f ) #; ( 0> )
+def_word "zmore" hash_ZMORE
+	.word xt_lit, 0
+	.word xt_swap
+	.word xt_less
+	.word xt_exit
+
+#---------------------------------------------------------------------- 
  
 # ( -- w ) ;# ( LIT ) 
+.equ hash_LIT, 0x0B87DB14 #; ( LIT ) 
 def_word "lit" hash_LIT 
 	.word xt_docon 
 	.word xt_exit 
  
 # ( -- a ) ;# ( HERE ) 
+.equ hash_HERE, 0x7C857F9F #; ( HERE ) 
 def_word "here" hash_HERE 
 	.word xt_heap, xt_fetch 
 	.word xt_exit 
  
 # ( u -- ) ;# ( ALLOT ) 
+.equ hash_ALLOT, 0x0C53195F #; ( ALLOT ) 
 def_word "allot" hash_ALLOT 
 	.word xt_here, xt_plus, xt_heap, xt_store 
 	.word xt_exit 
  
 # ( w -- ) ;# ( COMMA ) 
+.equ hash_COMMA, 0x0002B589 #; ( , ) 
 def_word "comma" hash_COMMA 
 	.word xt_here, xt_store, xt_cell, xt_allot 
 	.word xt_exit 
  
 # ( -- ) #; ( LITERAL )  
+.equ hash_LITERAL, 0x738774CE #; ( LITERAL )
 def_word "literal" hash_LITERAL
 	.word xt_lit, xt_lit, xt_comma, xt_comma
 	.word xt_exit
 
 # ( -- ) #; ( [ )  
+.equ hash_LBRACK, 0x0002B5FE #; ( [ )
 def_word "lbrack" hash_LBRACK IMMEDIATE
 	.word xt_lit, xt_nil, xt_state, xt_store
 	.word xt_exit
 
 # ( -- ) #; ( ] )  
+.equ hash_RBRACK, 0x0002B5F8 #; ( ] )
 def_word "rbrack" hash_RBRACK
 	.word xt_lit, xt_one, xt_state, xt_store
 	.word xt_exit
 
-#---------------------------------------------------------------------- 
+# ( -- ) #; ( IMMEDIATE ) makes a word immediate 
+.equ hash_IMMEDIATE, 0x236DE614 #; ( IMMEDIATE )
+def_word "immediate" hash_IMMEDIATE
+	.word xt_latest, xt_fetch, xt_cell, xt_plus
+	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
+	.word xt_exit 
 
-.equ hash_DOCODE, 0x7C81D9A8 #; ( CODE )
-.equ hash_ENDCODE, 0x4507E16A #; ( END-CODE )
-.equ hash_TOCODE, 0x075D9A73 #; ( ;CODE )
-.equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
+# ( a -- a F ) #; ( IMMEDIATE? ) is a word immediate ?
+.equ hash_IMMEDIATEQ, 0x112AA8AB #; ( IMMEDIATE? )
+def_word "immediateq" hash_IMMEDIATEQ
+	.word xt_cell, xt_plus, xt_fetch
+	.word xt_lit, FLAG_IMM, xt_and
+	.word xt_exit 
+ 
+# ( -- ) #; ( RECURSE ) compiles the word been compiled 
+.equ hash_RECURSE, 0x06761000 #; ( RECURSE )
+def_word "recurse" hash_RECURSE IMMEDIATE
+	# there is no return, 
+	.word xt_lit, xt_rto, xt_comma
+	# compile to self, could cause dead loops
+	.word xt_pike, xt_fetch
+	.word xt_cell, xt_plus, xt_cell, xt_plus
+	.word xt_comma
+	.word xt_exit 
+
+#---------------------------------------------------------------------- 
 
 # ( -- ) #; #; ( CODE ), starts native code, ZZZZ 
 # enable ASM vocabulary
-def_word "iscode" hash_DOCODE 
+.equ hash_DOCODE, 0x7C81D9A8 #; ( CODE )
+def_word "docode" hash_DOCODE 
 	.word xt_exit 
 
 # ( -- ) #; #; ( END-CODE ), ends native code, ZZZZ 
+.equ hash_ENDCODE, 0x4507E16A #; ( END-CODE )
 # disable ASM vocabulary
 def_word "endcode" hash_ENDCODE 
 	.word xt_exit 
 
-# ( w -- ) #; #; ( ;CODE ), does a native call 
+# ( w -- ) #; #; ( :CODE ), does a native call 
+.equ hash_TOCODE, 0x075D9A73 #; ( ;CODE )
 def_word "tocode" hash_TOCODE 
 	.word xt_rto, xt_perform
 	.word xt_exit 
 
 # ( w -- ) #; #; ( CODE; ), does a native return 
 # in RISCV ret is jalr zero, 0 (ra) 
+.equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
 .equ RET, 0x00008067
 def_word "codeto" hash_CODETO 
 	.word xt_lit, RET, xt_comma
@@ -542,28 +615,6 @@ def_word "postpone" hash_POSTPONE IMMEDIATE
 	.word xt_tick, xt_comma 
 	.word xt_exit 
  
-# ( -- ) #; ( IMMEDIATE ) makes a word immediate 
-def_word "immediate" hash_IMMEDIATE
-	.word xt_latest, xt_fetch, xt_cell, xt_plus
-	.word xt_dup, xt_fetch, xt_nan, xt_or, xt_swap, xt_store
-	.word xt_exit 
- 
-# ( a -- a F ) #; ( IMMEDIATE? ) is a word immediate ?
-def_word "immediateq" hash_IMMEDIATEQ
-	.word xt_cell, xt_plus, xt_fetch
-	.word xt_lit, FLAG_IMM, xt_and
-	.word xt_exit 
- 
-# ( -- ) #; ( RECURSE ) compiles the word been compiled, could cause dead loops
-def_word "recurse" hash_RECURSE IMMEDIATE
-	# drop return
-	.word xt_lit, xt_rto, xt_comma
-	# compile to self
-	.word xt_pike, xt_fetch
-	.word xt_cell, xt_plus, xt_cell, xt_plus
-	.word xt_comma
-	.word xt_exit 
- 
 # ( -- ) #; ( INTERPRET )
 def_word "interpret" hash_INTERPRET
 	.word xt_begin, xt_hash, xt_seek
@@ -597,30 +648,25 @@ def_word "compile" hash_COMPILE
 
 #----------------------------------------------------------------------
 #
-# All numbers are prefixed. but with a space :) $NNN is $ NNN 
+# All numbers are prefixed by a dollar :) $ NNN  
 #
 
-.equ hash_TONUMBER, 0x58D73858 #; ( $ )
-def_word "tonumber" hash_TONUMBER
-	.word xt_exit
-
 .equ hash_HEX, 0x0B87EC90 #; ( HEX )
-.equ hash_DEC, 0x0B87BA87 #; ( DEC )
-.equ hash_OCT, 0x0B87E0DD #; ( OCT )
-.equ hash_BIN, 0x0B87C400 #; ( BIN )
-
 def_word "number_hex" hash_HEX
 	.word xt_lit, 16, xt_base, xt_store
 	.word xt_exit
 
+.equ hash_DEC, 0x0B87BA87 #; ( DEC )
 def_word "number_dec" hash_DEC
 	.word xt_lit, 10, xt_base, xt_store
 	.word xt_exit
 
+.equ hash_OCT, 0x0B87E0DD #; ( OCT )
 def_word "number_oct" hash_OCT
 	.word xt_lit, 8, xt_base, xt_store
 	.word xt_exit
 
+.equ hash_BIN, 0x0B87C400 #; ( BIN )
 def_word "number_bin" hash_BIN
 	.word xt_lit, 2, xt_base, xt_store
 	.word xt_exit
@@ -816,33 +862,23 @@ def_word "twomul" hash_2MUL
 
 #---------------------------------------------------------------------- 
 
-.equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
-
-def_word "cells" hash_CELLS
-	.word xt_lit, 2
-	.word xt_lshift
-	.word xt_exit
-
-#---------------------------------------------------------------------- 
-
-.equ hash_ON, 0x00597364 #; ( ON )
-.equ hash_OFF, 0x0B87E0AA #; ( OFF )
 .equ hash_BL, 0x0059728B #; ( BL )
-.equ hash_QU, 0x00597421 #; ( QU )
-
 def_word "bl" hash_BL
 	.word xt_lit, BL
 	.word xt_exit
 
+.equ hash_QU, 0x00597421 #; ( QU )
 def_word "qu" hash_QU
 	.word xt_lit, QU
 	.word xt_exit
 
+.equ hash_ON, 0x00597364 #; ( ON )
 def_word "on" hash_ON
 	.word xt_lit, TRUE
 	.word xt_swap, xt_store
 	.word xt_exit
 
+.equ hash_OFF, 0x0B87E0AA #; ( OFF )
 def_word "off" hash_OFF
 	.word xt_lit, FALSE
 	.word xt_swap, xt_store
@@ -883,33 +919,34 @@ def_word "pick" hash_PICK
 .equ hash_ROLL, 0x7C890218 #; ( ROLL )
 # ( u -- ) #; ( ROLL ) ZZZZ
 def_word "roll" hash_ROLL
-	.word xt_dup, xt_cells, xt_spat, xt_plus, xt_fetch, xt_tor
-	.word xt_begin, xt_one, xt_minus, xt_while  
-	.word xt_dup, xt_cell, xt_minus, xt_fetch, xt_swap, xt_store
+	.word xt_dup
+	.word xt_begin
+	.word xt_while, xt_swap, xt_tor
 	.word xt_repeat 
+	.word xt_begin
+	.word xt_while, xt_rto
+	.word xt_repeat
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
 #\ E.10 The optional Exception word set
 
 .equ hash_HANDLER, 0x37B8B03D #; ( HANDLER ) 
-.equ hash_CATCH, 0x0CB9F7F8 #; ( CATCH ) 
-.equ hash_THROW, 0x0D847D13 #; ( THROW )
-.equ hash_ABORT, 0x0C4FFEAF #; ( ABORT ) 
-
 def_word "handler" hash_HANDLER
 	.word xt_dovar, 0
 	.word xt_exit
 
+.equ hash_CATCH, 0x0CB9F7F8 #; ( CATCH ) 
 def_word "catch" hash_CATCH
 	.word xt_spat, xt_tor
 	.word xt_handler, xt_fetch, xt_tor
-	.word xt_execute # ????
+	.word xt_execute
 	.word xt_rto, xt_handler, xt_store
 	.word xt_rto, xt_drop
 	.word xt_nil
 	.word xt_exit
 
+.equ hash_THROW, 0x0D847D13 #; ( THROW )
 def_word "throw" hash_THROW
 	.word xt_qdup, xt_if
 	.word xt_handler, xt_fetch, xt_rpto
@@ -919,6 +956,7 @@ def_word "throw" hash_THROW
 	.word xt_then
 	.word xt_exit
 	
+.equ hash_ABORT, 0x0C4FFEAF #; ( ABORT ) 
 def_word "abort" hash_ABORT
 	.word xt_lit, -1, xt_throw
 	.word xt_exit
@@ -927,59 +965,20 @@ def_word "abort" hash_ABORT
 #\ E.12 The optional Facility word set
 
 .equ hash_PLUSFIELD, 0x4D63F1AC #; ( +FIELD )
-.equ hash_BEGIN_STRUCTURE, 0x2C8D7E9A #; ( BEGIN-STRUCTURE ) 
-.equ hash_END_STRUCTURE, 0x51515D12 #; ( END-STRUCTURE )
-
 def_word "plusfield" hash_PLUSFIELD
 	.word xt_create, xt_over, xt_comma, xt_plus
 	.word xt_does, xt_fetch, xt_plus
 	.word xt_exit
 
+.equ hash_BEGIN_STRUCTURE, 0x2C8D7E9A #; ( BEGIN-STRUCTURE ) 
 def_word "begin_structure" hash_BEGIN_STRUCTURE
    	.word xt_create, xt_here, xt_nil, xt_nil, xt_comma
 	.word xt_does, xt_fetch
 	.word xt_exit
 
+.equ hash_END_STRUCTURE, 0x51515D12 #; ( END-STRUCTURE )
 def_word "end_structure" hash_END_STRUCTURE
 	.word xt_swap, xt_store
 	.word xt_exit
 
 #---------------------------------------------------------------------- 
-
-/*
-.equ hash_ZEQU, 0x00596808 #; ( 0= )
-.equ hash_ZLESS, 0x00596809 #; ( 0< )
-.equ hash_ZGREAT, 0x0059680B #; ( 0> )
-
-# ( w -- f ) #; ( 0= )
-def_word "zequ" hash_ZEQU
-	.word xt_lit, 0
-	.word xt_equ
-	.word xt_exit
-
-# ( w -- f ) #; ( 0< )
-def_word "zless" hash_ZLESS
-	.word xt_lit, 0
-	.word xt_less
-	.word xt_exit
-
-# ( w -- f ) #; ( 0> )
-def_word "zmore" hash_ZMORE
-	.word xt_lit, 0
-	.word xt_greather
-	.word xt_exit
-*/
-
-/*
-.equ hash_FALSE, 0x0C3C6778 #; ( FALSE )
-.equ hash_TRUE, 0x7C879BF3 #; ( TRUE )
-
-def_word "false" hash_FALSE
-	.word xt_lit, FALSE
-	.word xt_exit
-
-def_word "true" hash_TRUE
-	.word xt_lit, TRUE
-	.word xt_exit
-*/
-
