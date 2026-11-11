@@ -36,28 +36,30 @@ bgtu R1, R2, Label ( 1 cycle )
         
 ## Classic ITC, aka Fig-Forth
 
-Enter:
-        
-        push IP, RP ;
-        move IP, W ;
-        jump Next ;
-
-Exit:
-        
-        pull IP, RP ;
-
-Next:
+.macro  Next
 
         pull W, IP ; 
         jump (W) ;
+.endm
 
-Any word  could be at anywhere in dictionary.
+Enter:  ( docol )
+        
+        push IP, RP ;
+        move IP, W ;
+        Next ;
 
-Every word must start with *Enter*. 
+Exit:   ( semis )
+        
+        pull IP, RP ;
+        Next ;
 
-Words primitives ends with *Next* and words compiled ends with *Exit*.
+Any word  could be at anywhere in dictionary. Does not need register V. 
 
-The registers IP and W does not need be preserved, does not need register V. 
+Any primitive word ends with *Next*.
+
+Any compiled word must start with *Enter* and ends with *Exit*.
+
+The registers IP and W does not need be preserved.
 
 ## The M.I.T.C. 
 
