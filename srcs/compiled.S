@@ -254,6 +254,9 @@ def_word "immediateq" hash_IMMEDIATEQ
 	.word xt_lit, FLAG_IMM, xt_and
 	.word xt_exit 
  
+/*
+	USE NOT CLEAR
+
 # ( -- ) #; ( RECURSE ) compiles the word been compiled 
 .equ hash_RECURSE, 0x06761000 #; ( RECURSE )
 def_word "recurse" hash_RECURSE IMMEDIATE
@@ -264,6 +267,7 @@ def_word "recurse" hash_RECURSE IMMEDIATE
 	.word xt_cell, xt_plus, xt_cell, xt_plus
 	.word xt_comma
 	.word xt_exit 
+*/
 
 #---------------------------------------------------------------------- 
 
@@ -644,10 +648,34 @@ def_word "compile" hash_COMPILE
 	.word xt_exit
 
 #----------------------------------------------------------------------
+.equ hash_SPACE, 0x0DD41F41 #; ( SPACE ) 
+def_word "space" hash_SPACE
+	.word xt_lit, BL, xt_emit
+	.word xt_exit
+
+# ( u -- ) #; emits u spaces
+.equ hash_SPACES, 0x48580732 #; ( SPACES ) 
+def_word "spaces" hash_SPACES
+	.word xt_begin, xt_dup 
+	.word xt_while, xt_space, xt_one, xt_minus 
+	.word xt_repeat, xt_drop
+	.word xt_exit
+
+# ( a u -- ) #; emits u characters from address a
+.equ hash_TYPE, 0x7C87A05D #; ( TYPE ) 
+def_word "type" hash_TYPE
+	.word xt_begin, xt_dup 
+	.word xt_while, xt_tor
+	.word xt_dup, xt_cfetch, xt_emit
+	.word xt_one, xt_plus
+	.word xt_rto, xt_one, xt_minus
+	.word xt_repeat, xt_drop, xt_drop
+	.word xt_exit
+
 .equ hash_PDOTQUOP, 0x7C4F2F48 #; ( (.") )
 def_word "pdotquop" hash_PDOTQUOP
 	.word xt_rto, xt_begin, xt_dup, xt_fetch
-	.word xt_while, xt_dup, xt_fetch, xt_emit, xt_one, xt_plus
+	.word xt_while, xt_dup, xt_cfetch, xt_emit, xt_one, xt_plus
 	.word xt_repeat, xt_tor
 	.word xt_exit
 
@@ -655,8 +683,9 @@ def_word "pdotquop" hash_PDOTQUOP
 def_word "dotquo" hash_DOTQUO
 	.word xt_state, xt_fetch, xt_if
 	.word xt_lit, xt_pdotquop, xt_comma
-	.word xt_lit, xt_space, 
-	.word xt_else, xt_type, # zzzzz
+	.word xt_lit, xt_space 
+	# ZZZZ 
+	.word xt_else, xt_type
 	.word xt_exit
 
 #----------------------------------------------------------------------

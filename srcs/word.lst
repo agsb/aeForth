@@ -117,6 +117,8 @@ compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE
 compiled.S:def_word "interpret" hash_INTERPRET
 compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "compile" hash_COMPILE
+compiled.S:def_word "space" hash_SPACE
+compiled.S:def_word "spaces" hash_SPACES
 compiled.S:def_word "pdotquop" hash_PDOTQUOP
 compiled.S:def_word "dotquo" hash_DOTQUO
 compiled.S:def_word "number_hex" hash_HEX
