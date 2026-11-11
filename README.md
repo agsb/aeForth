@@ -14,9 +14,9 @@ No human WORDS. It uses 31-bits DJB2 hash in headers.
 
 No Terminal Input Buffer, just one-by-one-key input, and a token-to-hash ascii parser.
 
-Only use a IMMEDIATE flag, at MSBit (32) of hash, also is NaN. 
+Only use a IMMEDIATE flag, at MSBit (32) of hash, also 0x80000000 is indicator of errors and Not a Number. 
 
-Uses SP, RP, IP, TOS keeped in dedicated registers.
+Uses SP, RP, IP and TOS, keeped in dedicated registers.
 
 There are some primitive words in native code, some in pre-compiled code and a file to compile with more forth words.
 
