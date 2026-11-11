@@ -38,43 +38,54 @@ bgtu R1, R2, Label ( 1 cycle )
 
 .macro  Next
 
-        pull W, IP ; 
-        jump (W) ;
+        pull W, IP 	\ 2 cycles ; 
+        jump (W) 	\ 1 cycle ;
 .endm
 
-Enter:  ( docol )
+( docol aka nest )
+Enter:  
         
-        push IP, RP ;
-        move IP, W ;
-        Next ;
+        push IP, RP 	\ 2 cycles ;
+        move IP, W 	\ 1 cycle ;
+        Next ;		\ 3 cycles ;
 
-Exit:   ( semis )
+( semis aka unnest )
+Exit:   
         
-        pull IP, RP ;
-        Next ;
+        pull IP, RP 	\ 2 cycles ;
+        Next ;		\ 3 cycles ;
 
-Any word  could be at anywhere in dictionary. Does not need register V. 
+Both word types, primitive or compiled, could be at anywhere in dictionary. Does not need register V. 
 
-Any primitive word ends with *Next*.
+All words ends with *Next*. The primitives have machine native code.
 
-Any compiled word must start with *Enter* and ends with *Exit*.
+	primitive: code Next
 
-The registers IP and W does not need be preserved.
+The compiled word inits with *docol* and exits with *semis*. The spot is a reference address to a word. 
+
+	compiled: docol spot spot ... spot semis
+
+Usually Next is a macro at very end of all words. Some Forths uses a jump to Next.
+
+The register W contains the spot of word been executed and IP the follow one.
 
 ## The M.I.T.C. 
 
-All primitive words bellow a memory reference at register V, and all compiled above. 
+The main idea of M.I.T.C is reorder the code pieces on docol (Enter), semis (Exit) and Next, 
+	to not need *docol* at start of every word and only do one jump at ends.
 
-Uses same 6 instructions of the Classic plus one for comparison.
+Uses same 6 instructions of the Classic ITC plus one instruction for comparison.
 
-Re-order the instructions to not need *Enter* at start of every word.
+It does jumps only into primitive words else the references (spots) are pushed and pulled at return stack.
 
-Only jumps to primitive words, a test decides it, then more 1 instruction cycle.
+Place all primitive words bellow a memory reference (at register V), and all compiled words above. 
 
-For all compiled words does at two jumps less than Classic, then less 2 instructions cycles.
+A unique test ( 1 cycle ) to decides if jump of push. 
+
+For all compiled words does at two jumps less ( -2 cycles ) than Classic.
 
 The register V could be loaded with reference address before and preserved, 
-        or before each comparasion, at costs of more one instruction cycle.
+        or before each comparasion ( + 1 cycle ).
 
 ## M.I.T.C. version 1.0
 
