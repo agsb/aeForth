@@ -1,5 +1,4 @@
 aeforth2.S:def_word "reset" hash_RESET
-assembled.S:def_word "align", hash_ALIGN 
 assembled.S:def_word "and" hash_AND 
 assembled.S:def_word "base" hash_BASE 
 assembled.S:def_word "beatsto" hash_BEATSTO 
@@ -61,6 +60,8 @@ compiled.S:def_word "abort" hash_ABORT
 compiled.S:def_word "aft" hash_AFT IMMEDIATE 
 compiled.S:def_word "again" hash_AGAIN IMMEDIATE 
 compiled.S:def_word "ahead" hash_AHEAD IMMEDIATE 
+compiled.S:def_word "aligned", hash_ALIGNED 
+compiled.S:def_word "align", hash_ALIGN 
 compiled.S:def_word "allot" hash_ALLOT 
 compiled.S:def_word "array" hash_ARRAY 
 compiled.S:def_word "back" hash_BACK IMMEDIATE 
@@ -72,6 +73,7 @@ compiled.S:def_word "buffer" hash_BUFFER
 compiled.S:def_word "builds" hash_BUILDS 
 compiled.S:def_word "case" hash_CASE IMMEDIATE 
 compiled.S:def_word "catch" hash_CATCH
+compiled.S:def_word "ccomma" hash_CCOMMA 
 compiled.S:def_word "codeto" hash_CODETO 
 compiled.S:def_word "colon" hash_COLON 
 compiled.S:def_word "comma" hash_COMMA 
@@ -83,7 +85,7 @@ compiled.S:def_word "djb2" hash_DJB2
 compiled.S:def_word "docode" hash_DOCODE 
 compiled.S:def_word "does" hash_DOES 
 compiled.S:def_word "do" hash_DO IMMEDIATE 
-compiled.S:def_word "dotquo" hash_DOTQUO
+compiled.S:def_word "doquote" hash_DOTQUO IMMEDIATE
 compiled.S:def_word "else" hash_ELSE IMMEDIATE 
 compiled.S:def_word "endcase" hash_ENDCASE IMMEDIATE 
 compiled.S:def_word "endcode" hash_ENDCODE 
@@ -122,7 +124,6 @@ compiled.S:def_word "off" hash_OFF
 compiled.S:def_word "of" hash_OF IMMEDIATE 
 compiled.S:def_word "one" hash_ONE 
 compiled.S:def_word "on" hash_ON
-compiled.S:def_word "pdotquop" hash_PDOTQUOP
 compiled.S:def_word "pick" hash_PICK
 compiled.S:def_word "ploop" hash_PLOOP IMMEDIATE 
 compiled.S:def_word "plusfield" hash_PLUSFIELD
@@ -160,6 +161,8 @@ compiled.S:def_word "tworto" hash_2RTO
 compiled.S:def_word "twostore" hash_2STORE
 compiled.S:def_word "twoswap" hash_2SWAP
 compiled.S:def_word "twotor" hash_2TOR
+compiled.S:def_word "type" hash_TYPE
+compiled.S:def_word "typez" hash_TYPEZ
 compiled.S:def_word "until" hash_UNTIL IMMEDIATE 
 compiled.S:def_word "unto" hash_UNTO IMMEDIATE 
 compiled.S:def_word "value" hash_VALUE 

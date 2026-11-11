@@ -33,7 +33,6 @@ assembled.S:def_word "negate", hash_NEGATE
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "rshift", hash_RSHIFT 
 assembled.S:def_word "nand" hash_NAND
-assembled.S:def_word "align", hash_ALIGN 
 assembled.S:def_word "perform", hash_PERFORM 
 assembled.S:def_word "nilq", hash_NILQ
 assembled.S:def_word "equ" hash_EQU 
@@ -67,7 +66,10 @@ compiled.S:def_word "zmore" hash_ZMORE
 compiled.S:def_word "lit" hash_LIT 
 compiled.S:def_word "here" hash_HERE 
 compiled.S:def_word "allot" hash_ALLOT 
+compiled.S:def_word "ccomma" hash_CCOMMA 
 compiled.S:def_word "comma" hash_COMMA 
+compiled.S:def_word "aligned", hash_ALIGNED 
+compiled.S:def_word "align", hash_ALIGN 
 compiled.S:def_word "literal" hash_LITERAL
 compiled.S:def_word "lbrack" hash_LBRACK IMMEDIATE
 compiled.S:def_word "rbrack" hash_RBRACK
@@ -119,8 +121,9 @@ compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "compile" hash_COMPILE
 compiled.S:def_word "space" hash_SPACE
 compiled.S:def_word "spaces" hash_SPACES
-compiled.S:def_word "pdotquop" hash_PDOTQUOP
-compiled.S:def_word "dotquo" hash_DOTQUO
+compiled.S:def_word "type" hash_TYPE
+compiled.S:def_word "typez" hash_TYPEZ
+compiled.S:def_word "doquote" hash_DOTQUO IMMEDIATE
 compiled.S:def_word "number_hex" hash_HEX
 compiled.S:def_word "number_dec" hash_DEC
 compiled.S:def_word "number_oct" hash_OCT

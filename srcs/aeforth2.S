@@ -122,6 +122,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ NAN,   0x80000000
 
+# sizeof a CELL
+
+.equ CELL, 4    
+
 # flag for words 
 
 .equ IMMEDIATE, NAN
@@ -134,11 +138,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # usefull
 
-.equ CELL, 4    # sizeof a CELL
-
-.equ BL,  32    # word delimiter is blank space
+.equ BL,  32    # word delimiter is blank space, first valid ascii
 
 .equ QU,  34    # string delimiter is double quote, quotation mark
+
+.equ TL, 126    # last valid ascii ( ~ ) tilde
 
 # highlander, immediate flag, unique NaN
 

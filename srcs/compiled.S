@@ -216,11 +216,30 @@ def_word "allot" hash_ALLOT
 	.word xt_here, xt_plus, xt_heap, xt_store 
 	.word xt_exit 
  
+# ( c -- ) ;# ( CCOMMA ) 
+.equ hash_CCOMMA,  0x0059728A  #; ( C, ) compile a char 
+def_word "ccomma" hash_CCOMMA 
+	.word xt_here, xt_cstore, xt_one, xt_allot 
+	.word xt_exit 
+ 
 # ( w -- ) ;# ( COMMA ) 
-.equ hash_COMMA, 0x0002B589 #; ( , ) 
+.equ hash_COMMA, 0x0002B589 #; ( , ) compile a word
 def_word "comma" hash_COMMA 
 	.word xt_here, xt_store, xt_cell, xt_allot 
 	.word xt_exit 
+ 
+# ( w1 -- w2 ) ;# ( ALIGNED )
+.equ hash_ALIGNED, 0x6D8D6769 #; ( ALIGNED ) 
+def_word "aligned", hash_ALIGNED 
+	.word xt_lit, CELL, xt_lit, 1, xt_less, xt_tor
+	.word xt_rat, xt_plus, xt_rto, xt_inverse, xt_plus
+	.word xt_exit
+
+# ( w1 -- w2 ) #; ( ALIGN ) align to cell, word is 4 bytes 
+.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
+def_word "align", hash_ALIGN 
+	.word xt_here, xt_aligned, xt_heap, xt_store
+        .word xt_exit
  
 # ( -- ) #; ( LITERAL )  
 .equ hash_LITERAL, 0x738774CE #; ( LITERAL )
@@ -672,20 +691,39 @@ def_word "type" hash_TYPE
 	.word xt_repeat, xt_drop, xt_drop
 	.word xt_exit
 
-.equ hash_PDOTQUOP, 0x7C4F2F48 #; ( (.") )
-def_word "pdotquop" hash_PDOTQUOP
-	.word xt_rto, xt_begin, xt_dup, xt_fetch
-	.word xt_while, xt_dup, xt_cfetch, xt_emit, xt_one, xt_plus
-	.word xt_repeat, xt_tor
+# ( a -- ) #; emits a asciiz from address a 
+.equ hash_TYPEZ, 0x0D7BABA7 #; ( TYPEZ ) 
+def_word "typez" hash_TYPEZ
+	.word xt_begin, xt_dup, xt_cfetch 
+	.word xt_while, xt_emit
+	.word xt_repeat, xt_drop
 	.word xt_exit
 
 .equ hash_DOTQUO, 0x005966C9 #; ( ." )
-def_word "dotquo" hash_DOTQUO
-	.word xt_state, xt_fetch, xt_if
-	.word xt_lit, xt_pdotquop, xt_comma
-	.word xt_lit, xt_space 
-	# ZZZZ 
-	.word xt_else, xt_type
+def_word "doquote" hash_DOTQUO IMMEDIATE
+	.word xt_lit, dot_quote, xt_comma, dot_commas 
+	.word xt_exit
+
+dot_ascii:
+	.word xt_dup 
+	.word xt_lit, BL, xt_less, xt_if 
+	.word xt_lit, TL, xt_swap, xt_less, xt_if 
+	.word xt_false, xt_exit 
+	.word xt_then, xt_then, xt_true
+	.word xt_exit
+
+dot_commas: # ZZZZ
+	.word xt_lit, QU # ( -- c )
+	.word xt_begin, xt_key  # ( c -- c k ) 
+	.word xt_dup, dot_ascii, xt_while # ( c k f -- c k )
+	.word xt_over, xt_over, xt_less    # ( c k -- c k c k -- c k w )
+	.word xt_while, xt_ccomma
+	.word xt_repeat # ( c -- c )
+	.word xt_ccomma, xt_align
+	.word xt_exit
+
+dot_quote: // must return the ip corrtcet
+	.word xt_rto, xt_typez, xt_to
 	.word xt_exit
 
 #----------------------------------------------------------------------

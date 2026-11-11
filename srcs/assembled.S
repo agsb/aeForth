@@ -376,13 +376,6 @@ def_word "nand" hash_NAND
 
 #--------------------------------------------------------------------- 
  
-# ( w1 -- w2 ) #; ( ALIGN ) align to cell, word is 4 bytes 
-.equ hash_ALIGN, 0x0C531CC8 #; ( ALIGN )
-def_word "align", hash_ALIGN 
-        addi tos, tos,  (CELL-1) 
-        andi tos, tos, ~(CELL-1) 
-        j next 
- 
 # ( w -- ) #; #; ( PERFORM ), does a native jump 
 # at end do: ' jalr zero, 0 (ra) ' to return at j next
 # must preserve ra ipt spt rpt tos usr nib 
