@@ -655,6 +655,10 @@ def_word "interpret" hash_INTERPRET
 	.word xt_again
 	.word xt_exit
 
+#----------------------------------------------------------------------
+
+# those must be compiled
+
 .equ hash_EXECUTE, 0x69224E1A #; ( EXECUTE )
 # ( w1 -- ; -- w2 ) #; ( EXECUTE ), execute a word in Forth
 def_word "execute", hash_EXECUTE
@@ -667,6 +671,7 @@ def_word "compile" hash_COMPILE
 	.word xt_exit
 
 #----------------------------------------------------------------------
+
 .equ hash_SPACE, 0x0DD41F41 #; ( SPACE ) 
 def_word "space" hash_SPACE
 	.word xt_lit, BL, xt_emit
@@ -676,11 +681,12 @@ def_word "space" hash_SPACE
 .equ hash_SPACES, 0x48580732 #; ( SPACES ) 
 def_word "spaces" hash_SPACES
 	.word xt_begin, xt_dup 
-	.word xt_while, xt_space, xt_one, xt_minus 
+	.word xt_while, xt_space, xt_emit
+	.word xt_one, xt_minus 
 	.word xt_repeat, xt_drop
 	.word xt_exit
 
-# ( a u -- ) #; emits u characters from address a
+# ( a u -- ) #; emits u characters from address a, return next address
 .equ hash_TYPE, 0x7C87A05D #; ( TYPE ) 
 def_word "type" hash_TYPE
 	.word xt_begin, xt_dup 
@@ -688,31 +694,21 @@ def_word "type" hash_TYPE
 	.word xt_dup, xt_cfetch, xt_emit
 	.word xt_one, xt_plus
 	.word xt_rto, xt_one, xt_minus
-	.word xt_repeat, xt_drop, xt_drop
+	.word xt_repeat, xt_drop, xt_one, xt_plus
 	.word xt_exit
 
-# ( a -- ) #; emits a asciiz from address a 
-.equ hash_TYPEZ, 0x0D7BABA7 #; ( TYPEZ ) 
-def_word "typez" hash_TYPEZ
-	.word xt_begin, xt_dup, xt_cfetch 
-	.word xt_while, xt_emit
-	.word xt_repeat, xt_drop
-	.word xt_exit
+# as :noname
 
-.equ hash_DOTQUO, 0x005966C9 #; ( ." )
-def_word "doquote" hash_DOTQUO IMMEDIATE
-	.word xt_lit, dot_quote, xt_comma, dot_commas 
-	.word xt_exit
-
+# ( a -- F) #; valid ascii character ? space to tilde
 dot_ascii:
 	.word xt_dup 
-	.word xt_lit, BL, xt_less, xt_if 
-	.word xt_lit, TL, xt_swap, xt_less, xt_if 
-	.word xt_false, xt_exit 
-	.word xt_then, xt_then, xt_true
+	.word xt_lit, BL, xt_swap, xt_less, xt_if 
+	.word xt_lit, TL + 1, xt_less, xt_if 
+	.word xt_true, xt_exit 
+	.word xt_then, xt_then, xt_false
 	.word xt_exit
 
-dot_commas: # ZZZZ
+do_commas: # copy characters 
 	.word xt_lit, QU # ( -- c )
 	.word xt_begin, xt_key  # ( c -- c k ) 
 	.word xt_dup, dot_ascii, xt_while # ( c k f -- c k )
@@ -722,8 +718,22 @@ dot_commas: # ZZZZ
 	.word xt_ccomma, xt_align
 	.word xt_exit
 
-dot_quote: // must return the ip corrtcet
-	.word xt_rto, xt_typez, xt_to
+# ( a -- a ) #; emits a asciiz from address a, returns next address 
+.equ hash_TYPEZ, 0x0D7BABA7 #; ( TYPEZ )
+do_typez:
+	.word xt_begin, xt_dup, xt_cfetch, xt_dup 
+	.word xt_while, xt_emit, xt_one, xt_plus
+	.word xt_repeat, xt_drop, xt_one, xt_plus
+	.word xt_exit
+
+do_quotes: 
+	.word xt_rto, do_typez, xt_tor
+	.word xt_exit
+
+# ( "<ccc>" -- ) #; compiles asciiz and type it at executing
+.equ hash_DOTQUOTE, 0x005966C9 #; ( ." )
+def_word "dotquote" hash_DOTQUOTE IMMEDIATE
+	.word xt_lit, do_quotes, xt_comma, do_commas
 	.word xt_exit
 
 #----------------------------------------------------------------------
@@ -732,22 +742,22 @@ dot_quote: // must return the ip corrtcet
 #
 
 .equ hash_HEX, 0x0B87EC90 #; ( HEX )
-def_word "number_hex" hash_HEX
+def_word "base_hex" hash_HEX
 	.word xt_lit, 16, xt_base, xt_store
 	.word xt_exit
 
 .equ hash_DEC, 0x0B87BA87 #; ( DEC )
-def_word "number_dec" hash_DEC
+def_word "base_dec" hash_DEC
 	.word xt_lit, 10, xt_base, xt_store
 	.word xt_exit
 
 .equ hash_OCT, 0x0B87E0DD #; ( OCT )
-def_word "number_oct" hash_OCT
+def_word "base_oct" hash_OCT
 	.word xt_lit, 8, xt_base, xt_store
 	.word xt_exit
 
 .equ hash_BIN, 0x0B87C400 #; ( BIN )
-def_word "number_bin" hash_BIN
+def_word "base_bin" hash_BIN
 	.word xt_lit, 2, xt_base, xt_store
 	.word xt_exit
 
