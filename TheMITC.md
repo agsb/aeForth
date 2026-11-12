@@ -14,17 +14,27 @@ Forth employs two types of "words": primitives words, implemented in native mach
 
 Using a RISC-V-based CPU, with one cycle per instruction and four registers: IP (Instruction Pointer), RP (Return Stack Pointer), W (Work scratch register), and V (Reference address register), along with macros:
 
-.macro pull R1, R2 ( 2 cycles )
+.macro incr R1
 
-        R1 = (R2) ; R2 = R2 + CELL ;
+	R1 = R1 + CELL
 .endmacro
 
-.macro push R1, P2  ( 2 cycles )
+.macro decr R1
 
-        R2 = R2 - CELL ; (R2) = R1 ;
+	R1 = R1 - CELL
 .endmacro
-        
-.macro move R1, R2  ( 1 cycle )
+
+.macro load R1 R2
+
+	R1 = (R2)
+.endmacro
+
+.macro save R1 R2
+
+	(R2) = R1
+.endmacro
+
+.macro move R1 R2  ( 1 cycle )
         
         R1 = R2 ;
 .endmacro
@@ -34,44 +44,66 @@ Using a RISC-V-based CPU, with one cycle per instruction and four registers: IP 
         PC = (R1) ;
 .endmacro
         
-.macro less R1, R2 ( 1 cycle )
-	
-		bgtu R1, R2, Label ( 1 cycle )
+.macro pull R1 R2 ( 2 cycles )
+
+        load R1 R2 ; 
+	incr R2 ;
+.endmacro
+
+.macro push R1 P2  ( 2 cycles )
+
+        decr R2 ;
+	save R1 R2 ;
+.endmacro
+        
+.macro less R1 R2 ( 1 cycle )
+        
+        bgtu R1, R2, Label ( 1 cycle )
 .endmacro
 
         
 ## Classic ITC, aka Fig-Forth, 1980
 
-Translated from PDP-11 instructions, (Docol and Semis are called nest and unnest in eForth) 
+Translated from PDP-11 instructions. Fig-Forth *docol* and *semis* are called *nest* and *unnest* in eForth. 
 
 .macro  Next
 
-        pull W, IP 		\ 2 cycles ; 
-        jump (W) 		\ 1 cycle ;
+	# pull W from instruction pointer
+        W = (IP)
+	IP++
+	# magic of Auto-increment Deferred # PC = @(W)++ 
+	V = (W)
+	W++
+	PC = (V)
 .endm
 
 ( Enter aka nest )
-Docol:  
-        
-        push IP, RP 	\ 2 cycles ;
-        move IP, W 		\ 1 cycle ;
-        Next ;		\ 3 cycles ;
+docol:  
+	# push IP into return stack
+        RP--
+	(RP) = IP
+	# move pointer
+	IP = W
+	# go next
+	Next
 
 ( Exit aka unnest )
-Semis:   
-        
-        pull IP, RP 	\ 2 cycles ;
-        Next ;		\ 3 cycles ;
+semis:   
+	# pull IP from return stack
+       	IP = (RP)
+	RP++
+	# go next
+	Next
 
 Both word types, primitive or compiled, could be at anywhere in dictionary. 
 
-All words ends with *Next*. The primitives have machine native code.
+All words ends with *next*. The primitives have machine native code.
 
-	primitive: code Next
+        primitive: code code ... code Next ; Primitive word must reserve IP
 
-The compiled word inits with *Docol* and exits with *Semis*. The spot is a reference address to a word. 
+The compiled word inits with *docol* and exits with *semis*. The spot is a reference address to a word. 
 
-	compiled: Docol spot spot ... spot Semis
+        compiled: docol spot spot ... spot semis ; Compiled words could use IP
 
 Usually Next is a macro at very end of all words. Some Forth uses a jump to a routine Next.
 
@@ -87,12 +119,12 @@ The main idea of M.I.T.C is to reorder and group the code pieces on Docol (nest)
 into one piece, as an unique internal inner interpreter, a "heart beat".
 
 This allow better account and responses to interrupts and events, eliminate use *Docol* at start of words,
-	and do a jump at end of words, and No macros.
+        and do a jump at end of words, and No macros.
 
 MITC does jumps only at primitive words and the references (spots) are pushed and pulled at return stack.
 
 By place all primitive words bellow a memory reference and all compiled words above then 
-	an unique test to decides if jump of push. (plus 1 cycle) 
+        an unique test to decides if jump of push. (plus 1 cycle) 
 
 The register V could be loaded with reference address before and preserved, 
         or before each comparasion (plus 1 cycle).
@@ -136,7 +168,7 @@ Jump:
 Move:
 
         move IP, W ;
-		
+                
         jump Next
 
 ## M.I.T.C. version 2.0
