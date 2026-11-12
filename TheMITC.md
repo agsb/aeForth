@@ -12,20 +12,22 @@ Forth employs two types of "words": primitives words, implemented in native mach
 
 ## What is Indirect Thread
 
-Moore once writes **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, which translates to **" W = (IP)++ ; V = (W)++; JMP (V) ; "**. A jump using the indirect deferred addressing mode of PDP-11, with V as a hidden register. 
+Moore once writes **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, which translates to **" W = (IP)++ ; V = (W)++; JMP (V) ; "**. A jump using the indirect deferred addressing mode of PDP-11, is really two "indirect load and increment" then jump, with use a hidden register. 
 
 The magic of this code snippet lies in the fact that it allows for the chaining of multiple references (spots), until they point directly to an executable code.
 Only primitive words, with native machine code, are actually executed by the real CPU.
 
 The term "indirect" is actually causes a semantic question. All modern CPUs calls "jump to contents of a register" as indirect jump and "jump to a absolute address" as direct jump. 
 
-Using a reference RISC-V-based CPU, with one cycle per instruction and five registers: PC (program counter), IP (Instruction Pointer), RP (Return Stack Pointer), W (Work scratch register), and V (Reference address register). Using () to indicate the registes holds a memory address where the value is.
+Look for a great explanation of [Forth Thread Code](https://www.bradrodriguez.com/papers/moving1.htm).
 
-Fig-Forth *docol* and *semis* are called *enter* and *exit* in many Forths, and *nest* and *unnest* in eForth. 
+##  Reference
+
+Using a reference RISC-V-based CPU, with one cycle per instruction and five registers: PC (program counter), IP (Instruction Pointer), RP (Return Stack Pointer), W (Work scratch register), and V (Reference address register). Using () to indicate the registes holds a memory address where the value is.
 
 ## Classic ITC, aka Fig-Forth, 1980
 
-Translated from PDP-11 instructions. 
+Translated from PDP-11 instructions. Fig-Forth *docol* and *semis* are called *enter* and *exit* in many Forths, and *nest* and *unnest* in eForth. 
 
 .macro  Next
 
