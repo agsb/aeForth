@@ -17,13 +17,13 @@ Moore once writes **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, which translates to *
 The magic of this code snippet lies in the fact that it allows for the chaining of multiple references (spots), until they point directly to an executable code.
 Only primitive words, with native machine code, are actually executed by the real CPU.
 
-The term "indirect" is actually causes a semantic question. All modern CPUs calls "jump to contents of a register" as indirect jump and "jump to a absolute address" as direct jump. 
+The term "indirect" actually causes confusion. All CPUs calls "jump to contents of a register" as indirect jump and "jump to a absolute address" as direct jump. 
 
 Look for a great explanation of [Forth Thread Code](https://www.bradrodriguez.com/papers/moving1.htm).
 
 ##  Reference
 
-Using a reference RISC-V-based CPU, with one cycle per instruction and five registers: PC (program counter), IP (Instruction Pointer), RP (Return Stack Pointer), W (Work scratch register), and V (Reference address register). Using () to indicate the registes holds a memory address where the value is.
+Using as reference a RISC-V-based CPU, with one cycle per instruction and five registers: PC - program counter), IP - Instruction Pointer, RP - Return Stack Pointer, W -Work register, and V - Reference register. Using () to indicate the register holds a memory address where the value is, and ++ or -- to indicate increment or decrement by one address unit.
 
 ## Classic ITC, aka Fig-Forth, 1980
 
@@ -32,47 +32,49 @@ Translated from PDP-11 instructions. Fig-Forth *docol* and *semis* are called *e
 .macro  Next
 
 	# pull W from instruction pointer
-    W = (IP)
-	IP++
+    W = (IP) ;
+	IP++ ;
 	# magic of Auto-increment Deferred # PC = @(W)++ 
-	V = (W)
-	W++
-	PC = (V)
+	V = (W) ;
+	W++ ;
+	PC = (V) ;
 .endm
 
 ( enter aka nest )
 docol: 
 
 	# push IP into return stack
-    RP--
-	(RP) = IP
-	# move pointer to next cell, in PDP-11 the W++ was already done in previous Next, in other CPUs must be included here
-	IP = W
+    RP-- ;
+	(RP) = IP ;
+	# Move the pointer to the next cell; 
+	# on the PDP-11, the W++ increment has already been performed during the previous "Next" operation, but on other CPUs, 
+	# it must be included here as " W++ ; IP = W ; "
+	IP = W ;
 	# go next
-	Next
+	Next ;
 
 ( exit aka unnest )
 semis:
 
 	# pull IP from return stack
-   	IP = (RP)
-	RP++
+   	IP = (RP) ;
+	RP++ ;
 	# go next
-	Next
+	Next ;
 
 Both word types, primitive or compiled, could be at anywhere in dictionary. All words ends with *next*. 
 
-The primitives have machine native code. The start spot points to code and last one to *next*
+The primitives have machine native code. The first spot points to code and last spot to *next*.
 
         primitive: spot code Next ; # Primitive word must reserve IP or could update it
 
-The compiled word have a list of references (spots) to words. It start spot points to *docol* and last spot to *semis*. 
+The compiled word have a list of references (spots) to words. It first spot points to *docol* and last spot to *semis*. 
 
         compiled: docol spot spot ... spot semis ; # Compiled words could reuse IP
 
-Usually Next is a macro at very end of all words. Some Forth uses a jump to a routine Next.
+Usually Next is a macro at very end of all words. Some Forths uses a jump to a routine Next.
 
-The register W contains the reference (spot) of word been executed and IP the follow one.
+The register W contains the reference (spot) of word been executed and IP to the follow one.
 
 The words DOVAR, DOCON and BRANCH changes IP. (Some Forths call DOCON as DOLIT).
 
@@ -80,22 +82,18 @@ The words DOVAR, DOCON and BRANCH changes IP. (Some Forths call DOCON as DOLIT).
 
 MITC uses same operations of the Classic ITC, plus one comparison.
 
-The main idea of M.I.T.C is to reorder and group the code pieces on Docol (nest), Semis (unnest) and Next 
-into one piece, as an unique internal inner interpreter, a "heart beat".
+The main idea of M.I.T.C is to reorder and group the code pieces on *docol*, *semis* and *Next* 
+into one routine, as an unique internal inner interpreter, a "heart beat". No macros. 
 
 This allow better account and responses to interrupts and events, eliminate the indirect pointer at start of words,
-and ends all words with a jump. No macros.
-
-MITC does jumps only at primitive words and the references (spots) are pushed and pulled at return stack.
+and ends all words with a jump or a spot. The references (spots) are pushed and pulled at return stack but only jumps at primitive words.
 
 By place all primitive words bellow a memory reference and all compiled words above then 
-        an unique test to decides if jump of push. (plus 1 cycle) 
+        an unique test to decides if jump of push.
 
-The register V could be loaded with reference address before and preserved, 
-        or before each comparasion (plus 1 cycle).
+The register V could be loaded with reference address before and preserved, or before each comparasion.
 
-For all compiled words does at two jumps less than Classic. (less 2 cycles)
-
+All compiled words does two jumps less than Classic.
 
 ## M.I.T.C. version 1.0
 
@@ -111,31 +109,37 @@ The >R R@ R> uses the cell bellow the top of return stack, to preserve the retur
 
 ### Code version 1.0
 
-Unnest:
+Unnest: # pull IP from RP
 
-        pull IP, RP ;
+        IP = RP
 
-Next:
- 
-        pull W, IP ;
+		RP++
 
-Nest:
+Next: # pull W from IP
 
-        push IP, RP ;
+ 		W = (IP)
+        
+		IP++
+		
+Nest: # push IP into RP
 
-Pick:
+        RP--
+		
+		(RP) = IP
 
-        less W, V, Move ;
+Pick: # branch conditional
+     
+		IF (W < V) PC = Move
 
-Jump:
+Jump: # indirect jump
 
-        jump (W) ;
+        PC = (W) 
 
-Move:
+Move: # chain it
 
-        move IP, W ;
+        IP =  W 
                 
-        jump Next
+        PC = Next
 
 ## M.I.T.C. version 2.0
 
@@ -143,38 +147,48 @@ All primitive words must ends with **jump** *Next*. All compiled words must ends
 
 The IP is **really** used as a instruction pointer and must be preserved.
 
-Does not push or pull IP for primitive words. (less 4 instructions cycles)
+Does not push or pull IP for primitive words. 
 
-The branches uses the value of IP as reference for offsets. (less 2 instructions cycles)
+The branches uses the value of IP as reference for offsets. 
 
-The >R R@ R> direct use the top of return stack, because the return reference is at IP. (less 2 instructions cycles)
+The >R R@ R> direct use the top of return stack, because the return reference is at IP. 
 
-### code 2.0
+### Code version 2.0
 
-Unnest:
+Unnest: # pull IP from RP
 
-      pull IP, RP ;
+        IP = RP
+		
+		RP++
 
-Next:
+Next: # pull W from IP
 
-      pull W, IP ;
+ 		W = (IP)
+        
+		IP++
 
-Pick: 
+Pick: # branch conditional
+     
+		IF (V < W) PC = Nest
 
-      less W, V, Move ;
+Jump: # indirect jump
 
-Jump:
+        PC = (W) 
 
-      jump (W) ;
+Nest: # push IP into RP
 
-Nest:
+        RP--
+		
+		(RP) = IP
 
-      push IP, RP ;
+Move: # chain it
 
-Move:
+        IP =  W 
+                
+        PC = Next
 
-      move IP, W ;
-      jump Next ;
+## Rationale
 
+In classic model, a Next starts every word and always jumps to address at address in first spot, if is *docol*, it push the next spot and repeats until reach an execute code. Every word does two jumps. The Next code takes 5 cycles, then each *docol* takes 3 cycles + 5 cycles, each *semis* takes 2 cycles + 5 cycles.
 
-
+In version 1, 
