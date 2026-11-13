@@ -32,7 +32,7 @@ The code snippets bellow consider a RISC-V-based CPU as reference, with: 1. one 
 
 The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many Forths, and *nest* and *unnest* in eForth. The PDP-11 native instructions are translated to generic virtual intructions. 
 
-.macro  *next*
+.macro  *next* ( payload 5 cycles )
 
     # pull W from instruction pointer
 
@@ -50,7 +50,7 @@ The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many
 .endm
 
 ( enter aka nest )
-*docol*: 
+*docol*: ( payload 8 cycles )
 
     # push IP into return stack
 
@@ -67,7 +67,7 @@ The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many
     next ;
 
 ( exit aka unnest )
-*semis*:
+*semis*: ( payload 7 cycles )
 
     # pull IP from return stack
     
@@ -83,16 +83,25 @@ Both word types, primitive or compiled, could be at anywhere in dictionary.
 
 Inside primitives, the first spot points to the following native code and the last spot copy the code of *next*. A primitive word could update IP. The words DOVAR, DOCON and BRANCH update IP. 
 
-        primitive: spot code Next ;
+        primitive: ( payload 5 cycles ) 
+            spot_to_code 
+            code code ... code 
+            macro_next
 
 The compiled word have a list of references (spots) to words. Its first spot points to *docol*, followed by a list of spots and the last spot points to *semis*. A compiled words could do any use with IP 
 
-        compiled: docol spot spot ... spot semis ; 
+        compiled: ( payload 15 cycles )
+            docol 
+            spot 
+            ... 
+            spot 
+            semis 
 
-Usually *next* is a macro at end of *docol* and *semis* but it could replaced by a jump to a routine *next*.
+Both word types are called by a previous *next*. 
+
+Usually *next* is a macro, also at end of *docol* and *semis*, but it could replaced by a jump to a routine *next*.
 
 The register W contains the reference (spot) of word been executed and IP a reference to the follow one.
-
 
 ## The M.I.T.C. 
 
@@ -101,13 +110,12 @@ MITC uses same operations of the Classic ITC, plus one comparison.
 The main idea of M.I.T.C is to reorder and group the code pieces on *docol*, *semis* and *next* 
 into one routine, as an unique internal inner interpreter, a "heart beat". Without macros at words. 
 
-This allow better account and responses to interrupts and events, eliminate the indirect pointer at start of words,
-and ends all words with a jump or a spot. The references (spots) are pushed and pulled at return stack and only jumps at primitive words.
+This allow better account and responses to events and interrupts, eliminate the indirect pointer at start of words,
+and ends all words with a jump or a spot. 
 
-By place all primitive words bellow a memory reference and all compiled words above, 
-then an unique test is used to decides if jump of push.
+By reorder the Forth dictionary, and place all primitive words bellow a memory reference, and all compiled words above, then an unique test is used to decides if jump of push. At primitive words it jumps to code, and in compiled words, the spots are pushed and pulled at return stack.
 
-That memory reference could be placed into register V or loaded before each comparasion.
+That memory reference could be placed into a register V or loaded before each comparasion.
 
 ## M.I.T.C. version 1.0
 
