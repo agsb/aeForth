@@ -117,6 +117,16 @@ By reorder the Forth dictionary, and place all primitive words bellow a memory r
 
 That memory reference could be placed into a register V or loaded before each comparasion.
 
+### the IP, NOS and TOS 
+
+There are 3 types of primitives:
+
+1. ones that changes IP, as DOCON, DOVAR, BRANCH;
+2. ones that changes TOS (Top Of Stack), as @, NEGATE, INVERSE, DROP, >R, R>, R@ (etc)
+3. ones that changes TOS and NOS (Next On Stack), as !, +, -, AND, OR, XOR, =, <, DUP, SWAP (etc)   
+
+could also the top of data stack could be at a register T.
+
 ## M.I.T.C. version 1.0
 
 All primitive words must ends with **jump** *Unnest*. All compiled words must ends with a spot to *Unnest*
@@ -143,14 +153,6 @@ Next: # pull W from IP
         
         IP++
 
-Pick: # branch conditional
-     
-        IF (V < W) PC = Nest
-
-Jump: # indirect jump
-
-        PC = (W) 
-
 Nest: # push IP into RP
 
         RP--
@@ -161,19 +163,25 @@ Move: # chain it
 
         IP =  W 
 
-        PC = Next
+Pick: # branch conditional
+     
+        IF (V < W) PC = Nest
+
+Jump: # indirect jump
+
+        PC = (W) 
 
 ## M.I.T.C. version 2.0
 
 All primitive words must ends with **jump** *Next*. All compiled words must ends with *Unnest*.
 
-The IP is **really** used as a instruction pointer and must be preserved.
+The IP is **really** used as a instruction pointer and must be preserved or updated.
 
-Does not push or pull IP for primitive words. 
+Does not push or pull IP for primitive words, only for compiled words. 
 
 The branches uses the value of IP as reference for offsets. 
 
-The >R R@ R> direct use the top of return stack, because the return reference is at IP. 
+The >R R@ R> direct use the top of return stack, because the return reference is always at IP. 
 
 ### Code version 2.0
 
@@ -211,6 +219,11 @@ Unnest: # pull IP from RP
 
 ## Rationale
 
-In classic model, a Next starts every word and always jumps to address at address in first spot, if is *docol*, it push the next spot and repeats until reach an execute code. Every word does two jumps. The Next code takes 5 cycles, then each *docol* takes 3 cycles + 5 cycles, each *semis* takes 2 cycles + 5 cycles.
+_to review_
+
+In classic model, a *next* starts every word and always jumps to address at address in first spot, if is *docol*, it push the next spot and repeats until reach a primitive code. Every word does two jumps. The *next* code takes 5 cycles, each *docol* takes 3 cycles + 5 cycles, each *semis* takes 2 cycles + 5 cycles.
 
 In version 1, 
+
+In version 2,
+
