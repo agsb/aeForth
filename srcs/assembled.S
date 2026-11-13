@@ -66,9 +66,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # beats counts executions 
 #
 
-# aka EXIT 
-unnest: 
-	pull ipt rpt 
+# aka DOCOL 
+nest: 
+.ifdef beats
+	addi t2, t2, 1
+.endif
+	push ipt rpt 
+ 
+move: 
+	mv ipt, nos 
  
 # aka NEXT 
 next: 
@@ -79,7 +85,8 @@ next:
 	lw nos, 0 (ipt)
 	addi ipt, ipt, CELL
 
-# this is the tipping point, above nib only lives compiled words 
+# this is the tipping point, above nib only compiled words 
+# when (nos > nib) goto nest
 pick: 
 	bge nos, nib, nest 
  
@@ -88,19 +95,13 @@ jump:
 	addi t1, t1, 1
 .endif
 	jalr ra, 0 (nos) 
+ 
+# aka EXIT 
+unnest: 
+	pull ipt rpt 
+ 
 	j next 
- 
-# aka DOCOL 
-nest: 
-	push ipt rpt 
- 
-move: 
-.ifdef beats
-	addi t2, t2, 1
-.endif
-	mv ipt, nos 
-	j next 
- 
+
 #---------------------------------------------------------------------- 
 # changes ip 
  
