@@ -221,7 +221,7 @@ Unnest: # pull IP from RP
 
 _to review_
 
-In classic model, a *next* starts every word and always jumps to address at address in first spot, if is *docol*, it push the next spot and repeats until reach a primitive code. Every word does two jumps. The *next* code takes 5 cycles, each *docol* takes 3 cycles + 5 cycles, each *semis* takes 2 cycles + 5 cycles.
+In classic model, a *next* starts every word and always jumps to address at address in first spot, if is *docol*, it push the next spot and repeats until reach a primitive code, then at last spot it execute *semis* to pull the spots. Every word does two jumps. The *next* code takes 5 cycles, each *docol* takes 3 cycles + 5 cycles, each *semis* takes 2 cycles + 5 cycles.
 
 In version 1, 
 
