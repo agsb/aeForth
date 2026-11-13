@@ -127,15 +127,11 @@ The >R R@ R> uses the cell bellow the top of return stack, to preserve the retur
 
 ### Code version 1.0
 
-Nest: # push IP into RP
+Unnest: # pull IP from RP
 
-        RP--
-        
-        (RP) = IP
+        IP = RP
 
-Move: # chain it
-
-        IP =  W 
+        RP++
                 
 Next: # pull W from IP
 
@@ -151,11 +147,15 @@ Jump: # indirect jump
 
         PC = (W) 
 
-Unnest: # pull IP from RP
+Nest: # push IP into RP
 
-        IP = RP
+        RP--
+        
+        (RP) = IP
 
-        RP++
+Move: # chain it
+
+        IP =  W 
 
         PC = Next
 
@@ -173,15 +173,19 @@ The >R R@ R> direct use the top of return stack, because the return reference is
 
 ### Code version 2.0
 
-Unnest: # pull IP from RP
+Nest: # push IP into RP
 
-        IP = RP
+        RP--
         
-        RP++
+        (RP) = IP
 
+Move: # chain it
+
+        IP =  W 
+                
 Next: # pull W from IP
 
-         W = (IP)
+        W = (IP)
         
         IP++
 
@@ -193,16 +197,12 @@ Jump: # indirect jump
 
         PC = (W) 
 
-Nest: # push IP into RP
+Unnest: # pull IP from RP
 
-        RP--
+        IP = RP
         
-        (RP) = IP
+        RP++
 
-Move: # chain it
-
-        IP =  W 
-                
         PC = Next
 
 ## Rationale
