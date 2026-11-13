@@ -12,12 +12,12 @@ Forth employs two types of "words": primitives words, implemented in native mach
 
 ## What is Indirect Thread
 
-Moore once writes **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, which translates to **" W = (IP)++ ; V = (W)++; JMP (V) ; "**. A jump using the indirect deferred addressing mode of PDP-11, is really two "indirect load and increment" then jump, with use a hidden register. 
+Moore once writes **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, which translates to **" W = (IP)++ ; V = (W)++; JMP (V) ; "**. A jump using the indirect deferred addressing mode of PDP-11, is really two "indirect load and increment" then a indirect jump, with use a hidden register. 
 
 The magic of this code snippet lies in the fact that it allows for the chaining of multiple references (spots), until they point directly to an executable code.
 Only primitive words, with native machine code, are actually executed by the real CPU.
 
-The term "indirect" actually causes confusion. All CPUs calls "jump to contents of a register" as indirect jump and "jump to a absolute address" as direct jump. 
+The term "indirect" actually causes some confusion. All CPUs calls "jump to address content of a register" as indirect jump and "jump to a absolute address" as direct jump. 
 
 Look for a great explanation of [Forth Thread Code](https://www.bradrodriguez.com/papers/moving1.htm).
 
@@ -27,48 +27,65 @@ Using as reference a RISC-V-based CPU, with one cycle per instruction and five r
 
 ## Classic ITC, aka Fig-Forth, 1980
 
-Translated from PDP-11 instructions. Fig-Forth *docol* and *semis* are called *enter* and *exit* in many Forths, and *nest* and *unnest* in eForth. 
+The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many Forths, and *nest* and *unnest* in eForth. These virtual intructions are translated from PDP-11 native instructions. 
 
 .macro  Next
 
-	# pull W from instruction pointer
+    # pull W from instruction pointer
+
     W = (IP) ;
-	IP++ ;
-	# magic of Auto-increment Deferred # PC = @(W)++ 
-	V = (W) ;
-	W++ ;
-	PC = (V) ;
+
+    IP++ ;
+
+    # magic of Auto-increment Deferred # PC = @(W)++ 
+
+    V = (W) ;
+
+    W++ ;
+
+    PC = (V) ;
 .endm
 
 ( enter aka nest )
 docol: 
 
-	# push IP into return stack
+    # push IP into return stack
+
     RP-- ;
-	(RP) = IP ;
-	# Move the pointer to the next cell; 
-	# on the PDP-11, the W++ increment has already been performed during the previous "Next" operation, but on other CPUs, 
-	# it must be included here as " W++ ; IP = W ; "
-	IP = W ;
-	# go next
-	Next ;
+
+    (RP) = IP ;
+
+    # Move the pointer to the next cell; 
+    # on the PDP-11, the W++ increment has already been performed 
+    # during the previous "Next" operation, but on other CPUs, 
+    # it must be included here as " W++ ; IP = W ; "
+
+    IP = W ;
+
+    # macro next
+
+    Next ;
 
 ( exit aka unnest )
 semis:
 
-	# pull IP from return stack
-   	IP = (RP) ;
-	RP++ ;
-	# go next
-	Next ;
+    # pull IP from return stack
+    
+    IP = (RP) ;
+    
+    RP++ ;
+    
+    # macro next 
+    
+    Next ;
 
-Both word types, primitive or compiled, could be at anywhere in dictionary. All words ends with *next*. 
+Both word types, primitive or compiled, could be at anywhere in dictionary. 
 
-The primitives have machine native code. The first spot points to code and last spot to *next*.
+The primitives have machine native code inside. The first spot points to following native code and last spot copy the code of *next*. Primitive word could reserve or update IP.
 
-        primitive: spot code Next ; # Primitive word must reserve IP or could update it
+        primitive: spot code Next ;
 
-The compiled word have a list of references (spots) to words. It first spot points to *docol* and last spot to *semis*. 
+The compiled word have a list of references (spots) to words. It first spot points to *docol*, followed by a list of spots and last spot to *semis*. 
 
         compiled: docol spot spot ... spot semis ; # Compiled words could reuse IP
 
@@ -113,23 +130,23 @@ Unnest: # pull IP from RP
 
         IP = RP
 
-		RP++
+        RP++
 
 Next: # pull W from IP
 
- 		W = (IP)
+         W = (IP)
         
-		IP++
-		
+        IP++
+        
 Nest: # push IP into RP
 
         RP--
-		
-		(RP) = IP
+        
+        (RP) = IP
 
 Pick: # branch conditional
      
-		IF (W < V) PC = Move
+        IF (W < V) PC = Move
 
 Jump: # indirect jump
 
@@ -158,18 +175,18 @@ The >R R@ R> direct use the top of return stack, because the return reference is
 Unnest: # pull IP from RP
 
         IP = RP
-		
-		RP++
+        
+        RP++
 
 Next: # pull W from IP
 
- 		W = (IP)
+         W = (IP)
         
-		IP++
+        IP++
 
 Pick: # branch conditional
      
-		IF (V < W) PC = Nest
+        IF (V < W) PC = Nest
 
 Jump: # indirect jump
 
@@ -178,8 +195,8 @@ Jump: # indirect jump
 Nest: # push IP into RP
 
         RP--
-		
-		(RP) = IP
+        
+        (RP) = IP
 
 Move: # chain it
 
