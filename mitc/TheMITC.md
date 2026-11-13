@@ -8,29 +8,25 @@ Forth is a virtual machine that uses stack operations, pushing and popping, and 
 
 Forth employs two types of "words": primitives words, implemented in native machine code and containing no references to other words, and compiled words, which consist of a sequence of references (spots) to other words. 
 
+The magic of this code lies in the fact that it allows for the chaining of multiple references (spots) of compiled words, until a spot points directly to an executable native machine code. Only primitive words are actually executed by the real CPU.
+
 *Minimal Indirect Threaded Code* is an alternative to the classic *Indirect Threaded Code*, it saves space in the dictionary and allows for faster execution of Forth words.
 
 ## What is Indirect Thread
 
-Moore once writed **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, for a PDP-11 Forth.
+Moore once writes **" : NEXT IP )+ W MOV W )+ ) JMP ; "**, for a PDP-11 Forth.
 
-A jump using the indirect deferred addressing mode of PDP-11, **" JMP @(W)+ "** is really a "indirect load and increment" then an "indirect jump", with use a hidden register.
+The PDP-11 Forth assembler **" W )+ ) JMP"** is **" JMP @(W)+ "**, a jump using the indirect **deferred** addressing mode. It is really a _indirect load and increment_ then an _indirect jump_, with use a hidden register, that PDP-11 code translates actually to **" W = (IP)++ ; V = (W)++; JMP (V) ; "**. 
 
-That old PDP-11 code translates actually to **" W = (IP)++ ; V = (W)++; JMP (V) ; "**. 
+In this sense, the term **"Indirect Thread Code"** is really **"Indirect _Deferred_ Thread Code"**.
 
-The magic of this code snippet lies in the fact that it allows for the chaining of multiple references (spots), until  spot directly to an executable native machine code.
-
-Only primitive words, with native machine code, are actually executed by the real CPU.
-
-The term "indirect" actually causes some confusion. All CPUs calls "jump to memory address content of a register" as indirect jump and "jump to an absolute address" as direct jump. 
+The term "indirect" actually causes some confusion. All CPUs calls "jump to memory address content of a register" as indirect jump and "jump to a following absolute address" as direct jump. 
 
 Look for complete explanation of [Forth Thread Code](https://www.bradrodriguez.com/papers/moving1.htm).
 
 ##  Reference
 
-Using as reference a RISC-V-based CPU, with one cycle per instruction and five registers: PC - program counter), IP - Instruction Pointer, RP - Return Stack Pointer, W -Work register, and V - Reference register. 
-
-Using () to indicate the register holds a memory address where the value is, and ++ or -- to indicate increment or decrement by one address unit.
+The code snippets bellow consider a RISC-V-based CPU as reference, with: 1. one cycle per instruction; 2. at least five registers: PC - Program Counter, IP - Instruction Pointer, RP - Return Stack Pointer, W - Work register, and V - Reference register; 3. A register holds a memory address where is the value, by (); 4. A increment or decrement of a register by one address unit, by ++ and --.
 
 ## Classic ITC, aka Fig-Forth, 1980
 
@@ -44,7 +40,7 @@ The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many
 
     IP++ ;
     
-    # magic emulate of Auto-increment Deferred # PC = @(W)++ 
+    # magic emulate of Indirect Deferred Jump # PC = @(W)++ 
 
     V = (W) ;
 
@@ -66,7 +62,7 @@ The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many
 
     IP = W ;
 
-    # macro next
+    # macro next, include code
 
     next ;
 
@@ -79,17 +75,17 @@ The Fig-Forth routines *docol* and *semis* are called *enter* and *exit* in many
     
     RP++ ;
     
-    # macro next 
+    # macro next, include code
     
     next ;
 
 Both word types, primitive or compiled, could be at anywhere in dictionary. 
 
-The primitives have machine native code inside. The first spot points to following native code and last spot copy the code of *next*. A primitive word could update IP. The words DOVAR, DOCON and BRANCH update IP. 
+Inside primitives, the first spot points to the following native code and the last spot copy the code of *next*. A primitive word could update IP. The words DOVAR, DOCON and BRANCH update IP. 
 
         primitive: spot code Next ;
 
-The compiled word have a list of references (spots) to words. It first spot points to *docol*, followed by a list of spots and last spot points to *semis*. A compiled words could do any use with IP 
+The compiled word have a list of references (spots) to words. Its first spot points to *docol*, followed by a list of spots and the last spot points to *semis*. A compiled words could do any use with IP 
 
         compiled: docol spot spot ... spot semis ; 
 
