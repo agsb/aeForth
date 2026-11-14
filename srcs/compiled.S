@@ -172,6 +172,60 @@ def_word "ten" hash_TEN
 	lui tos, 10 
         j next 
  
+#--------------------------------------------------------------------- 
+# variables 
+ 
+.equ hash_TEMP, 0x7C87D1E9 #; ( TEMP ) 
+
+ 
+# ( w -- usr[w] ) #; ( USER ) word in user array, milliforth: U@ 
+.equ hash_USER, 0x7C84F154 #; ( USER )
+def_word "user" hash_USER 
+	.word xt_cells, xt_douse, xt_plus, xt_fetch 
+        .word xt_exit 
+ 
+# ( -- sp0 ) #; ( SPZ ) 
+.equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
+def_word "sp0" hash_SPZ 
+	.word xt_lit, SPTR, xt_user 
+        .word xt_exit 
+ 
+.equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
+# ( -- rp0 ) #; ( RPZ ) 
+def_word "rp0" hash_RPZ 
+	.word xt_lit, RPTR, xt_user 
+        .word xt_exit 
+ 
+# ( -- state ) #; ( STATE ) 
+.equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
+def_word "state" hash_STAT 
+	.word xt_lit, LAST, xt_user
+        .word xt_exit 
+ 
+# ( -- last ) #; ( LATEST ) 
+.equ hash_LAST, 0x2ADAAFBE #; ( LATEST ) 
+def_word "latest" hash_LAST 
+	.word xt_lit, LAST, xt_user
+        .word xt_exit 
+ 
+# ( -- heap ) #; ( DP ) 
+.equ hash_HEAP, 0x00597251 #; ( DP ) 
+def_word "heap" hash_HEAP 
+	.word xt_lit, HEAP, xt_user
+        .word xt_exit 
+ 
+# ( -- base ) #; ( BASE ) 
+.equ hash_BASE, 0x7C8025F0 #; ( BASE ) 
+def_word "base" hash_BASE 
+	.word xt_lit, BASE, xt_user
+        .word xt_exit 
+ 
+# ( -- pike ) #; ( PIKE ) 
+.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE ) 
+def_word "pike" hash_PIKE 
+	.word xt_lit, PIKE, xt_user
+        .word xt_exit 
+ 
 #---------------------------------------------------------------------- 
 
 .equ hash_ZEQU, 0x00596808 #; ( 0= )
@@ -670,6 +724,12 @@ def_word "compile" hash_COMPILE
 	.word xt_comma
 	.word xt_exit
 
+# defined by GForth-0.0 
+.equ hash_PERFORM, 0x15EEB854 #; ( PERFORM ) 
+def_word "perform", hash_PERFORM 
+	.word xt_fetch, xt_execute
+	.word xt_exit
+
 #----------------------------------------------------------------------
 
 .equ hash_SPACE, 0x0DD41F41 #; ( SPACE ) 
@@ -976,26 +1036,32 @@ def_word "off" hash_OFF
 
 #---------------------------------------------------------------------- 
 
+# ( a w -- ) #; ( +! ) plus and store
 .equ hash_PLUSTORE, 0x0059676F #; ( +! )
-# ( -- ) #; ( +! ) plus and store
 def_word "plustore" hash_PLUSTORE
 	.word xt_dup, xt_fetch, xt_plus, xt_swap, xt_store
 	.word xt_exit
 
+# ( w1 w2 w3 -- w4 ) ( */ ) w4 = w1 * w2 / w3
+.equ hash_RATIO, 0x00596740 #; ( */ )
+def_word "ratio" hash_RATIO
+	.word xt_tor, xt_bymul, xt_rto, xt_bymod, xt_drop
+	.word
+
+# ( w1 w2 -- w2 ) #; ( NIP ) 
 .equ hash_NIP, 0x0B87D312 #; ( NIP )
-# ( -- ) #; ( NIP ) 
 def_word "nip" hash_NIP
 	.word xt_swap, xt_drop
 	.word xt_exit
 
+# ( w1 w2 -- w2 w1 w2 ) #; ( TUCK )
 .equ hash_TUCK, 0x7C878D2C #; ( TUCK )
-# ( -- ) #; ( TUCK )
 def_word "tuck" hash_TUCK
 	.word xt_dup, xt_tor, xt_swap, xt_rto
 	.word xt_exit
 
-.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
 # ( w -- w | w w  ) #; ( ?DUP ) 
+.equ hash_QDUP, 0x7C55FD3B #; ( ?DUP )
 def_word "qdup" hash_QDUP
 	.word xt_dup, xt_if, xt_dup, xt_then
 	.word xt_exit

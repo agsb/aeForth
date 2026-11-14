@@ -61,11 +61,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
 # this is the forth heart beat, Minimum Indirect Thread Code 
 # 
-# nib is the address after last native code primitive word 
+# nib is the address after "last native machine code" primitive word 
 #
 # beats counts executions 
 #
 
+#---------------------------------------------------------------------- 
+# aka EXIT
+# ( -- ) #; ( EXIT ) 
+.equ hash_EXIT, 0x7C7CC745 #; ( EXIT ) 
+def_word "exit" hash_EXIT 
+unnest: 
+	pull ipt rpt 
+ 
+	j next 
+
+#---------------------------------------------------------------------- 
 # aka DOCOL 
 nest: 
 .ifdef beats
@@ -76,6 +87,7 @@ nest:
 move: 
 	mv ipt, nos 
  
+#---------------------------------------------------------------------- 
 # aka NEXT 
 next: 
 .ifdef beats
@@ -85,30 +97,24 @@ next:
 	lw nos, 0 (ipt)
 	addi ipt, ipt, CELL
 
+#---------------------------------------------------------------------- 
 # this is the tipping point, above nib only compiled words 
 # when (nos > nib) goto nest
 pick: 
 	bge nos, nib, nest 
  
+#---------------------------------------------------------------------- 
+# jump to a primitive word
 jump: 
 .ifdef beats
 	addi t1, t1, 1
 .endif
 	jalr ra, 0 (nos) 
  
-# aka EXIT 
-unnest: 
-	pull ipt rpt 
- 
-	j next 
+#---------------------------------------------------------------------- 
 
 #---------------------------------------------------------------------- 
-# changes ip 
- 
-# ( -- ) #; ( EXIT ) 
-.equ hash_EXIT, 0x7C7CC745 #; ( EXIT ) 
-def_word "exit" hash_EXIT 
-	j unnest 
+# words that update ip 
  
 # ( -- ) #; ( BRANCH ) 
 .equ hash_BRANCH, 0x1E6C4191 #; ( BRANCH ) 
@@ -151,7 +157,9 @@ def_word "dovar" hash_DOVAR
 	mv tos, ipt 
 	addi ipt, ipt, CELL 
         j next 
- 
+
+#---------------------------------------------------------------------- 
+
 #---------------------------------------------------------------------- 
 # moves return stack 
  
@@ -248,7 +256,7 @@ def_word "rot" hash_ROT
         j next 
  
 #---------------------------------------------------------------------- 
-# memory 
+# access memory 
 
 # ( a -- w ) #; ( @ ) 
 .equ hash_FETCH, 0x0C3E96F9 #; ( @ ) 
@@ -376,12 +384,13 @@ def_word "nand" hash_NAND
 	j next
 
 #--------------------------------------------------------------------- 
- 
-# ( w -- ) #; #; ( PERFORM ), does a native jump 
+# 13/11/2026, discover that GForth 0.2 define : PERFORM @ EXECUTE ; 
+# 
+# ( w -- ) #; #; ( BEHAVE ), does a native jump 
 # at end do: ' jalr zero, 0 (ra) ' to return at j next
 # must preserve ra ipt spt rpt tos usr nib 
-.equ hash_PERFORM, 0x15EEB854 #; ( PERFORM ) 
-def_word "perform", hash_PERFORM 
+.equ hash_BEHAVE, 0x1CD31C18 #; ( BEHAVE )
+def_word "behave", hash_BEHAVE
 	mv nos, tos 
 	pull tos spt 
         jalr ra, 0 (nos) 
@@ -389,7 +398,7 @@ def_word "perform", hash_PERFORM
 
 /* 
 
-# Using PERFORM, beware of call it with proper setup
+# Using BEHAVE, beware of call it with proper setup
 
 entry_point:
 # at init of function, preserve those, use 32 for align
@@ -400,6 +409,7 @@ entry_point:
         sw tos, 12(sp)
         sw usr, 16(sp)
         sw nib, 20(sp)
+        sw ra,  24(sp)
 
 	~~~~~~~~~~~~~~~~~~~
 	~~DO_WHAT_IS_NEED~~
@@ -412,6 +422,7 @@ entry_point:
         lw tos, 12(sp)
         lw usr, 16(sp)
         lw nib, 20(sp)
+        lw ra,  24(sp)
         addi sp, sp, 32
 
 # return
@@ -496,70 +507,15 @@ def_word "cells" hash_CELLS
 	sll tos, tos, 0x4 
         j next 
  
-#--------------------------------------------------------------------- 
-
-# constants
-.equ hash_USER, 0x7C84F154 #; ( USER )
-# ( -- usr ) #; ( USER ) pointer to user array, milliforth: U@ 
-def_word "user" hash_USER 
+# ( -- usr ) #; ( DOUSE ) pointer to user array, milliforth: U@ 
+.equ hash_DOUSE, 0x0C6844AD #; ( DOUSE )
+def_word "douse" hash_DOUSE 
 	push tos spt 
 	mv tos, usr 
         j next 
 
-.equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
-# ( -- rp0 ) #; ( RPZ ) 
-def_word "rp0" hash_RPZ 
-	push tos spt 
-	lw tos, RPTR  * CELL ( usr ) 
-        j next 
- 
-# ( -- sp0 ) #; ( SPZ ) 
-.equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
-def_word "sp0" hash_SPZ 
-	push tos spt 
-	lw tos, SPTR  * CELL ( usr ) 
-        j next 
- 
 #--------------------------------------------------------------------- 
-# variables 
- 
-.equ hash_TEMP, 0x7C87D1E9 #; ( TEMP ) 
 
-# ( -- state ) #; ( STATE ) 
-.equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
-def_word "state" hash_STAT 
-	push tos spt 
-	addi tos, usr, STAT * CELL
-        j next 
- 
-# ( -- last ) #; ( LATEST ) 
-.equ hash_LAST, 0x2ADAAFBE #; ( LATEST ) 
-def_word "latest" hash_LAST 
-	push tos spt 
-	addi tos, usr, LAST * CELL
-        j next 
- 
-# ( -- heap ) #; ( DP ) 
-.equ hash_HEAP, 0x00597251 #; ( DP ) 
-def_word "heap" hash_HEAP 
-	push tos spt 
-	addi tos, usr, HEAP * CELL
-        j next 
- 
-# ( -- base ) #; ( BASE ) 
-.equ hash_BASE, 0x7C8025F0 #; ( BASE ) 
-def_word "base" hash_BASE 
-	push tos spt 
-	addi tos, usr, BASE * CELL
-        j next 
- 
-# ( -- pike ) #; ( PIKE ) 
-.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE ) 
-def_word "pike" hash_PIKE 
-	push tos spt 
-	addi tos, usr, PIKE * CELL
-        j next 
- 
 #--------------------------------------------------------------------- 
 # counts forth heart beats
 # t0 counts next executed, t1 counts primitives, t2 counts compiled

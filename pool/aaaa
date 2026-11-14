@@ -1,0 +1,17 @@
+#----------------------------------------------------------------------
+
+# LINK pointer
+.equ LINK, 8
+
+# task pointer
+.equ TASK, 9
+
+# IP pointer
+.equ IPTR, 10
+
+# TOS Value
+.equ TOSR, 11
+
+# user pointer
+.equ USER, 12
+

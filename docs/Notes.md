@@ -6,20 +6,20 @@
  
     As ANSI Forth 1983: FALSE is 0 and TRUE is -1 ;
  
-    Uses DJB2 31-bit Hash instead of size-name-pad in header of words in
-        dictionary.
+    Uses DJB2 31-bit Hash instead of size-name-pad 
+    in header of words in dictionary.
 
     The header order is LINK, HASH and code or references.
  
-    Still only hexdecimal numbers, no base radix included;
+    Still only hexadecimal numbers, no base radix included;
 
  ## NO MORE
 
     No more TIB or PAD. Create if need.
 
-    ~~TIB (80 bytes) and locals (8 cells) are in sequence;~~
+    ~~TIB (80 bytes) and locals (8 cells)~~
 
-    ~~PAD (84 bytes) and PIC (68 bytes) must be allocated if need;~~
+    ~~PAD (84 bytes) and PIC (68 bytes)~~
  
 ## Remarks
  
@@ -29,15 +29,15 @@
  
     Words must be between spaces, before and after;
  
-    Words of ascii characters, no controls and any size;
+    Words of valid ascii characters, no controls and any size;
  
     Still no multiuser, no multitask, no checks, not faster;
 
     IMMEDIATE word only works outside word definition, 
     it always make latest word immediate.
  
-    Not using smudge, colon saves HERE into PIKE and 
-          semis loads LATEST from PIKE;
+    Not using smudge, at compilation colon (:) saves HERE into PIKE
+    and semis (;) loads LATEST from PIKE;
  
 ## For Devs
  
@@ -45,6 +45,8 @@
 
     Be wise, obey the rule of 72 characters per line; 
  
+    Learn about use BLOCKs, 1024 bytes;
+
     Never mess with two underscore variables;
  
 # For stacks
@@ -88,13 +90,13 @@
 
     No direct memory access, only accessed using a register as pointer.
 
-    No register indexed offset, only immediate offsets (+/- 1024 bytes).
+    No register indexed offset, only immediate offsets (+/- 2047 bytes).
 
 ## For Heaps
 
-    Order is variables, stacks, forth, dictionary, heap, end-of-memory
+    Order is variables, stacks, dictionary, [heap--> <--stack], end-of-memory
 
-    Heap always grows till end of memory.
+    Heap always grows till end of memory. Stack is for system use; 
 
 ## For Hash
 
@@ -114,7 +116,8 @@ To keep safe from colisions, check the hash of token inside colon (:)
 
 Also could export a name:hash, to make a list for human reference.
     
-The hash over 0x00000000 to 0x7FFFFFFF, reserve -1 to IMMEDIATE flag
+The hash is over 0x0000:0000 to 0x7FFF:FFFF, reserve 0x80000000 to use
+    as IMMEDIATE flag and to indicate errors.
 
 _" there is no spoon "_
 
@@ -123,6 +126,17 @@ _" there is no spoon "_
 Any number must be preceded by a *$* and decoded using BASE value radix.
 
 TOS is printed with *.* and also uses BASE value radix.
+
+AeForth uses simetric division, as defined in X3.215-1994 ANSI
+
+                     Table 3.4 - Symmetric Division Example
+                    Dividend   Divisor   Remainder   Quotient
+                    -----------------------------------------
+                       10         7          3          1
+                      -10         7         -3         -1
+                       10        -7          3         -1
+                      -10        -7         -3          1
+                    -----------------------------------------
 
 ## For Not a Number (NaN)
 
@@ -137,17 +151,6 @@ In aeForth, -128 is not a number ( NaN ) and is used to indicate
 numeric errors in conversion, overflow, undeflow, zero division.
 
 Sure it is extended to 4 bytes cells, then 0x8000:0000 is NaN.
-
-AeForth uses simetric division, as defined in X3.215-1994 ANSI
-
-                     Table 3.4 - Symmetric Division Example
-                    Dividend   Divisor   Remainder   Quotient
-                    -----------------------------------------
-                       10         7          3          1
-                      -10         7         -3         -1
-                       10        -7          3         -1
-                      -10        -7         -3          1
-                    -----------------------------------------
 
 ## Primitive or Compiled words
 

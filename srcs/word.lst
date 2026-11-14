@@ -33,7 +33,7 @@ assembled.S:def_word "negate", hash_NEGATE
 assembled.S:def_word "lshift", hash_LSHIFT 
 assembled.S:def_word "rshift", hash_RSHIFT 
 assembled.S:def_word "nand" hash_NAND
-assembled.S:def_word "perform", hash_PERFORM 
+assembled.S:def_word "behave", hash_BEHAVE
 assembled.S:def_word "nilq", hash_NILQ
 assembled.S:def_word "equ" hash_EQU 
 assembled.S:def_word "less" hash_LESS 
@@ -43,14 +43,7 @@ assembled.S:def_word "false" hash_TRUE
 assembled.S:def_word "nan" hash_NAN 
 assembled.S:def_word "cell" hash_CELL 
 assembled.S:def_word "cells" hash_CELLS
-assembled.S:def_word "user" hash_USER 
-assembled.S:def_word "rp0" hash_RPZ 
-assembled.S:def_word "sp0" hash_SPZ 
-assembled.S:def_word "state" hash_STAT 
-assembled.S:def_word "latest" hash_LAST 
-assembled.S:def_word "heap" hash_HEAP 
-assembled.S:def_word "base" hash_BASE 
-assembled.S:def_word "pike" hash_PIKE 
+assembled.S:def_word "douse" hash_DOUSE 
 assembled.S:def_word "tobeats" hash_TOBEATS 
 assembled.S:def_word "beatsto" hash_BEATSTO 
 assembled.S:def_word "zbeats" hash_ZBEATS
@@ -60,6 +53,14 @@ compiled.S:def_word "nil" hash_NIL
 compiled.S:def_word "one" hash_ONE 
 compiled.S:def_word "two" hash_TWO 
 compiled.S:def_word "ten" hash_TEN
+compiled.S:def_word "user" hash_USER 
+compiled.S:def_word "sp0" hash_SPZ 
+compiled.S:def_word "rp0" hash_RPZ 
+compiled.S:def_word "state" hash_STAT 
+compiled.S:def_word "latest" hash_LAST 
+compiled.S:def_word "heap" hash_HEAP 
+compiled.S:def_word "base" hash_BASE 
+compiled.S:def_word "pike" hash_PIKE 
 compiled.S:def_word "zequ" hash_ZEQU
 compiled.S:def_word "zless" hash_ZLESS
 compiled.S:def_word "zmore" hash_ZMORE
@@ -119,15 +120,15 @@ compiled.S:def_word "postpone" hash_POSTPONE IMMEDIATE
 compiled.S:def_word "interpret" hash_INTERPRET
 compiled.S:def_word "execute", hash_EXECUTE
 compiled.S:def_word "compile" hash_COMPILE
+compiled.S:def_word "perform", hash_PERFORM 
 compiled.S:def_word "space" hash_SPACE
 compiled.S:def_word "spaces" hash_SPACES
 compiled.S:def_word "type" hash_TYPE
-compiled.S:def_word "typez" hash_TYPEZ
-compiled.S:def_word "doquote" hash_DOTQUO IMMEDIATE
-compiled.S:def_word "number_hex" hash_HEX
-compiled.S:def_word "number_dec" hash_DEC
-compiled.S:def_word "number_oct" hash_OCT
-compiled.S:def_word "number_bin" hash_BIN
+compiled.S:def_word "dotquote" hash_DOTQUOTE IMMEDIATE
+compiled.S:def_word "base_hex" hash_HEX
+compiled.S:def_word "base_dec" hash_DEC
+compiled.S:def_word "base_oct" hash_OCT
+compiled.S:def_word "base_bin" hash_BIN
 compiled.S:def_word "create" hash_CREATE  
 compiled.S:def_word "does" hash_DOES 
 compiled.S:def_word "builds" hash_BUILDS 
@@ -160,6 +161,7 @@ compiled.S:def_word "qu" hash_QU
 compiled.S:def_word "on" hash_ON
 compiled.S:def_word "off" hash_OFF
 compiled.S:def_word "plustore" hash_PLUSTORE
+compiled.S:def_word "ratio" hash_RATIO
 compiled.S:def_word "nip" hash_NIP
 compiled.S:def_word "tuck" hash_TUCK
 compiled.S:def_word "qdup" hash_QDUP

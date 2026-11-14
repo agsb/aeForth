@@ -25,6 +25,11 @@
 
 ## Done
 
+13/11/2026
+
+    Discovered that GForth-0.2 have defined : PERFORM @ EXECUTE ;
+    then changing name of 'my PERFORM to BEHAVE.
+
 10/11/2026
 
     Following Moore in POL, for STATE, COMPILE is now 0, and EXECUTE id now 1. 

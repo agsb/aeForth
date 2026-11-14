@@ -11,6 +11,9 @@
 
 DECIMAL
 
+
+#----------------------------------------------------------------------
+
 \ ------------------------------------------------------------------------------
 \ 1. Task Control Block (TCB) Structure
 \ ------------------------------------------------------------------------------
@@ -19,8 +22,11 @@ DECIMAL
 \ Offset 1: STATE (Cell-sized flag: true = active/runnable, false = sleeping)
 \ Offset 2: SP_SAVE (Saved Data Stack Pointer for this task)
 \ Offset 3: RP_SAVE (Saved Return Stack Pointer for this task)
-\ Offset 4: SP0 (Bottom/origin of this task's Data Stack)
-\ Offset 5: RP0 (Bottom/origin of this task's Return Stack)
+\ Offset 4: TOS (task's top of Data Stack)
+\ Offset 5: IP  (task's instruction pointer
+\ Offset 6: USR (task's User Array)
+\ Offset 7: SP0 (task's Data Stack)
+\ Offset 8: RP0 (task's Return Stack)
 
 3 CELLS CONSTANT STATUS-OFFSET
 4 CELLS CONSTANT /TCB

@@ -132,9 +132,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # states
 
-.equ EXECUTE, 1
+.equ COMPILE, 0	# wise
 
-.equ COMPILE, 0
+.equ EXECUTE, 1
 
 # usefull
 
@@ -142,7 +142,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ QU,  34    # string delimiter is double quote, quotation mark
 
-.equ TL, 126    # last valid ascii ( ~ ) tilde
+.equ TL, 127    # delete ascii character
 
 # highlander, immediate flag, unique NaN
 
@@ -181,20 +181,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # base radix for numbers, for future use
 .equ BASE, 7 
-
-#----------------------------------------------------------------------
-
-# LINK pointer
-.equ LINK, 8
-
-# task pointer
-.equ TASK, 9
-
-# user pointer
-.equ USER, 10
-
-# next pointer
-.equ IPTR, 11
 
 #----------------------------------------------------------------------
 
@@ -260,6 +246,7 @@ xt_\label:
 # generic push into memory
 .macro push rg ps 
         addi \ps, \ps, -1 * CELL
+	# round robin stack
         andi \ps, \ps, stack_deep
         sw \rg, 0 (\ps)
 .endm
@@ -268,6 +255,7 @@ xt_\label:
 .macro pull rg ps
         lw \rg, 0 (\ps)
         addi \ps, \ps, +1 * CELL
+	# round robin stack
         andi \ps, \ps, stack_deep
 .endm
 
