@@ -1,4 +1,6 @@
 
+\ this is a stub 
+
 ( emulate a F21 cpu, word size is 21 bits, 20 is address, 1 Mb )
 
 VARIABLE P	\ program pointer
