@@ -6,27 +6,34 @@ is essential to extend the dictionary of Forth.
 Forth systems could use a dictionary with only a single vocabulary
 or a list of vocabularies.
 
-Each vocabulary is composed as an linear array or a linked list,
-with header payloads. 
+## Vocabulary
+
+Each vocabulary is composed as an linear array or a linked list, with header payloads. 
 
 The header payload composed by Link, Flags, Hash, Name, Code or pointers for those.
 
 For easy, the free memory is mapped with two pointers, a *Heap* is lowerest free address 
 and grows forward, and a *Stack* is highest free address and grows backward. The start 
-values for Heap and Stack are constant.
+values for *Heap* and *Stack* are constant.
 
 ### Linear array
 
 The header is a tupple composed by a Hash+Flags value and a Code 
-    pointer, allocated from Stack, and the snippets of code allocated
-    from Heap. 
+pointer, allocated from Stack, and the snippets of code allocated
+from Heap. 
 
 Usually the main stack pointer also points at high memory and must 
-    be updated on each new item in array. Must do not create tupples 
-    inside stack dependent routines.
+be updated on each new tuple placed into array. Must do not create tupples 
+inside stack dependent routines.
 
+These separation is useful for systems with reduced memory footprint. 
+When is not necessary dictionary updates, just strip out the array of headers.
 
-### Backward direction
+### Linked list
+
+The header and snippet of code are mixed and linked.
+
+#### Backward direction
 
     lower memory 
     A[0x0](hdr)<--B[A](hdr)<--C[B](hdr)<--D[C](hdr)
@@ -38,7 +45,14 @@ Usually the main stack pointer also points at high memory and must
     create a definition at address E with [0x0](hdr), E[0x0](hdr)
     do latest = D, E[0x0] = latest, latest = E,
 
-### Forward direction 
+Using backward list:
+
+    A vocabulary keep one address (latest) by entry;
+
+    To know the index of a definition, start at latest and transverse 
+    the list iuntil found, then start counting and continue until end.
+
+#### Forward direction 
 
     lower memory
     A[B](hdr)-->B[C](hdr)-->C[D](hdr)-->D[0x0](hdr) 
@@ -48,16 +62,7 @@ Usually the main stack pointer also points at high memory and must
 
     To include a newer definition, 
     create a definition at address E with [0x0](hdr), E[0x0](hdr)
-    do tail = D, D[0x0] = E, tail = E,
-
-## Vocabulary list
-
-Using backward list:
-
-    A vocabulary keep one address (latest) by entry;
-
-    To know the index of a definition, start at latest and transverse 
-    the list iuntil found, then start counting and continue until end.
+    do tail = D, D[0x0] = E, tail = E.
 
 Using forward list:
 
@@ -66,7 +71,8 @@ Using forward list:
     TO know the index of a definition, start at head and transverse 
     the list, counting entries until found it. The count is the index;
 
-Why the index is important or necessary ?
+
+#### Why the index is important or necessary ?
 
 
 
