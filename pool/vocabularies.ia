@@ -1,0 +1,117 @@
+
+A moving pointer implementation treats the search order as a true push-down stack in memory. Instead of keeping a fixed base address and a separate counter (#ORDER), the system maintains a single pointer variable (CONTEXT) that moves up and down a fixed array of cells as wordlists are added or removed.
+
+1. Memory Layout and Pointer Mechanics
+
+• Base Buffer (ORDER-STACK). A small fixed block of memory (e.g., 16 cells) allocated to hold active wordlist identifiers (wids).
+• Stack Pointer (CONTEXT). Holds the exact memory address of the topmost active wordlist (wid1).
+• Empty State. When CONTEXT equals ORDER-STACK (cell 0), the search order is empty (n = 0).
+• Active Slots. As wordlists are pushed, CONTEXT advances by 1 CELLS per entry (ORDER-STACK + 1 CELLS holds widn, up to CONTEXT holding wid1).
+• Instant Top Access. Because CONTEXT always points directly to wid1, replacing the top wordlist (the standard action of a VOCABULARY word) is a single memory store: wid CONTEXT !.
+
+2. Complete Forth Implementation
+
+Below is a complete, self-contained ANS Forth search-order implementation using the moving pointer design. It includes SET-ORDER, GET-ORDER, ALSO, PREVIOUS, ONLY, DEFINITIONS, VOCABULARY, and the interpreter lookup loop.
+forth
+\ --- 1. Data Structures ---
+16 CONSTANT MAX-ORDER
+CREATE ORDER-STACK MAX-ORDER 1+ CELLS ALLOT  \ Cell 0 is empty base; Cells 1..16 hold wids
+ORDER-STACK VALUE CONTEXT                    \ Moving pointer to top active wid
+0 VALUE CURRENT                              \ Compilation wordlist (wid)
+
+\ --- 2. Core Search-Order Primitives ---
+: SET-ORDER ( widn ... wid1 n -- )
+   DUP -1 = IF DROP FORTH-WORDLIST 1 THEN    \ -1 resets to default search order
+   DUP MAX-ORDER > IF -49 THROW THEN         \ Search-order overflow
+   DUP 0<          IF -50 THROW THEN         \ Search-order underflow
+   ORDER-STACK TO CONTEXT                    \ Reset pointer to empty base
+   0 ?DO
+      CONTEXT CELL+ TO CONTEXT               \ Advance pointer by 1 cell
+      CONTEXT !                              \ Store wid1 first, ending with widn at top
+   LOOP ;
+
+\ Note: In standard stack order ( widn ... wid1 n ), wid1 is on TOP of the data stack.
+\ To achieve this, SET-ORDER pops wid1 first and stores it at the highest address,
+\ so we actually want widn at cell 1 and wid1 at CONTEXT!
+Use code with caution.
+Correction on Stack Direction: Because SET-ORDER receives ( widn ... wid1 n ) with wid1 on top of the data stack, popping wid1 first means wid1 should end up at CONTEXT (the top of the memory stack) while widn ends up at ORDER-STACK + 1 CELLS (the bottom). Writing downward from the target top address keeps both stacks aligned:
+forth
+: SET-ORDER ( widn ... wid1 n -- )
+   DUP -1 = IF DROP FORTH-WORDLIST 1 THEN
+   DUP MAX-ORDER > IF -49 THROW THEN         \ Search-order overflow
+   DUP 0<          IF -50 THROW THEN         \ Search-order underflow
+   CELLS ORDER-STACK + DUP TO CONTEXT        \ Set CONTEXT directly to new top slot (wid1)
+   BEGIN
+      DUP ORDER-STACK >                      \ While pointer is above base cell 0
+   WHILE
+      SWAP OVER !                            \ Pop next wid (wid1, wid2...) and store at pointer
+      1 CELLS -                              \ Move pointer down toward base
+   REPEAT
+   DROP ;
+
+: GET-ORDER ( -- widn ... wid1 n )
+   CONTEXT ORDER-STACK - 1 CELLS /           \ Calculate active count n from pointer offset
+   DUP >R                                    \ Save count n on return stack
+   ORDER-STACK                               \ Start just below bottom entry (widn)
+   R@ 0 ?DO
+      CELL+ DUP @ SWAP                       \ Advance up to CONTEXT, fetching widn ... wid1
+   LOOP
+   DROP R> ;                                 \ Drop pointer, push count n on top
+Use code with caution.
+
+3. High-Level Search-Order Words
+
+With CONTEXT pointing directly to wid1, both standard words and fast low-level optimizations work cleanly:
+forth
+\ Standard portable definitions:
+: ONLY     ( -- ) -1 SET-ORDER ;
+: ALSO     ( -- ) GET-ORDER OVER SWAP 1+ SET-ORDER ;
+: PREVIOUS ( -- ) GET-ORDER NIP 1- SET-ORDER ;
+
+\ Direct pointer equivalents (faster, avoids copying the whole stack):
+: FAST-ALSO ( -- )
+   CONTEXT ORDER-STACK MAX-ORDER CELLS + >= IF -49 THROW THEN
+   CONTEXT @                                 \ Fetch current top wid1
+   CONTEXT CELL+ TO CONTEXT                  \ Advance pointer
+   CONTEXT ! ;                               \ Duplicate wid1 into new top slot
+
+: FAST-PREVIOUS ( -- )
+   CONTEXT ORDER-STACK <= IF -50 THROW THEN  \ Underflow check
+   CONTEXT 1 CELLS - TO CONTEXT ;            \ Simply move pointer down 1 cell
+
+\ Compilation target & Vocabulary defining word:
+: DEFINITIONS ( -- )
+   CONTEXT @ TO CURRENT ;                    \ Copy top search wid into CURRENT
+
+: VOCABULARY ( "name" -- )
+   WORDLIST CREATE ,
+   DOES> @ CONTEXT ! ;                       \ Overwrite top slot directly via CONTEXT !
+Use code with caution.
+
+4. Text Interpreter Word Lookup (FIND-NAME)
+
+When the Forth text interpreter looks up a word ( c-addr u ), it starts at CONTEXT (wid1) and walks backward down to ORDER-STACK + 1 CELLS (widn), calling SEARCH-WORDLIST on each slot until a match is found:
+forth
+: SEARCH-ORDER-LIST ( c-addr u -- 0 | xt 1 | xt -1 )
+   CONTEXT                                   \ Start at top active slot (wid1)
+   BEGIN
+      DUP ORDER-STACK >                      \ Stop when pointer reaches empty base (cell 0)
+   WHILE
+      >R 2DUP R@ @ SEARCH-WORDLIST           \ Search wordlist at current pointer
+      ?DUP IF                                \ Match found? (returns 1 or -1)
+         R> DROP 2SWAP 2DROP EXIT            \ Clean up pointer and string, return xt & flag
+      THEN
+      R> 1 CELLS -                           \ Step pointer down to next wordlist
+   REPEAT
+   DROP 2DROP 0 ;                            \ Not found in any active wordlist
+Use code with caution.
+
+Summary of Benefits
+
+• Zero Index Math at Runtime. Invoking a vocabulary (EDITOR) executes CONTEXT !, and DEFINITIONS executes CONTEXT @ TO CURRENT.
+• O(1) Stack Operations. FAST-ALSO and FAST-PREVIOUS adjust a single address pointer rather than shifting array elements or copying stacks.
+• Self-Contained State. The single CONTEXT pointer encodes both the active top wordlist and the current search-order depth (CONTEXT ORDER-STACK - CELL/).
+Would you like to trace how SEARCH-WORDLIST walks the dictionary headers inside one of those wordlists, or see how MARKER snapshots and restores ORDER-STACK and CONTEXT?
+
+
+

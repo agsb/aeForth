@@ -59,9 +59,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #        hash of words in uppercase
 #        no buffer input.
 #
-# a0, a2, a3, a4, a5, a7 used in ecalls
+#----------------------------------------------------------------------
 #
-# s0, s1, a0, a2, a3, a4, a5 used in 16 bits opcodes
+# RISCV ABI reserves a0, a1, a2, a3, a4, a5, a6, a7 for ecalls
+#
+# a0, a1, a2, a3, a7 used in file ecalls
+#
+# s0, s1, a0, a1, a2, a3, a4, a5 used in 16 bits opcodes
 #
 #----------------------------------------------------------------------
 #
@@ -216,7 +220,7 @@ xt_\label:
 .endm
 
 # compiled resumes to unnest
-.macro end_compose
+.macro end_compiled
     j xt_exit
 .endm
 
@@ -224,10 +228,13 @@ xt_\label:
 
 #
 # Moore says the 22 deep are infinite :)
-# use round-robin stacks of 32 deep, or 2^n
-# the stack must start at a multiple of it as 1*10000000
-# magics by -1 * 32 * CELL == NOT(32*CELL)
+# aeForth use round-robin stacks of 32 deep, (or chose a 2^N)
+# the stack must start at a multiple of it 
+# and magics by == NOT(DEEP*CELL)
+# 32 * 4 is 128 as 0b10000000
 #
+
+# moves backwards
 
 .equ stacks, 32
 
@@ -239,14 +246,14 @@ xt_\label:
 
 .equ rp_size, stacks * CELL
 
-# moves backwards
+# round robin hack 
 
 .equ stack_deep, (-1 * stacks * CELL) 
 
 # generic push into memory
 .macro push rg ps 
         addi \ps, \ps, -1 * CELL
-	# round robin stack
+	# round robin hack
         andi \ps, \ps, stack_deep
         sw \rg, 0 (\ps)
 .endm
@@ -255,7 +262,7 @@ xt_\label:
 .macro pull rg ps
         lw \rg, 0 (\ps)
         addi \ps, \ps, +1 * CELL
-	# round robin stack
+	# round robin hack
         andi \ps, \ps, stack_deep
 .endm
 
@@ -268,8 +275,6 @@ xt_\label:
 #----------------------------------------------------------------------
 # There is no spoon.
 .section .bss
-.option push
-.option norelax 
 
 #----------------------------------------------------------------------
 # Note:
@@ -280,9 +285,12 @@ xt_\label:
 # user_size + sp_size + rp_size must be less than 2024 bytes
 # because code uses addi (+12bits) to setup offset address
 
+.option push
+.option norelax 
+
 #----------------------------------------------------------------------
 # common user structure and some spare space
-_user:
+_us0:
 .p2align 7, 0x0
 .skip usr_size
 
@@ -307,13 +315,13 @@ _rp0:
 
 #----------------------------------------------------------------------
 
-# just for sake
+# leave it here just for sake
 .word FALSE
 
 # at start of memory
 h_where:
-.skip RAM_LIMIT - ( h_where - _user )
-# to end of  memory
+.skip RAM_LIMIT - ( h_where - _us0 )
+# to end of memory
 h_there:
 
 #----------------------------------------------------------------------
@@ -336,7 +344,7 @@ main:
 
 # load constant pointer address
 
-        la usr, _user
+        la usr, _us0
 
 # load end of assembled dictionary
 
@@ -357,8 +365,8 @@ main:
 #----------------------------------------------------------------------
 # do what need for setup
 
-# hold void
-        mv tos, zero
+# hold us0
+        la tos, _us0
         sw tos, VOID (usr)
 
 # hold sp0
@@ -389,6 +397,11 @@ main:
         lui tos, 0x10
         sw tos, BASE (usr)
 
+# state of forth, aka STATE
+
+        lui tos, EXECUTE
+        sw tos, STAT (usr)
+
 # reset data stack
 
         lw tos, SPTR (usr) 
@@ -398,11 +411,6 @@ main:
 
         lw tos, RPTR (usr)
         mv rpt, tos
-
-# state of forth, aka STATE
-
-        lui tos, EXECUTE
-        sw tos, STAT (usr)
 
         ret 
 
@@ -422,7 +430,7 @@ _start:
 
         call main
         
-        la ipt, xt_interpret
+        la ipt, xt_turnkey
 	
 	j next
 
@@ -453,6 +461,5 @@ _start:
 #---------------------------------------------------------------------
 
 _end_of_code:
-#	.word 0
 .end
 

@@ -51,33 +51,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # AEFORTH2 pre-compiled words 
 #---------------------------------------------------------------------- 
  
-
 # controls backwards
-
-.equ hash_BEGIN, 0x0C8280A2 #; ( BEGIN ) 
-.equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
-
-.equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
-.equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
-.equ hash_WHILST, 0x40B17B78 #; ( WHILST )
 
 # controls forwards
 
-.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
-.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
-
-.equ hash_AHEAD, 0x0C555E0C #; ( AHEAD )
-.equ hash_IF, 0x0059732A #; ( IF ) 
-.equ hash_UNTO, 0x7C855025 #; ( UNTO )
-
-.equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
-.equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
-
 # controls forward and backward
-
-.equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
-.equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
-.equ hash_AFT, 0x0B87B636 #; ( AFT )
 
 # cases, mind the data stack deep while compiling
 
@@ -143,55 +121,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_TONUMBER, 0x58D73858 #; ( >NUMBER ) 
 
 #---------------------------------------------------------------------- 
+.equ hash_TURNKEY, 0x519F5BEF #; ( TURNKEY )
+def_word "turnkey" hash_TURNKEY
+	.word xt_interpret
+	.word xt_exit	
 
-.equ hash_NIL, 0x0002B595 #; ( 0 ) 
 # ( -- 0) #; ( 0 ) #; 
+.equ hash_NIL, 0x0002B595 #; ( 0 ) 
 def_word "nil" hash_NIL 
-	push tos spt 
-	lui tos, 0x0 
-        j next 
+	.word xt_lit, 0x0
+	.word xt_exit	
  
-.equ hash_ONE, 0x0002B594 #; ( 1 ) 
 # ( -- 1) #; ( 1 ) #; 
+.equ hash_ONE, 0x0002B594 #; ( 1 ) 
 def_word "one" hash_ONE 
-	push tos spt 
-	lui tos, 1 
-        j next 
+	.word xt_lit, 0x1
+	.word xt_exit	
  
-.equ hash_TWO, 0x0002B597 #; ( 2 ) 
 # ( -- 2) #; ( 2 ) #; 
+.equ hash_TWO, 0x0002B597 #; ( 2 ) 
 def_word "two" hash_TWO 
-	push tos spt 
-	lui tos, 2 
-        j next 
+	.word xt_lit, 0x2
+	.word xt_exit	
 
-.equ hash_TEN, 0x00596824 #; ( 10 )
 # ( -- 10) #; ( 10 ) #; 
+.equ hash_TEN, 0x00596824 #; ( 10 )
 def_word "ten" hash_TEN
-	push tos spt 
-	lui tos, 10 
-        j next 
+	.word xt_lit, 0xA
+	.word xt_exit	
  
 #--------------------------------------------------------------------- 
 # variables 
  
 .equ hash_TEMP, 0x7C87D1E9 #; ( TEMP ) 
 
- 
 # ( w -- usr[w] ) #; ( USER ) word in user array, milliforth: U@ 
 .equ hash_USER, 0x7C84F154 #; ( USER )
 def_word "user" hash_USER 
 	.word xt_cells, xt_douse, xt_plus, xt_fetch 
         .word xt_exit 
  
-# ( -- sp0 ) #; ( SPZ ) 
+# ( -- sp0 ) #; ( SPZ ) base of data stack 
 .equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
 def_word "sp0" hash_SPZ 
 	.word xt_lit, SPTR, xt_user 
         .word xt_exit 
  
+# ( -- rp0 ) #; ( RPZ ) base of return stack 
 .equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
-# ( -- rp0 ) #; ( RPZ ) 
 def_word "rp0" hash_RPZ 
 	.word xt_lit, RPTR, xt_user 
         .word xt_exit 
@@ -228,22 +205,22 @@ def_word "pike" hash_PIKE
  
 #---------------------------------------------------------------------- 
 
-.equ hash_ZEQU, 0x00596808 #; ( 0= )
 # ( w -- f ) #; ( 0= )
+.equ hash_ZEQU, 0x00596808 #; ( 0= )
 def_word "zequ" hash_ZEQU
 	.word xt_lit, 0
 	.word xt_equ
 	.word xt_exit
 
-.equ hash_ZLESS, 0x00596809 #; ( 0< )
 # ( w -- f ) #; ( 0< )
+.equ hash_ZLESS, 0x00596809 #; ( 0< )
 def_word "zless" hash_ZLESS
 	.word xt_lit, 0
 	.word xt_less
 	.word xt_exit
 
-.equ hash_ZMORE, 0x0059680B #; ( 0> )
 # ( w -- f ) #; ( 0> )
+.equ hash_ZMORE, 0x0059680B #; ( 0> )
 def_word "zmore" hash_ZMORE
 	.word xt_lit, 0
 	.word xt_swap
@@ -356,13 +333,17 @@ def_word "docode" hash_DOCODE
 def_word "endcode" hash_ENDCODE 
 	.word xt_exit 
 
-# ( w -- ) #; #; ( :CODE ), does a native call 
+# ( -- ) #; #; ( ;CODE ), does a native call ZZZZ
+.equ hash_ATCODE, 0x075D9A73 #; ( ;CODE )
+	.word xt_exit 
+
+# ( w -- ) #; #; ( :CODE ), does a native call ZZZZ
 .equ hash_TOCODE, 0x075D9A73 #; ( ;CODE )
 def_word "tocode" hash_TOCODE 
 	.word xt_rto, xt_perform
 	.word xt_exit 
 
-# ( w -- ) #; #; ( CODE; ), does a native return 
+# ( w -- ) #; #; ( CODE; ), does a native return ZZZZ
 # in RISCV ret is jalr zero, 0 (ra) 
 .equ hash_CODETO, 0x0CBD0E93 #; ( CODE; )
 .equ RET, 0x00008067
@@ -374,23 +355,28 @@ def_word "codeto" hash_CODETO
 #
 # remember 0x0 is FALSE, ever  
 #
+
 # ( -- a ) ;# ( BEGIN ) mark a backward offset
+.equ hash_BEGIN, 0x0C8280A2 #; ( BEGIN ) 
 def_word "begin" hash_BEGIN IMMEDIATE 
 	.word xt_here 
 	.word xt_exit 
  
 # ( -- ) ;# ( BACK ) goes backward 
+.equ hash_BACK, 0x7C8023EE #; ( BACK ) 
 def_word "back" hash_BACK IMMEDIATE 
 	.word xt_here, xt_minus, xt_comma 
 	.word xt_exit 
  
 # ( a -- ) ;# ( AGAIN ) goes back always
+.equ hash_AGAIN, 0x0C5078E5 #; ( AGAIN ) 
 def_word "again" hash_AGAIN IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_back 
 	.word xt_exit 
  
 # ( a -- ) ;# ( UNTIL ) goes back, when TOS is zero
+.equ hash_UNTIL, 0x0D2F54CF #; ( UNTIL ) 
 def_word "until" hash_UNTIL IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
 	.word xt_back 
@@ -398,6 +384,7 @@ def_word "until" hash_UNTIL IMMEDIATE
  
 # strange word
 # ( a -- ) ;# ( WHILST ) goes back, when TOS greater than zero
+.equ hash_WHILST, 0x40B17B78 #; ( WHILST )
 def_word "whilst" hash_WHILST IMMEDIATE 
 	.word xt_lit, xt_gbranch, xt_comma
 	.word xt_back 
@@ -406,22 +393,26 @@ def_word "whilst" hash_WHILST IMMEDIATE
 #---------------------------------------------------------------------- 
 
 # ( -- a ) ;# ( MARK ) mark a forward offset
+.equ hash_MARK, 0x7C80BAB0 #; ( MARK ) 
 def_word "mark" hash_MARK IMMEDIATE 
 	.word xt_here, xt_nil, xt_comma 
 	.word xt_exit 
 
 # ( -- ) ;# ( ENDIF ) 
+.equ hash_ENDIF, 0x0C0E10C5 #; ( ENDIF ) 
 def_word "endif" hash_ENDIF IMMEDIATE 
 	.word xt_here, xt_over, xt_minus, xt_swap, xt_store 
 	.word xt_exit 
  
 # ( -- a ) ;# ( AHEAD ) 
+.equ hash_AHEAD, 0x0C555E0C #; ( AHEAD )
 def_word "ahead" hash_AHEAD IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_mark 
 	.word xt_exit 
  
 # ( -- ) ;# ( IF ) 
+.equ hash_IF, 0x0059732A #; ( IF ) 
 def_word "if" hash_IF IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
 	.word xt_mark 
@@ -429,12 +420,14 @@ def_word "if" hash_IF IMMEDIATE
  
 # strange word
 # ( -- ) ;# ( UNTO ) 
+.equ hash_UNTO, 0x7C855025 #; ( UNTO )
 def_word "unto" hash_UNTO IMMEDIATE 
 	.word xt_lit, xt_gbranch, xt_comma
 	.word xt_mark 
 	.word xt_exit 
  
 # ( -- ) ;# ( ELSE ) 
+.equ hash_ELSE, 0x7C7C971A #; ( ELSE ) 
 def_word "else" hash_ELSE IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_mark
@@ -443,6 +436,7 @@ def_word "else" hash_ELSE IMMEDIATE
 	.word xt_exit 
  
 # ( -- ) ;# ( THEN ) 
+.equ hash_THEN, 0x7C87E6F2 #; ( THEN ) 
 def_word "then" hash_THEN IMMEDIATE 
 	.word xt_endif
 	.word xt_exit 
@@ -450,18 +444,21 @@ def_word "then" hash_THEN IMMEDIATE
 #---------------------------------------------------------------------- 
 
 # ( -- ) ;# ( WHILE ) goes forward, when TOS is zero 
+.equ hash_WHILE, 0x0D98C5BA #; ( WHILE ) 
 def_word "while" hash_WHILE IMMEDIATE 
 	.word xt_lit, xt_zbranch, xt_comma
 	.word xt_mark, xt_swap 
 	.word xt_exit 
  
 # ( -- ) ;# ( REPEAT ) goes backward to begin
+.equ hash_REPEAT, 0x42188BB2 #; ( REPEAT ) 
 def_word "repeat" hash_REPEAT IMMEDIATE 
 	.word xt_lit, xt_branch, xt_comma
 	.word xt_back, xt_endif 
 	.word xt_exit 
  
 # ( -- a ) ;# ( AFT ) goes forward 
+.equ hash_AFT, 0x0B87B636 #; ( AFT )
 def_word "aft" hash_AFT IMMEDIATE 
 	.word xt_drop
 	.word xt_lit, xt_branch, xt_comma
