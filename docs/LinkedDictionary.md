@@ -17,13 +17,13 @@ values for Heap and Stack are constant.
 
 ### Linear array
 
-    The header is a tupple composed by a Hash+Flags value and a Code 
+The header is a tupple composed by a Hash+Flags value and a Code 
     pointer, allocated from Stack, and the snippets of code allocated
     from Heap. 
 
-    Usually the task stack pointer points at Stack and must be updated
-    on each new item in array. Must do not create tupples inside stack
-    dependent routines.
+Usually the main stack pointer also points at high memory and must 
+    be updated on each new item in array. Must do not create tupples 
+    inside stack dependent routines.
 
 
 ### Backward direction
