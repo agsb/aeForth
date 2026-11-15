@@ -6,7 +6,7 @@ is essential to extend the dictionary of Forth.
 Forth systems could use a dictionary with only a single vocabulary
 or a list of vocabularies.
 
-Each vocabulary is composed by an linear array or a linked list,
+Each vocabulary is composed as an linear array or a linked list,
 with header payloads. 
 
 The header a payload composed with contents of Link, Flags, Hash, Name, 
