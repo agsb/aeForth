@@ -1,14 +1,31 @@
 ## The dictionary
 
 The compilation is not the most important piece of Forth but 
-is essential to extend dictionary of Forth.
+is essential to extend the dictionary of Forth.
 
 Forth systems could use a dictionary with only a single vocabulary
 or a list of vocabularies.
 
-Each vocabulary is composed by a linked list with header payloads. 
+Each vocabulary is composed by an linear array or a linked list,
+with header payloads. 
 
-The header includes Link, Hash, Name, Code
+The header a payload composed with contents of Link, Flags, Hash, Name, 
+Code or pointers for those.
+
+The free memory is mapped with two pointers, a Heap from lowerest address 
+and grows forward and a Stack from highest address and grows backward.
+
+
+### Linear array
+
+    The header is a tupple composed by a Hash+Flags value and a Code 
+    pointer, allocated from Stack, and the snippets of code allocated
+    from Heap. The start of Heap and Stack are constant.
+
+    Usually the task stack pointer points at Stack and must be updated
+    on each new item in array. Must do not create tupples inside stack
+    dependent routines.
+
 
 ### Backward direction
 

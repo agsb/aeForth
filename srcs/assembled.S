@@ -375,14 +375,6 @@ def_word "rshift", hash_RSHIFT
          srl tos, nos, tos 
         j next 
 
-# ( w1 w2 -- w), NOT(w1 AND w2)
-.equ hash_NAND, 0x7C8254C0 #; ( NAND )
-def_word "nand" hash_NAND
-    	pull nos spt 
-        and tos, tos, nos
-	not tos, tos
-	j next
-
 #--------------------------------------------------------------------- 
 # 13/11/2026, discover that GForth 0.2 define : PERFORM @ EXECUTE ; 
 # 
@@ -433,12 +425,6 @@ entry_point:
 #--------------------------------------------------------------------- 
 
 # comparation 
-
-# ( 0 -- FALSE) | ( n -- TRUE), not zero at top ?
-.equ hash_NILQ, 0x00596816 #; ( 0# )
-def_word "nilq", hash_NILQ
-        beqz tos, isfalse
-        j istrue
 
 # ( w1 w2 -- T|F ) #; ( = ) 
 .equ hash_EQU, 0x0002B598  #; ( = ) 
@@ -507,6 +493,26 @@ def_word "cells" hash_CELLS
 	sll tos, tos, 0x4 
         j next 
  
+#--------------------------------------------------------------------- 
+
+# from milliforth-sector
+
+#----------------------------------------------------------------------
+
+# ( 0 -- FALSE) | ( n -- TRUE), not zero at top ?
+.equ hash_NILQ, 0x00596816 #; ( 0# )
+def_word "nilq", hash_NILQ
+        beqz tos, isfalse
+        j istrue
+
+# ( w1 w2 -- w), NOT(w1 AND w2)
+.equ hash_NAND, 0x7C8254C0 #; ( NAND )
+def_word "nand" hash_NAND
+    	pull nos spt 
+        and tos, tos, nos
+	not tos, tos
+	j next
+
 # ( -- usr ) #; ( DOUSE ) pointer to user array, milliforth: U@ 
 .equ hash_DOUSE, 0x0C6844AD #; ( DOUSE )
 def_word "douse" hash_DOUSE 
@@ -514,57 +520,11 @@ def_word "douse" hash_DOUSE
 	mv tos, usr 
         j next 
 
-#--------------------------------------------------------------------- 
-
-#--------------------------------------------------------------------- 
-# counts forth heart beats
-# t0 counts next executed, t1 counts primitives, t2 counts compiled
-#
-.ifdef beats
-
-.equ hash_>BEATS, 0x6BC0B39A #; ( >BEATS )
-.equ hash_BEATS>, 0x1CCFA27A #; ( BEATS> )
-.equ hash_ZBEATS, 0x554440FE #; ( ZBEATS )
-
-# ( t2 t1 t0 -- ) #; ( BASE ) 
-def_word "tobeats" hash_TOBEATS 
-	mv t0, tos
-	pull tos spt
-	mv t1, tos
-	pull tos spt
-	mv t2, tos
-	pull tos spt
-        j next
-
-# ( -- t2 t1 t0 ) #; ( BASE ) 
-def_word "beatsto" hash_BEATSTO 
-	push tos spt
-	mv tos, t2
-	push tos spt
-	mv tos, t1
-	push tos spt
-	mv tos, t2
-        j next
-
-# ( -- ) #; ( BEATSASE ) 
-def_word "zbeats" hash_ZBEATS
-	mv t0, zero
-	mv t1, zero
-	mv t2, zero
-        j next
-
-.endif
-
-
-
-#----------------------------------------------------------------------
 # code a ASCII $0-9A-Z to value, conform radix of BASE
-.equ hash_TONUMBER, 0x0002B581 #; ( $ )
+.equ hash_dolar, 0x0002B581 #; ( $ )
 # ( -- w ) #; ( $ ) 
-def_word "tonumber" hash_TONUMBER
-
+def_word "dolar" hash_dolar
 	push tos spt
-
 	call tonumber
 
 	j next
@@ -699,6 +659,47 @@ num2hex:
 300:
 
         ret
+
+#---------------------------------------------------------------------
+
+#--------------------------------------------------------------------- 
+# counts forth heart beats
+# t0 counts next executed, t1 counts primitives, t2 counts compiled
+#
+.ifdef beats
+
+.equ hash_>BEATS, 0x6BC0B39A #; ( >BEATS )
+.equ hash_BEATS>, 0x1CCFA27A #; ( BEATS> )
+.equ hash_ZBEATS, 0x554440FE #; ( ZBEATS )
+
+# ( t2 t1 t0 -- ) #; ( BASE ) 
+def_word "tobeats" hash_TOBEATS 
+	mv t0, tos
+	pull tos spt
+	mv t1, tos
+	pull tos spt
+	mv t2, tos
+	pull tos spt
+        j next
+
+# ( -- t2 t1 t0 ) #; ( BASE ) 
+def_word "beatsto" hash_BEATSTO 
+	push tos spt
+	mv tos, t2
+	push tos spt
+	mv tos, t1
+	push tos spt
+	mv tos, t2
+        j next
+
+# ( -- ) #; ( BEATSASE ) 
+def_word "zbeats" hash_ZBEATS
+	mv t0, zero
+	mv t1, zero
+	mv t2, zero
+        j next
+
+.endif
 
 #---------------------------------------------------------------------
 
