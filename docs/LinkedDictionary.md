@@ -31,7 +31,8 @@ When is not necessary dictionary updates, just strip out the array of headers.
 
 ### Linked list
 
-The header and snippet of code are mixed and linked.
+Nowadays, the header and code snippets are mixed and linked, growing from *Heap* but 
+could be separated for cache optimization, ROM-ability, or fixed dictionary or stripped-down standalone.
 
 #### Backward direction
 
