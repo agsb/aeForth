@@ -13,8 +13,9 @@ Each vocabulary is composed as an linear array or a linked list, with header pay
 The header payload composed by Link, Flags, Hash, Name, Code or pointers for those.
 
 For easy, the free memory is mapped with two pointers, a *Heap* is lowerest free address 
-and grows forward, and a *Stack* is highest free address and grows backward. The start 
-values for *Heap* and *Stack* are constant.
+and grows forward, and a *Stack* is highest free address and grows backward. 
+
+The initial values for *Heap* and *Stack* are constant and keeped.
 
 ### Linear array
 
