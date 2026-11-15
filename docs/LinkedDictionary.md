@@ -11,14 +11,15 @@ with header payloads.
 
 The header payload composed by Link, Flags, Hash, Name, Code or pointers for those.
 
-For easy, the free memory is mapped with two pointers, a Heap is lowerest free address 
-and grows forward and a Stack is highest free address and grows backward.
+For easy, the free memory is mapped with two pointers, a *Heap* is lowerest free address 
+and grows forward, and a *Stack* is highest free address and grows backward. The start 
+values for Heap and Stack are constant.
 
 ### Linear array
 
     The header is a tupple composed by a Hash+Flags value and a Code 
     pointer, allocated from Stack, and the snippets of code allocated
-    from Heap. The start of Heap and Stack are constant.
+    from Heap. 
 
     Usually the task stack pointer points at Stack and must be updated
     on each new item in array. Must do not create tupples inside stack
