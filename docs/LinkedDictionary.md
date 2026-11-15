@@ -9,12 +9,10 @@ or a list of vocabularies.
 Each vocabulary is composed as an linear array or a linked list,
 with header payloads. 
 
-The header a payload composed with contents of Link, Flags, Hash, Name, 
-Code or pointers for those.
+The header payload composed by Link, Flags, Hash, Name, Code or pointers for those.
 
-The free memory is mapped with two pointers, a Heap from lowerest address 
-and grows forward and a Stack from highest address and grows backward.
-
+For easy, the free memory is mapped with two pointers, a Heap is lowerest free address 
+and grows forward and a Stack is highest free address and grows backward.
 
 ### Linear array
 
