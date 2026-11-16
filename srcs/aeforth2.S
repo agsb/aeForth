@@ -146,7 +146,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ QU,  34    # string delimiter is double quote, quotation mark
 
-.equ TL, 127    # delete ascii character
+.equ DEL, 127   # delete ascii character
 
 # highlander, immediate flag, unique NaN
 
@@ -162,13 +162,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-# void start
+# void start (user array address)
 .equ VOID, 0 
 
-# data stack index
+# data stack 0 index
 .equ SPTR, 1 
 
-# return stack index
+# return stack 0 index
 .equ RPTR, 2 
 
 # last link cell in heap dictionary linked list
@@ -268,9 +268,15 @@ xt_\label:
 
 #----------------------------------------------------------------------
 # Nothing here, void.
-.section .data
+
+.section .rodata
 .p2align 4, 0x0
 
+#----------------------------------------------------------------------
+# Nothing here, void.
+
+.section .data
+.p2align 4, 0x0
 
 #----------------------------------------------------------------------
 # There is no spoon.
@@ -360,7 +366,6 @@ main:
         # tack
         li t2, 0
 .endif
-
 
 #----------------------------------------------------------------------
 # do what need for setup

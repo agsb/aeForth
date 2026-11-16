@@ -249,9 +249,9 @@ def_word "swap" hash_SWAP
 .equ hash_ROT, 0x0B8807CC #; ( ROT ) 
 def_word "rot" hash_ROT 
 	lw nos, 0 (spt) 
-	lw trd, 4 (spt) 
+	lw trd, CELL (spt) 
 	sw trd, 0 (spt) 
-	sw tos, 4 (spt) 
+	sw tos, CELL (spt) 
 	mv tos, nos 
         j next 
  
@@ -376,53 +376,6 @@ def_word "rshift", hash_RSHIFT
         j next 
 
 #--------------------------------------------------------------------- 
-# 13/11/2026, discover that GForth 0.2 define : PERFORM @ EXECUTE ; 
-# 
-# ( w -- ) #; #; ( BEHAVE ), does a native jump 
-# at end do: ' jalr zero, 0 (ra) ' to return at j next
-# must preserve ra ipt spt rpt tos usr nib 
-.equ hash_BEHAVE, 0x1CD31C18 #; ( BEHAVE )
-def_word "behave", hash_BEHAVE
-	mv nos, tos 
-	pull tos spt 
-        jalr ra, 0 (nos) 
-        j next 
-
-/* 
-
-# Using BEHAVE, beware of call it with proper setup
-
-entry_point:
-# at init of function, preserve those, use 32 for align
-        addi sp, sp, -32
-        sw ipt, 0(sp)
-        sw spt, 4(sp)
-        sw rpt, 8(sp)
-        sw tos, 12(sp)
-        sw usr, 16(sp)
-        sw nib, 20(sp)
-        sw ra,  24(sp)
-
-	~~~~~~~~~~~~~~~~~~~
-	~~DO_WHAT_IS_NEED~~
-	~~~~~~~~~~~~~~~~~~~
-
-# at quit of function, restore those, use 32 for align
-        lw ipt, 0(sp)
-        lw spt, 4(sp)
-        lw rpt, 8(sp)
-        lw tos, 12(sp)
-        lw usr, 16(sp)
-        lw nib, 20(sp)
-        lw ra,  24(sp)
-        addi sp, sp, 32
-
-# return
-	jalr zero, 0 (ra)
-
-*/
-
-#--------------------------------------------------------------------- 
 
 # comparation 
 
@@ -490,7 +443,7 @@ def_word "cell" hash_CELL
 # ( u -- u*4 ) #; ( CELLS ) #; sized to CELL 
 .equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
 def_word "cells" hash_CELLS
-	sll tos, tos, 0x4 
+	sll tos, tos, 0x2 
         j next 
  
 #--------------------------------------------------------------------- 
@@ -521,12 +474,19 @@ def_word "douse" hash_DOUSE
         j next 
 
 # code a ASCII $0-9A-Z to value, conform radix of BASE
-.equ hash_dolar, 0x0002B581 #; ( $ )
-# ( -- w ) #; ( $ ) 
-def_word "dolar" hash_dolar
+.equ hash_dollar, 0x0002B581 #; ( $ )
+# (  -- w ) #; ( $ ) 
+def_word "dollar" hash_dollar
 	push tos spt
 	call tonumber
+	j next
 
+# code a 32-bit value in 0-9A-Z ASCII, conform radix value
+# ( w -- ) #; ( . ) 
+.equ hash_DOT, 0x0002B58B #; ( . )
+def_word "dot" hash_DOT
+	call numberto
+	pull tos spt
 	j next
 
 #----------------------------------------------------------------------
@@ -535,6 +495,9 @@ tonumber:
 # safe inside Forth words, direct use getc
 # strict to use a0, a1, a2 in getc 
 # using a3 a4 a5 as extras for easy
+
+	# save ra
+	mv a6, ra
 
         # clear result
 
@@ -549,108 +512,91 @@ tonumber:
         lw a5, BASE * CELL (usr)
 
         # skip spaces
-nskip:
+100:
 
         call _getc
 
-	# escape allow controls
-
-        bltu tos, a4, nskip
-
 	# while space
 
-        bleu tos, a4, nskip
+        bleu tos, a4, 100b
 
 # verify ASCII valid digit and convert it
 
-ndigit:
+200:
 
-        #; valid digit, 0-9 and A-F
+        #; valid digit, 0-9 and A-Z
         addi tos, tos, -48
-        blt tos, zero, nodigit
 
         #; 0-9 ?
         li nos, 10
-        blt tos, tos, isradix
+        blt tos, tos, 300f
 
         #; normalize gap ascii 9 to A
         addi tos, tos, -7
 
-isradix:
+300:
+	# verify radix
+        bgt tos, a5, resume
 
-        bgt tos, a5, nodigit
-
-isdigit:
+400:
+	# add the value
 
         mul a3, a3, a5
 
         add a3, a3, tos
 
         # scan spaces
-nscan:
+500:
 
         call _getc
 
-	# escape allow controls
-
-        bltu tos, a4, nscan
-
 	# until space
 
-        bne tos, a4, ndigit
+        bgtu tos, a4, 200b
+
+	mv a5, a3
+
+# must return NaN when error
 
 resume:
 
-        mv tos, a3
-
-        ret
-
-nodigit:
-
         mv tos, a5
 
+	# load ra
+	mv ra, a6
+
         ret
 
 #---------------------------------------------------------------------
-# code a 32-bit value in 0-9A-Z ASCII, conform radix value
-# safe inside Forth words, direct putc
-# ( w -- ) #; ( . ) 
-.equ hash_DOT, 0x0002B58B #; ( . )
-def_word "dot" hash_DOT
+# number>	only hexadecimal print
+numberto:
 
-	call num2hex
+	# save ra
+	mc a6, ra
 
-	pull tos spt
+        mv a3, tos
 
-	j next
+        li a4, 58
 
-#---------------------------------------------------------------------
-# number>
-num2hex:
-
-        mv t3, tos
-
-        li t4, 58
-
-        li t5, 32
+        li a5, 32
 
         # rolls
 100:
-        beqz t5, 300f
+        beqz a5, 300f
 
-        addi t5, t5, -4
+        addi a5, a5, -4
 
-        srl  a3, t3, t5
+        srl  a0, a3, a5
 
 # mask
 
-        andi a3, a3, 15
+        andi a0, a0, 15
 
-        ori  a3, a3, 48
+        ori  a0, a0, 48
 
-        blt  a3, t4, 200f
+        blt  a0, t4, 200f
 
-        addi a3, a3, 7
+        addi a0, a0, 7
 
 200:
         call _putc
@@ -658,9 +604,57 @@ num2hex:
         j 100b
 300:
 
+	# load ra
+	mv ra, a6
+
         ret
 
-#---------------------------------------------------------------------
+#--------------------------------------------------------------------- 
+# 13/11/2026, discover that GForth 0.2 define : PERFORM @ EXECUTE ; 
+# 
+# ( w -- ) #; #; ( BEHAVE ), does a native jump 
+# at end do: ' jalr zero, 0 (ra) ' to return at j next
+# must preserve ra ipt spt rpt tos usr nib 
+.equ hash_BEHAVE, 0x1CD31C18 #; ( BEHAVE )
+def_word "behave", hash_BEHAVE
+	mv nos, tos 
+	pull tos spt 
+        jalr ra, 0 (nos) 
+        j next 
+
+/* 
+
+# Using BEHAVE, beware of call it with proper setup
+
+entry_point:
+# at init of function, preserve those, use 32 for align
+        addi sp, sp, -32
+        sw ipt, 0(sp)
+        sw spt, 4(sp)
+        sw rpt, 8(sp)
+        sw tos, 12(sp)
+        sw usr, 16(sp)
+        sw nib, 20(sp)
+        sw ra,  24(sp)
+
+	~~~~~~~~~~~~~~~~~~~
+	~~DO_WHAT_IS_NEED~~
+	~~~~~~~~~~~~~~~~~~~
+
+# at quit of function, restore those, use 32 for align
+        lw ipt, 0(sp)
+        lw spt, 4(sp)
+        lw rpt, 8(sp)
+        lw tos, 12(sp)
+        lw usr, 16(sp)
+        lw nib, 20(sp)
+        lw ra,  24(sp)
+        addi sp, sp, 32
+
+# return
+	jalr zero, 0 (ra)
+
+*/
 
 #--------------------------------------------------------------------- 
 # counts forth heart beats
