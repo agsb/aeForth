@@ -123,6 +123,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #---------------------------------------------------------------------- 
 .equ hash_TURNKEY, 0x519F5BEF #; ( TURNKEY )
 def_word "turnkey" hash_TURNKEY
+	.word xt_begin, xt_lit, 45, xt_emit, xt_again
 	.word xt_interpret
 	.word xt_exit	
 

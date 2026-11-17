@@ -269,6 +269,13 @@ xt_\label:
         andi \ps, \ps, stack_deep
 .endm
 
+.macro putch cc
+	mv a6, ra
+	li tos, \cc
+	call _putc
+	mv ra, a6
+.endm
+
 #----------------------------------------------------------------------
 # Nothing here, void.
 
@@ -337,6 +344,7 @@ h_there:
 #----------------------------------------------------------------------
 .globl _start
 
+_start:
 #----------------------------------------------------------------------
 # go ! go ! go !
 main:
@@ -344,6 +352,8 @@ main:
 # do any system initializations
 
         call _init
+
+	putch '0'
 
 #----------------------------------------------------------------------
 # do what need be only once
@@ -358,14 +368,16 @@ main:
 
 .ifdef beats
         # beat
-        li t0, 0
+        li cn0, 0
 
         # tick
-        li t1, 0
+        li cn1, 0
 
         # tack
-        li t2, 0
+        li cn2, 0
 .endif
+
+	putch 'A'
 
 #----------------------------------------------------------------------
 # do what need for setup
@@ -417,6 +429,8 @@ main:
         lw tos, RPTR (usr)
         mv rpt, tos
 
+	putch 'A'
+
         ret 
 
 #---------------------------------------------------------------------
@@ -435,11 +449,16 @@ _char: # 4 bytes for getc putc use
 
 .equ hash_RESET, 0x0DA3B330 #; ( RESET )
 def_word "reset" hash_RESET
-_start:
+#_start:
 
         call main
         
+	putch 'B'
+
         la ipt, xt_turnkey
+
+	putch 'B'
+
 	
 	j next
 

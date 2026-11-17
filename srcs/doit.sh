@@ -1,8 +1,17 @@
+#!/usr/bin/bash
 
-make clean && make
+# crude script
 
-grep 'def_word "' *.S | tee word.lst | sort > word.srt
+make clean
 
-wc word.lst | tee word.wc
+make
 
+# system and application
+QEMU=qemu-system-riscv64
+
+# single application
+QEMU=qemu-riscv32
+
+${QEMU} test.elf \
+ -display none -bios none -serial mon:stdio -smp 1 -machine virt
 
