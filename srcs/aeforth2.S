@@ -106,14 +106,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-# the t0, t1, t2 are used to count forth word executions
+# used to count forth word executions
+#define cn0 t0
+#define cn1 t1
+#define cn2 t2
 
 #----------------------------------------------------------------------
 # generics alias
 
 #----------------------------------------------------------------------
 # max size of dictionary 64k CELLS, depends on host machine
-
+# on ESP32 is 4 MMU pages of 64k bytes
 .equ RAM_LIMIT, 0x40000
 
 #----------------------------------------------------------------------
@@ -246,9 +249,9 @@ xt_\label:
 
 .equ rp_size, stacks * CELL
 
-# round robin hack 
+# round robin hack mask bit for 128 bit, 32 * CELL
 
-.equ stack_deep, (-1 * stacks * CELL) 
+.equ stack_deep, (0xFFFFFFBF) 
 
 # generic push into memory
 .macro push rg ps 
@@ -295,19 +298,19 @@ xt_\label:
 .option norelax 
 
 #----------------------------------------------------------------------
-# common user structure and some spare space
+# common user structure and some spare space, 32 x CELL, 128 bytes
 _us0:
 .p2align 7, 0x0
 .skip usr_size
 
 #----------------------------------------------------------------------
-# data stack grows backward, bottom
+# data stack grows backward, bottom, 32 x CELL, 128 bytes
 .p2align 7, 0x0
 .skip sp_size
 _sp0:
 
 #----------------------------------------------------------------------
-# return stack grows backward, bottom
+# return stack grows backward, bottom, 32 x CELL, 128 bytes
 .p2align 7, 0x0
 .skip rp_size
 _rp0:
@@ -320,9 +323,6 @@ _rp0:
 .p2align 4, 0x0
 
 #----------------------------------------------------------------------
-
-# leave it here just for sake
-.word FALSE
 
 # at start of memory
 h_where:
@@ -425,6 +425,10 @@ main:
 _linked:
         .word FALSE
         .word TRUE
+
+_char: # 4 bytes for getc putc use
+	.word FALSE
+	
 9999:
 
 #---------------------------------------------------------------------

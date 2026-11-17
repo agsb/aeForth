@@ -10,6 +10,7 @@ assembled.S:def_word "cells" hash_CELLS
 assembled.S:def_word "cfetch" hash_CFETCH 
 assembled.S:def_word "cstore" hash_CSTORE 
 assembled.S:def_word "docon" hash_DOCON 
+assembled.S:def_word "dollar" hash_dollar
 assembled.S:def_word "dot" hash_DOT
 assembled.S:def_word "douse" hash_DOUSE 
 assembled.S:def_word "dovar" hash_DOVAR 
@@ -42,7 +43,6 @@ assembled.S:def_word "spto" hash_SPTO
 assembled.S:def_word "store" hash_STORE 
 assembled.S:def_word "swap" hash_SWAP 
 assembled.S:def_word "tobeats" hash_TOBEATS 
-assembled.S:def_word "tonumber" hash_TONUMBER
 assembled.S:def_word "tor" hash_TOR 
 assembled.S:def_word "true" hash_TRUE 
 assembled.S:def_word "uless" hash_ULESS 
@@ -150,6 +150,7 @@ compiled.S:def_word "tick" hash_TICK IMMEDIATE
 compiled.S:def_word "to" hash_TO 
 compiled.S:def_word "tocode" hash_TOCODE 
 compiled.S:def_word "tuck" hash_TUCK
+compiled.S:def_word "turnkey" hash_TURNKEY
 compiled.S:def_word "two" hash_TWO 
 compiled.S:def_word "twodiv" hash_2DIV
 compiled.S:def_word "twodrop" hash_2DROP

@@ -25,6 +25,39 @@
 
 ## Done
 
+16/11/2026
+
+    The aeForth could be a turnkey for ESP32 RISCV, bellow FreeRTOS.
+
+    In ESP32 esp_rom*.h uses standart ABI. caller must save
+    ra, t0–t6, and a0–a7, but sp and s0–s11 are preserved.
+
+    Assume full 32 bit code, using
+
+    
+    | register | use | remarks |
+    | -- | -- | -- |
+    | s0 | sp | data stack pointer |
+    | s1 | rp | return stack pointer |
+    | s2 | ip | instruction stack pointer |
+    | s3 | usr | user array pointer |
+    | s4 | nib | first compiled pointer, only on MITC, reserved |
+
+    | register | use | remarks |
+    | -- | -- | -- |
+    | s5 | cn0 | counter of nexts |
+    | s6 | cn1 | counter of jumps |
+    | s7 | cn2 | counter of nests |
+    | s8 | rax | to save ra before rom call |
+
+
+    | register | use | remarks |
+    | -- | -- | -- |
+    | a0 | TOS | reserved, first  on data stack, fst | 
+    | a1 | NOS | scrath second on data stack, snd | 
+    | a2 | TRD | scrath third  on data stack, trd | 
+    | a3 | FTH | scrath fourth on data stack, fth | 
+
 13/11/2026
 
     Discovered that GForth-0.2 have defined : PERFORM @ EXECUTE ;

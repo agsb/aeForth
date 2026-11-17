@@ -57,7 +57,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .section .text
 .p2align 2, 0x0
 
-#---------------------------------------------------------------------- 
+#======================================================================
 # 
 # this is the forth heart beat, Minimum Indirect Thread Code 
 # 
@@ -80,7 +80,7 @@ unnest:
 # aka DOCOL 
 nest: 
 .ifdef beats
-	addi t2, t2, 1
+	addi cn2, cn2, 1
 .endif
 	push ipt rpt 
  
@@ -91,7 +91,7 @@ move:
 # aka NEXT 
 next: 
 .ifdef beats
-	addi t0, t0, 1
+	addi cn0, cn0, 1
 .endif
 	# no round-robin limit
 	lw nos, 0 (ipt)
@@ -107,11 +107,11 @@ pick:
 # jump to a primitive word
 jump: 
 .ifdef beats
-	addi t1, t1, 1
+	addi cn1, cn1, 1
 .endif
 	jalr ra, 0 (nos) 
  
-#---------------------------------------------------------------------- 
+#======================================================================
 
 #---------------------------------------------------------------------- 
 # words that update ip 
@@ -133,15 +133,6 @@ def_word "zbranch" hash_ZBRANCH
 	addi ipt, ipt, CELL 
         j next 
  
-# ( w -- ) #; ( GBRANCH ) greater than zero 
-.equ hash_GBRANCH, 0x689E2DB6 #; ( GBRANCH ) 
-def_word "gbranch" hash_GBRANCH 
-	mv nos, tos 
-	pull tos spt 
-	blt zero, nos, branch 
-	addi ipt, ipt, CELL 
-        j next 
- 
 # ( -- w ) #; ( DOCON ), also is LIT 
 .equ hash_DOCON, 0x0C67F9AC #; ( DOCON ) 
 def_word "docon" hash_DOCON 
@@ -157,8 +148,6 @@ def_word "dovar" hash_DOVAR
 	mv tos, ipt 
 	addi ipt, ipt, CELL 
         j next 
-
-#---------------------------------------------------------------------- 
 
 #---------------------------------------------------------------------- 
 # moves return stack 
@@ -185,7 +174,7 @@ def_word "rat" hash_RAT
         j next 
  
 #---------------------------------------------------------------------- 
-# moves pointers 
+# moves stack pointers 
 
 # ( -- rpt ) #; ( RP@ ) 
 .equ hash_RPAT, 0x7C88A9B2 #; ( RP@ ) 
@@ -306,22 +295,21 @@ def_word "minus" hash_MINUS
 # ( w1 w2 -- w3 w4 ) multiply w1 * w2, double result 
 .equ hash_BYMUL, 0x005972C2 #; ( M* ) 
 def_word "bymul", hash_BYMUL 
-    	pull nos spt 
-    	mulh trd, nos, tos 
-    	mul nos, nos, tos
-push2: 
+    	pull trd spt 
+    	mul nos, trd, tos 
+    	mulh tos, trd, tos
     	push nos spt 
-    	mv tos, trd 
         j next 
  
 # ( w1 w2 -- w3 w4 ) divide w1 / w2, reminder and quontient 
 .equ hash_BYMOD, 0x7C4D1C6C #; ( /MOD ) 
 def_word "bymod", hash_BYMOD 
     	beqz tos, by_zero 
-    	pull nos spt 
-    	div trd, nos, tos 
-    	rem nos, nos, tos 
-    	j push2 
+    	pull trd spt 
+    	rem nos, trd, tos 
+    	div tos, trd, tos 
+    	push nos spt 
+        j next 
  
 #---------------------------------------------------------------------- 
 # logics 
@@ -364,15 +352,15 @@ def_word "negate", hash_NEGATE
 # ( w1 w2 -- w1<<w2 ) #; ( LSHIFT ) w1 << W2 shift left some bits 
 .equ hash_LSHIFT, 0x2C5784C9 #; ( LSHIFT ) 
 def_word "lshift", hash_LSHIFT 
-         pull nos spt 
-         sll tos, nos, tos 
+        pull nos spt 
+        sll tos, nos, tos 
         j next 
  
 # ( w1 w2 -- w1>>w2 ) #; ( RSHIFT ) w1 >> w2 shift right some bits 
 .equ hash_RSHIFT, 0x416E6B97 #; ( RSHIFT ) 
 def_word "rshift", hash_RSHIFT 
-         pull nos spt 
-         srl tos, nos, tos 
+        pull nos spt 
+        srl tos, nos, tos 
         j next 
 
 #--------------------------------------------------------------------- 
@@ -389,7 +377,7 @@ def_word "equ" hash_EQU
 # ( w1 w2 -- T|F ) #; ( < ) w1 < w2 
 .equ hash_LESS, 0x0002B599 #; ( < ) 
 def_word "less" hash_LESS 
-    pull nos spt 
+        pull nos spt 
 	blt nos, tos, istrue 
 	j isfalse 
  
@@ -437,7 +425,7 @@ by_error:
 .equ hash_CELL, 0x7C81B0A3 #; ( CELL ) 
 def_word "cell" hash_CELL 
 	push tos spt 
-	lui tos, 0x4 
+	li tos, 0x4 
         j next 
  
 # ( u -- u*4 ) #; ( CELLS ) #; sized to CELL 
@@ -473,7 +461,7 @@ def_word "douse" hash_DOUSE
 	mv tos, usr 
         j next 
 
-# code a ASCII $0-9A-Z to value, conform radix of BASE
+# code a ASCII $0-9A-F to value, hexadecimal
 .equ hash_dollar, 0x0002B581 #; ( $ )
 # (  -- w ) #; ( $ ) 
 def_word "dollar" hash_dollar
@@ -481,7 +469,7 @@ def_word "dollar" hash_dollar
 	call tonumber
 	j next
 
-# code a 32-bit value in 0-9A-Z ASCII, conform radix value
+# code a 32-bit value into $0-9A-F ASCII, hexadecimal
 # ( w -- ) #; ( . ) 
 .equ hash_DOT, 0x0002B58B #; ( . )
 def_word "dot" hash_DOT
@@ -489,6 +477,16 @@ def_word "dot" hash_DOT
 	pull tos spt
 	j next
 
+# DUP 0 SWAP LESS ? 
+# ( w -- ) #; ( GBRANCH ) greater than zero 
+.equ hash_GBRANCH, 0x689E2DB6 #; ( GBRANCH ) 
+def_word "gbranch" hash_GBRANCH 
+	mv nos, tos 
+	pull tos spt 
+	blt zero, nos, branch 
+	addi ipt, ipt, CELL 
+        j next 
+ 
 #----------------------------------------------------------------------
 # >number
 tonumber:
@@ -503,64 +501,77 @@ tonumber:
 
         li a3, 0
 
-        # load space
+# must return NaN when error
 
-        li a4, BL
+	lui a4, 0x8000
 
-	# load radix 
-
-        lw a5, BASE * CELL (usr)
-
-        # skip spaces
+# skip spaces
 100:
 
         call _getc
 
-	# while space
+	# while space or controls
 
-        bleu tos, a4, 100b
+	li nos, BL
+
+        bleu tos, nos, 100b
 
 # verify ASCII valid digit and convert it
-
 200:
 
-        #; valid digit, 0-9 and A-Z
+        # valid digit, 0-9 and A-Z
         addi tos, tos, -48
 
-        #; 0-9 ?
+        # 0-9 ?
         li nos, 10
-        blt tos, tos, 300f
+
+	# A-Z ?
+        blt tos, nos, 300f
 
         #; normalize gap ascii 9 to A
         addi tos, tos, -7
 
 300:
 	# verify radix
-        bgt tos, a5, resume
+	li nos, 16
+
+        bgt tos, nos, 600f
 
 400:
-	# add the value
+	# multiply by base 
 
-        mul a3, a3, a5
+        slli a3, a3, 4
+
+	# add the value
 
         add a3, a3, tos
 
-        # scan spaces
+        # mul a3, a3, a5
+
+        # add a3, a3, tos
+
+# scan spaces
 500:
 
         call _getc
 
 	# until space
 
-        bgtu tos, a4, 200b
+	li nos, BL
 
-	mv a5, a3
+	# less than space ?
+        bltu tos, nos, 500b
 
-# must return NaN when error
+	# more than space ?
+        bltu nos, tos, 200b
 
-resume:
+# copy value 
 
-        mv tos, a5
+	mv a4, a3
+
+600:
+
+        mv tos, a4
 
 	# load ra
 	mv ra, a6
@@ -572,7 +583,7 @@ resume:
 numberto:
 
 	# save ra
-	mc a6, ra
+	mv a6, ra
 
         mv a3, tos
 
@@ -657,40 +668,36 @@ entry_point:
 */
 
 #--------------------------------------------------------------------- 
-# counts forth heart beats
+# counts forth heart beatsi on MITC
 # t0 counts next executed, t1 counts primitives, t2 counts compiled
 #
 .ifdef beats
 
-.equ hash_>BEATS, 0x6BC0B39A #; ( >BEATS )
-.equ hash_BEATS>, 0x1CCFA27A #; ( BEATS> )
-.equ hash_ZBEATS, 0x554440FE #; ( ZBEATS )
+.equ hash_TOBEATS, 0x6BC0B39A #; ( >BEATS )
+.equ hash_BEATSTO, 0x1CCFA27A #; ( BEATS> )
+.equ hash_ZBEATS,  0x554440FE #; ( ZBEATS )
 
-# ( t2 t1 t0 -- ) #; ( BASE ) 
+# ( t2 t1 t0 -- ) #; ( >BEATS ) 
 def_word "tobeats" hash_TOBEATS 
-	mv t0, tos
-	pull tos spt
-	mv t1, tos
-	pull tos spt
-	mv t2, tos
+	mv cn0, tos
+	pull cn1 spt
+	pull cn2 spt
 	pull tos spt
         j next
 
-# ( -- t2 t1 t0 ) #; ( BASE ) 
+# ( -- t2 t1 t0 ) #; ( BEATS> ) 
 def_word "beatsto" hash_BEATSTO 
 	push tos spt
-	mv tos, t2
-	push tos spt
-	mv tos, t1
-	push tos spt
-	mv tos, t2
+	push cn2 spt
+	push cn1 spt
+	mv tos, cn0
         j next
 
-# ( -- ) #; ( BEATSASE ) 
+# ( -- ) #; ( 0BEATS ) 
 def_word "zbeats" hash_ZBEATS
-	mv t0, zero
-	mv t1, zero
-	mv t2, zero
+	mv cn0, zero
+	mv cn1, zero
+	mv cn2, zero
         j next
 
 .endif
