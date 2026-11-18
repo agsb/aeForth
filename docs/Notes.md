@@ -162,5 +162,24 @@ Any Forth interprets compiled and only executes primitives.
 
 ## Why only TOS ?
 
+## Use BLKs 
 
+    *"Any map 2D could be colored with 4 colors"*
+
+Classic Forth uses Blocks and Screens. Blocks are 1024 bytes and 
+contains a screen of 16 lines by 64 columns.
+
+AeForth uses six buffers for block system, a "Mobius Strip" metaphor.
+
+## Sizes 
+
+Moore propose a Forth CPUs (F21) with 20 bits instruction/data/address 
+wide words, a 4096 paradigm. 
+
+The industry chose a 8 bits as the standart byte size and today most of
+memory industry uses memory frames of 4096 octets. 
+
+Most of CPUs internal cache are 64 bytes, a 6502 page is 256, 
+a Maple slot is 256, a disk block was 512, a memory frame is 4096, 
+a ESP32 MMU memory slot is 65536 ( 16 bits ).
 

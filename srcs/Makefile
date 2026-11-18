@@ -23,9 +23,10 @@ GCC = ${PASS}gcc
 
 GCCFLAGS = -nostartfiles -nodefaultlibs -static -Oz \
 		-march=rv32gc -mabi=ilp32 \
+		-g 
 
 # -mno-explicit-relocs 
-#-fno-pic -Wl,--no-relax \
+# -fno-pic -Wl,--no-relax \
 # -march=rv32g  -mabi=ilp32 \
 # -Wl,-Ttext,0
 # -Wl,-z,relro -Wl,-z,now
@@ -54,6 +55,8 @@ QEMU = ${BASE}qemu-riscv32
 QEMU = ${BASE}qemu-riscv64
 
 QFLAGS = -display none -bios none -serial mon:stdio -smp 1 -machine virt 
+
+MY = aeforth2
 
 MY = test
 

@@ -137,11 +137,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .equ IMMEDIATE, NAN
 
-# states
+# not wise, but standart states
 
-.equ COMPILE, 0	# wise
+.equ COMPILE, TRUE  
 
-.equ EXECUTE, 1
+.equ EXECUTE, FALSE
 
 # usefull
 
@@ -354,6 +354,10 @@ main:
         call _init
 
 	putch '0'
+
+	li tos, 0
+
+	call _exit
 
 #----------------------------------------------------------------------
 # do what need be only once

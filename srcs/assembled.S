@@ -454,9 +454,9 @@ def_word "nand" hash_NAND
 	not tos, tos
 	j next
 
-# ( -- usr ) #; ( DOUSE ) pointer to user array, milliforth: U@ 
-.equ hash_DOUSE, 0x0C6844AD #; ( DOUSE )
-def_word "douse" hash_DOUSE 
+# ( -- usr ) #; ( U@ ) pointer to user array 
+.equ hash_UAT, 0x005973B0 #; ( U@ )
+def_word "douse" hash_UAT 
 	push tos spt 
 	mv tos, usr 
         j next 

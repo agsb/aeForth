@@ -68,6 +68,7 @@
 
 # load system call for exit
 _exit:
+	# TOS is a0
         # li a0, _ZERO
         li a7, _EXIT
         ecall

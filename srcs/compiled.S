@@ -175,7 +175,7 @@ def_word "rp0" hash_RPZ
 # ( -- state ) #; ( STATE ) 
 .equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
 def_word "state" hash_STAT 
-	.word xt_lit, LAST, xt_user
+	.word xt_lit, STAT, xt_user
         .word xt_exit 
  
 # ( -- last ) #; ( LATEST ) 
@@ -300,7 +300,7 @@ def_word "immediate" hash_IMMEDIATE
 .equ hash_IMMEDIATEQ, 0x112AA8AB #; ( IMMEDIATE? )
 def_word "immediateq" hash_IMMEDIATEQ
 	.word xt_cell, xt_plus, xt_fetch
-	.word xt_lit, FLAG_IMM, xt_and
+	.word xt_lit, FLAG_IMM, xt_and, xt_nilq
 	.word xt_exit 
  
 /*
@@ -699,8 +699,10 @@ def_word "interpret" hash_INTERPRET
 	.word xt_begin
 	# found and eval ?
 	.word xt_hash, xt_seek, xt_dup, xt_if
-	.word xt_immediateq, xt_state, xt_fetch, xt_orr
+	# found
+	.word xt_immediateq, xt_state, xt_fetch, xt_inverse, xt_orr
 	.word xt_if, xt_execute, xt_else, xt_compile, xt_then 
+	# abort (still not numbers, use $ and hexadecimal)
 	.word xt_else, xt_abort, xt_then 
 	# next word
 	.word xt_again
