@@ -15,7 +15,8 @@ QEMU=qemu-system-riscv64
 QEMU=qemu-riscv32
 
 ${QEMU} test.elf \
- -g 1234 \
- -display none -bios none -serial mon:stdio -smp 1 -machine virt
+ -display none -bios none -serial mon:stdio -smp 1 -machine virt \
+
+# -g 1234 \
 
 echo "QEMU exit"

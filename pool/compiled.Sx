@@ -121,12 +121,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .equ hash_TONUMBER, 0x58D73858 #; ( >NUMBER ) 
 
 #---------------------------------------------------------------------- 
+# boot, init, turnkey 
+ 
 .equ hash_TURNKEY, 0x519F5BEF #; ( TURNKEY )
 def_word "turnkey" hash_TURNKEY
-	.word xt_begin, xt_lit, 45, xt_emit, xt_again
 	.word xt_interpret
 	.word xt_exit	
 
+#---------------------------------------------------------------------- 
+# constants
+ 
 # ( -- 0) #; ( 0 ) #; 
 .equ hash_NIL, 0x0002B595 #; ( 0 ) 
 def_word "nil" hash_NIL 
@@ -150,57 +154,6 @@ def_word "two" hash_TWO
 def_word "ten" hash_TEN
 	.word xt_lit, 0xA
 	.word xt_exit	
- 
-#--------------------------------------------------------------------- 
-# variables 
- 
-# ( w -- usr[w] ) #; ( USER ) word in user array, uses U@ 
-.equ hash_USER, 0x7C84F154 #; ( USER )
-def_word "user" hash_USER 
-	.word xt_cells, xt_douse, xt_plus, xt_fetch 
-        .word xt_exit 
- 
-# ( -- sp0 ) #; ( SPZ ) base of data stack 
-.equ hash_SPZ, 0x0B881196 #; ( SP0 ) 
-def_word "sp0" hash_SPZ 
-	.word xt_lit, SPTR, xt_user 
-        .word xt_exit 
- 
-# ( -- rp0 ) #; ( RPZ ) base of return stack 
-.equ hash_RPZ, 0x0B880557 #; ( RP0 ) 
-def_word "rp0" hash_RPZ 
-	.word xt_lit, RPTR, xt_user 
-        .word xt_exit 
- 
-# ( -- state ) #; ( STATE ) 
-.equ hash_STAT, 0x0DD1F032 #; ( STATE ) 
-def_word "state" hash_STAT 
-	.word xt_lit, STAT, xt_user
-        .word xt_exit 
- 
-# ( -- last ) #; ( LATEST ) 
-.equ hash_LAST, 0x2ADAAFBE #; ( LATEST ) 
-def_word "latest" hash_LAST 
-	.word xt_lit, LAST, xt_user
-        .word xt_exit 
- 
-# ( -- heap ) #; ( DP ) 
-.equ hash_HEAP, 0x00597251 #; ( DP ) 
-def_word "heap" hash_HEAP 
-	.word xt_lit, HEAP, xt_user
-        .word xt_exit 
- 
-# ( -- base ) #; ( BASE ) 
-.equ hash_BASE, 0x7C8025F0 #; ( BASE ) 
-def_word "base" hash_BASE 
-	.word xt_lit, BASE, xt_user
-        .word xt_exit 
- 
-# ( -- pike ) #; ( PIKE ) 
-.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE ) 
-def_word "pike" hash_PIKE 
-	.word xt_lit, PIKE, xt_user
-        .word xt_exit 
  
 #---------------------------------------------------------------------- 
 

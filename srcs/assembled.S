@@ -57,65 +57,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .section .text
 .p2align 2, 0x0
 
-#======================================================================
-# 
-# this is the forth heart beat, Minimum Indirect Thread Code 
-# 
-# nib is the address after "last native machine code" primitive word 
-#
-# beats counts executions 
-#
-
-#---------------------------------------------------------------------- 
-# aka EXIT
-# ( -- ) #; ( EXIT ) 
-.equ hash_EXIT, 0x7C7CC745 #; ( EXIT ) 
-def_word "exit" hash_EXIT 
-unnest: 
-	pull ipt rpt 
- 
-	j next 
-
-#---------------------------------------------------------------------- 
-# aka DOCOL 
-nest: 
-.ifdef beats
-	addi cn2, cn2, 1
-.endif
-	push ipt rpt 
- 
-move: 
-	mv ipt, nos 
- 
-#---------------------------------------------------------------------- 
-# aka NEXT 
-next: 
-.ifdef beats
-	addi cn0, cn0, 1
-.endif
-	# no round-robin limit
-	lw nos, 0 (ipt)
-	addi ipt, ipt, CELL
-
-#---------------------------------------------------------------------- 
-# this is the tipping point, above nib only compiled words 
-# when (nos > nib) goto nest
-pick: 
-	bge nos, nib, nest 
- 
-#---------------------------------------------------------------------- 
-# jump to a primitive word
-jump: 
-.ifdef beats
-	addi cn1, cn1, 1
-.endif
-	jalr ra, 0 (nos) 
- 
-#======================================================================
-
 #---------------------------------------------------------------------- 
 # words that update ip 
  
+# ( -- ) #; ( EXIT ) 
+.equ hash_EXIT, 0x7C7CC745 #; ( EXIT ) 
+def_word "exit" hash_EXIT 
+	j unnest
+
 # ( -- ) #; ( BRANCH ) 
 .equ hash_BRANCH, 0x1E6C4191 #; ( BRANCH ) 
 def_word "branch" hash_BRANCH 
@@ -389,6 +338,7 @@ def_word "uless" hash_ULESS
 	j isfalse 
 
 #--------------------------------------------------------------------- 
+
 # implementation dependent stuff 
 
 #--------------------------------------------------------------------- 
@@ -413,26 +363,109 @@ isfalse:
 # ( -- 0x80000000 ) #; ( NAN ) #; return error and flag IMMEDIATE 
 .equ hash_NAN, 0x0B87D404 #; ( NAN ) 
 def_word "nan" hash_NAN 
-by_zero: 
-by_over: 
-by_under: 
-by_error: 
+# all errors 
+by_zero: 	# division by zero
+by_over: 	# stack overflow
+by_under: 	# stack underflow
+by_error: 	# return error
 	push tos spt 
 	lui tos, 0x8000 
         j next 
  
-# ( -- 4) #; ( CELL ) #; sizeof a CELL, usualy 32 bits 
+# ( -- 1 ) #; ( CHAR ) #; ASCII sizeof a CHAR, usualy 8 bits 
+.equ hash_CHAR, 0x7C81EE9D #; ( CHAR ) 
+def_word "char" hash_CHAR
+	push tos spt 
+	li tos, 1
+        j next 
+ 
+# ( w -- w ) #; ( CHAR ) #; sized to CHAR 
+.equ hash_CHARS, 0x0CBFC26E #; ( CHARS ) 
+def_word "chars" hash_CHARS
+	slli tos, tos, 0
+        j next 
+ 
+# ( -- 4 ) #; ( CELL ) #; sizeof a CELL, usualy 32 bits 
 .equ hash_CELL, 0x7C81B0A3 #; ( CELL ) 
 def_word "cell" hash_CELL 
 	push tos spt 
-	li tos, 0x4 
+	li tos, 4 
         j next 
  
-# ( u -- u*4 ) #; ( CELLS ) #; sized to CELL 
+# ( u -- u*4 ) #; ( CELLS ) #; sized to CELL
 .equ hash_CELLS, 0x0CB7C550 #; ( CELLS )
 def_word "cells" hash_CELLS
-	sll tos, tos, 0x2 
+	slli tos, tos, 2 
         j next 
+ 
+# -------------------------------------------------------------------- 
+# variables 
+ 
+
+# ( w -- usr[w] )  ( USER ) start of user array 
+.equ hash_USER, 0x7C84F154 #; ( USER )
+def_word "user" hash_USER 
+	push tos spt
+	mv tos, usr
+	j next
+
+# the first cell (0) at user array is reserved
+ 
+# ( -- sp0 )  ( SP0 ) base of data stack 
+.equ hash_SP0, 0x0B881196 #; ( SP0 )
+def_word "sp0" hash_SP0 
+	push tos spt
+	mv tos, usr
+	addi tos, tos, SPTR * CELL
+	j next
+ 
+# ( -- rp0 )  ( RP0 ) base of data stack 
+.equ hash_RP0, 0x0B880557 #; ( RP0 )
+def_word "rp0" hash_RP0 
+	push tos spt
+	mv tos, usr
+	addi tos, tos, RPTR * CELL
+	j next
+ 
+# ( -- pike )  ( PIKE ) last DP before compile 
+.equ hash_PIKE, 0x7C8A12B2 #; ( PIKE )
+def_word "pike" hash_PIKE 
+	push tos spt
+	mv tos, usr
+	addi tos, tos, PIKE * CELL
+	j next
+ 
+# ( -- latest )  ( LATEST ) last word in linked list 
+.equ hash_LATEST, 0x2ADAAFBE #; ( LATEST )
+def_word "latest" hash_LATEST 
+	push tos spt
+	mv tos, usr
+	addi tos, tos, LAST * CELL
+	j next
+ 
+# ( -- heap )  ( DP ) next free cellin heap
+.equ hash_DP, 0x00597251 #; ( DP )
+def_word "heap" hash_DP
+	push tos spt
+	mv tos, usr
+	addi tos, tos, HEAP * CELL
+	j next
+ 
+# ( -- state )  ( STATE ) indicate the state of forth 
+.equ hash_STATE, 0x0DD1F032 #; ( STATE )
+def_word "state" hash_STATE 
+	push tos spt
+	mv tos, usr
+	addi tos, tos, STAT * CELL
+	j next
+ 
+# ( -- base )  ( BASE ) indicate the radix for numbers 
+.equ hash_BASE, 0x7C8025F0 #; ( BASE )
+def_word "base" hash_BASE 
+	push tos spt
+	mv tos, usr
+	addi tos, tos, HEAP * CELL
+	j next
  
 #--------------------------------------------------------------------- 
 

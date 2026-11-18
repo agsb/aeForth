@@ -25,6 +25,13 @@
 
 ## Done
 
+18/11/2026
+
+    Start merge the "outer and inner" interpreter from milli-forth
+    into aeforth2.S and all primitives into assemble.S
+
+    Unlike millForth, version (2) uses SP, RP, IP, TOS in registers.
+    
 16/11/2026
 
     The aeForth could be a turnkey for ESP32 RISCV, bellow FreeRTOS.

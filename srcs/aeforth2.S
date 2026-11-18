@@ -54,7 +54,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Using 
 #        Minimal Indirect Thread Code
 #        ip, sp, rp, tos, in dedicated registers
-#	 usr, nib in dedicated register
+#         usr, nib in dedicated register
 #        nos, trd, fth as generic registers
 #        hash of words in uppercase
 #        no buffer input.
@@ -256,7 +256,7 @@ xt_\label:
 # generic push into memory
 .macro push rg ps 
         addi \ps, \ps, -1 * CELL
-	# round robin hack
+        # round robin hack
         andi \ps, \ps, stack_deep
         sw \rg, 0 (\ps)
 .endm
@@ -265,15 +265,15 @@ xt_\label:
 .macro pull rg ps
         lw \rg, 0 (\ps)
         addi \ps, \ps, +1 * CELL
-	# round robin hack
+        # round robin hack
         andi \ps, \ps, stack_deep
 .endm
 
 .macro putch cc
-	mv a6, ra
-	li tos, \cc
-	call _putc
-	mv ra, a6
+        mv a6, ra
+        li tos, \cc
+        call _putc
+        mv ra, a6
 .endm
 
 #----------------------------------------------------------------------
@@ -330,10 +330,11 @@ _rp0:
 .p2align 4, 0x0
 
 #----------------------------------------------------------------------
+# use for free 
 
 _char: # 4 bytes for getc putc use
-	.word FALSE
-	
+        .word FALSE
+        
 #----------------------------------------------------------------------
 
 # at start of memory
@@ -350,7 +351,10 @@ h_there:
 .globl _start
 
 _start:
+
 #----------------------------------------------------------------------
+# adapted from milliForth-RISCV
+
 # go ! go ! go !
 main:
 
@@ -358,34 +362,34 @@ main:
 
         call _init
 
-	putch '0'
+#----------------------------------------------------------------------
+# run baby
+
+        call is_setup
 
 #----------------------------------------------------------------------
 # do what need be only once
 
-# load constant pointer address
+is_setup:
+
+# load constant pointer address of user array
 
         la usr, _us0
 
 # load end of assembled dictionary
 
-        la nib, assembled_last
+        la nib, h_last
 
 .ifdef beats
-        # beat
+        # beat, count next executions
         li cn0, 0
 
-        # tick
+        # tick, count primitive executions
         li cn1, 0
 
-        # tack
+        # tack, count compiled executions
         li cn2, 0
 .endif
-
-	putch 'A'
-
-#----------------------------------------------------------------------
-# do what need for setup
 
 # hold us0
         la tos, _us0
@@ -399,14 +403,12 @@ main:
         la tos, _rp0
         sw tos, RPTR (usr)
 
-	putch '1'
+# last on link list of dictionary, aka latest in .text
 
-# last on link list of dictionary, aka latest
-
-        la tos, compiled_last
+        la tos, h_last
         sw tos, LAST (usr)
 
-# next free cell on heap, aka DP
+# next free cell on heap, aka DP, aka heap in .bss
 
         la tos, h_where
         sw tos, HEAP (usr)
@@ -421,25 +423,228 @@ main:
         lui tos, 0x10
         sw tos, BASE (usr)
 
-# state of forth, aka STATE
-
-        lui tos, EXECUTE
-        sw tos, STAT (usr)
-
+is_abort:
 # reset data stack
 
         lw tos, SPTR (usr) 
         mv spt, tos
 
+is_quit:
 # reset return stack
 
         lw tos, RPTR (usr)
         mv rpt, tos
 
-	putch 'A'
+is_stat:
+# state of forth, aka STATE
 
-        ret 
+        lui tos, EXECUTE
+        sw tos, STAT (usr)
 
+is_warp:
+        
+is_seek:
+        
+        # get the latest link
+        
+        lw lnk, LAST * CELL (usr)
+
+ 100:
+        # verify end of dictionary
+
+        beqz lnk, is_miss
+
+        # backward linked list
+
+        mv fst, lnk
+
+        # copy next link
+
+        lw lnk, 0 (fst)
+
+        # copy the hash
+
+        addi fst, fst, CELL
+
+        lw hsh, 0 (fst)
+
+        # mask the FLAG, hold it in snd
+
+        lui snd, %hi(FLAG_IMM)
+
+        and snd, hsh, snd
+
+        xor hsh, hsh, snd
+
+        # compare trd equ hash
+
+        bne trd, hsh, 100b
+        
+        # found ! point to code or to list, aka xt
+
+        addi fst, fst, CELL
+
+ #---------------------------------------------------------------------
+ # snd have the flag
+ # fst have the address after header
+ is_eval:
+        # what to do ?
+
+        lw wrd, STAT (usr)
+
+        # executing ? if state == 0
+
+        beqz wrd, is_execute
+
+        # immediate ? if flaged
+
+        bnez snd, is_execute
+
+# compiling
+is_compile:
+
+        call is_comma
+
+        j is_warp
+
+# execute
+is_execute:
+
+        mv ipt, bow
+
+        j is_pick
+
+#---------------------------------------------------------------------
+# crude word
+# load a valid sequence of ascii from stream, wipes all controls,
+# any word must be between spaces
+#----------------------------------------------------------------------
+# djb2 hash function
+# classic djb2 hash algorithm, with XOR, adapted from cdb_hash
+#---------------------------------------------------------------------
+# magic numbers
+.equ DJB2, 5381
+.equ SFHT, 5
+#---------------------------------------------------------------------
+# return the hash of word in trd
+# do not change the registers !
+is_hash:
+
+        save_ra
+
+        # prepare for hash
+
+        lui trd, %hi(DJB2)
+        addi trd, trd, %lo(DJB2)
+
+        # load word separator, BL is space
+
+        li spc, BL
+
+        # skip spaces
+ 100:
+        call _getc
+
+        ble fst, spc, 100b
+
+        # djb2 hash function
+ 200:
+
+        mv snd, trd
+
+        slli trd, trd, SFHT
+
+        add trd, trd, snd
+
+        xor trd, trd, fst
+
+        # scan spaces
+        # scan spaces
+ 300:
+        call _getc
+
+        blt fst, spc, 300b
+
+        bne fst, spc, 200b
+
+        # clear hash high bit
+ 400:
+
+        slli trd, trd, 1
+
+        srli trd, trd, 1
+
+        load_ra
+
+        ret
+
+ #---------------------------------------------------------------------
+ is_comma:
+
+        lw trd, HEAP * CELL (usr)
+
+        sw fst, 0 (trd)
+
+        addi trd, trd, CELL
+
+        sw trd, HEAP * CELL (usr)
+
+        ret
+	
+#---------------------------------------------------------------------
+
+#======================================================================
+# 
+# this is the forth heart beat, Minimum Indirect Thread Code 
+# 
+# nib is the address after "last native machine code" primitive word 
+#
+# beats counts executions 
+#
+
+#---------------------------------------------------------------------- 
+# aka EXIT
+unnest: 
+	pull ipt rpt 
+ 
+	j next 
+
+#---------------------------------------------------------------------- 
+# aka DOCOL 
+nest: 
+.ifdef beats
+	addi cn2, cn2, 1
+.endif
+	push ipt rpt 
+ 
+move: 
+	mv ipt, nos 
+ 
+#---------------------------------------------------------------------- 
+# aka NEXT 
+next: 
+.ifdef beats
+	addi cn0, cn0, 1
+.endif
+	# no round-robin limit
+	lw nos, 0 (ipt)
+	addi ipt, ipt, CELL
+
+#---------------------------------------------------------------------- 
+# this is the tipping point, above nib only compiled words 
+# when (nos > nib) goto nest
+pick: 
+	bge nos, nib, nest 
+ 
+#---------------------------------------------------------------------- 
+# then jump to a primitive word
+jump: 
+.ifdef beats
+	addi cn1, cn1, 1
+.endif
+	jalr ra, 0 (nos) 
+ 
+#======================================================================
 #---------------------------------------------------------------------
 # A fake header at end of dictionary linked list
 #
@@ -449,46 +654,30 @@ _linked:
 
 9999:
 
-#---------------------------------------------------------------------
-
-.equ hash_RESET, 0x0DA3B330 #; ( RESET )
-def_word "reset" hash_RESET
-#_start:
-
-        call main
-        
-	putch 'B'
-
-        la ipt, xt_turnkey
-
-	putch 'B'
-
-	j next
 
 #----------------------------------------------------------------------i
-	
-#----------------------------------------------------------------------i
+# only native machine code, no compiled words
 
 # primitives
 #include "assembled.S"
 
 #---------------------------------------------------------------------
-# system getc, putc, bye
+# minimal system init, getc, putc, bye
 #include "ecalls.S"
 
 # system memory, file and directory words
 #include "efiles.S"
 
 #---------------------------------------------------------------------
+
+.set h_last, 9999b - 8
+
+#---------------------------------------------------------------------
 9999:
-.set assembled_last, 9999b
-#---------------------------------------------------------------------
+        .word FALSE
+        .word TRUE
 
-# composed words
-#include "compiled.S"
-
-#---------------------------------------------------------------------
-.set compiled_last, 9999b - 8
+.set h_heap, 9999b
 #---------------------------------------------------------------------
 
 _end_of_code:
