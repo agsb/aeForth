@@ -331,6 +331,11 @@ _rp0:
 
 #----------------------------------------------------------------------
 
+_char: # 4 bytes for getc putc use
+	.word FALSE
+	
+#----------------------------------------------------------------------
+
 # at start of memory
 h_where:
 .skip RAM_LIMIT - ( h_where - _us0 )
@@ -354,10 +359,6 @@ main:
         call _init
 
 	putch '0'
-
-	li tos, 0
-
-	call _exit
 
 #----------------------------------------------------------------------
 # do what need be only once
@@ -397,6 +398,8 @@ main:
 # hold rp0
         la tos, _rp0
         sw tos, RPTR (usr)
+
+	putch '1'
 
 # last on link list of dictionary, aka latest
 
@@ -444,9 +447,6 @@ _linked:
         .word FALSE
         .word TRUE
 
-_char: # 4 bytes for getc putc use
-	.word FALSE
-	
 9999:
 
 #---------------------------------------------------------------------
@@ -463,7 +463,6 @@ def_word "reset" hash_RESET
 
 	putch 'B'
 
-	
 	j next
 
 #----------------------------------------------------------------------i
