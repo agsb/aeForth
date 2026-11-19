@@ -56,6 +56,7 @@ assembled.S:def_word "spto" hash_SPTO
 assembled.S:def_word "state" hash_STATE 
 assembled.S:def_word "store" hash_STORE 
 assembled.S:def_word "swap" hash_SWAP 
+assembled.S:def_word "ticks" hash_TIMES
 assembled.S:def_word "tobeats" hash_TOBEATS 
 assembled.S:def_word "tor" hash_TOR 
 assembled.S:def_word "true" hash_TRUE 

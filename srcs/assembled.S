@@ -554,7 +554,7 @@ header:
 
 # copy hash into (here)
 
-        mv nos, hsh
+        mv nos, fth
 
 docomma:
 

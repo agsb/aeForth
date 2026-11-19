@@ -21,6 +21,8 @@ PASS = ${BASE}${NAME}
 
 GCC = ${PASS}gcc
 
+# enable use of compact instructions rv32gc
+
 GCCFLAGS = -nostartfiles -nodefaultlibs -static -Oz \
 		-march=rv32gc -mabi=ilp32 \
 		

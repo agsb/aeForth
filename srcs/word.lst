@@ -51,6 +51,7 @@ assembled.S:def_word "base" hash_BASE
 assembled.S:def_word "bye" hash_BYE
 assembled.S:def_word "key" hash_KEY
 assembled.S:def_word "emit" hash_EMIT
+assembled.S:def_word "ticks" hash_TIMES
 assembled.S:def_word "nilq", hash_NILQ
 assembled.S:def_word "nand" hash_NAND
 assembled.S:def_word "douse" hash_UAT 

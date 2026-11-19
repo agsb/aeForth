@@ -92,54 +92,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth third on stack, not reserved
 #define trd a2
 
-# always overwrited
-#define tmp a7
+# forth fourth on stack, not reserved
+#define fth a3
 
 #----------------------------------------------------------------------
-# those are used in ABI ecalls and outer loop
 
-#define hsh a3
+# never overwrited in ecalls
+#define scr a6
 
-#define lnk a4
-
-#define wrd a5
-
-# forth fourth on stack, not reserved
-
-#define fth a6
+# always overwrited in ecalls
+#define tmp a7
 
 #----------------------------------------------------------------------
 
 # forth parameter stack pointer, reserved
-#define spt s0
+#define spt a4
 
 # forth return stack pointer, reserved
-#define rpt s1
+#define rpt a5
 
 # forth instruction pointer, reserved
-#define ipt s2
+#define ipt s0
+
+# user array pointer, reserved
+#define usr s1
 
 # one level save/load ra
-#define rax s3
+#define rax s2
+
+# forth start of compiled dictionary, reserved
+#define nib s3
 
 # still not used s4, s5, s5, s6
 
 #----------------------------------------------------------------------
 # used to count forth word executions
 
-#define cn0 s7
+#define cn0 s9
 
-#define cn1 s8
+#define cn1 s10
 
-#define cn2 s9
-
-#----------------------------------------------------------------------
-
-# forth start of user area variables, reserved
-#define usr s10
-
-# forth start of compiled dictionary, reserved
-#define nib s11
+#define cn2 s11
 
 #----------------------------------------------------------------------
 # generics alias
@@ -419,57 +412,59 @@ setup:
 
 # hold us0
         la tos, _us0
-        sw tos, VOID (usr)
+        sw tos, VOID * CELL (usr) 
 
 # hold sp0
         la tos, _sp0
-        sw tos, SPTR (usr)
+        sw tos, SPTR * CELL (usr) 
 
 # hold rp0
         la tos, _rp0
-        sw tos, RPTR (usr)
+        sw tos, RPTR * CELL (usr) 
 
 # last on link list of dictionary, aka latest in .text
-
         la tos, h_last
-        sw tos, LAST (usr)
+        sw tos, LAST * CELL (usr) 
 
 # next free cell on heap, aka DP, aka heap in .bss
-
         la tos, h_where
-        sw tos, HEAP (usr)
+        sw tos, HEAP * CELL (usr) 
 
 # last free cell on heap before compile
-
         la tos, h_where
-        sw tos, PIKE (usr)
+        sw tos, PIKE * CELL (usr) 
 
 # base radix for numbers, aka BASE, defaults to 16
-
         lui tos, 0x10
-        sw tos, BASE (usr)
+        sw tos, BASE * CELL (usr) 
 
 abort:
 # reset data stack
-
-        lw tos, SPTR (usr) 
+        lw tos, SPTR * CELL (usr)  
         mv spt, tos
 
 quit:
 # reset return stack
-
-        lw tos, RPTR (usr)
+        lw tos, RPTR * CELL (usr) 
         mv rpt, tos
 
 mode:
 # state of forth, aka STATE
 
         lui tos, EXECUTE
-        sw tos, STAT (usr)
+        sw tos, STAT * CELL (usr) 
 
 #----------------------------------------------------------------------
+# missed a word ?
 miss:
-	# zzzz check if compiling and move PIKE to HEAP
+# check if compiling and move PIKE to HEAP
+	lw nos, STAT * CELL (usr)
+	# EXECUTE is FALSE
+	beqz nos, nack
+	lw nos, PIKE * CELL (usr)
+	sw nos, HEAP * CELL (usr)
+nack:
+#	.ascii " ~missed~ "
 
 #----------------------------------------------------------------------
 # run baby
@@ -499,41 +494,44 @@ warp:
 # better do not change the registers !:)
 hash:
 
-	# save ra
+	# push tos, spt
 
+	# saves
         mv rax, ra
 
         # prepare for hash
 
-        lui hsh, %hi(DJB2)
+        lui fth, %hi(DJB2)
 
-        addi hsh, hsh, %lo(DJB2)
+        addi fth, fth, %lo(DJB2)
 
         # skip spaces
+	
+	li tmp, BL
+
 100:
         call _getc
-
-	li tmp, BL
 
         ble tos, tmp, 100b
 
         # djb2 hash function
 200:
 
-        mv tmp, hsh
+        mv tmp, fth
 
-        slli hsh, hsh, SFHT
+        slli fth, fth, SFHT
 
-        add hsh, hsh, tmp
+        add fth, fth, tmp
 
-        xor hsh, hsh, tos
+        xor fth, fth, tos
 
         # scan spaces
+	
+	li tmp, BL
+
 300:
 	
         call _getc
-
-	li tmp, BL
 
         blt tos, tmp, 300b
 
@@ -542,11 +540,11 @@ hash:
         # clear hash high bit
 400:
 
-        slli hsh, hsh, 1
+        slli fth, fth, 1
 
-        srli hsh, hsh, 1
+        srli fth, fth, 1
 
-        # load ra
+        # loads
 
 	mv ra, rax
 
@@ -554,48 +552,52 @@ hash:
 
 #----------------------------------------------------------------------
 # seek a hash
-# nos the xt 
+# [ fth is the hash -- nos is the xt]
 # lnk the link
 seek:
         
         # get the latest link
         
-        lw lnk, LAST * CELL (usr)
+        lw tos, LAST * CELL (usr)
 
  100:
         # verify end of dictionary
 
-        beqz lnk, miss
+        beqz tos, miss
 
         # backward linked list
 
-        mv nos, lnk
+        mv nos, tos
 
         # copy next link
 
-        lw lnk, 0 (nos)
+        lw tos, 0 (nos)
 
         # copy the hash
 
         addi nos, nos, CELL
 
-        lw wrd, 0 (nos)
+        lw trd, 0 (nos)
 
-        # mask the FLAG, hold it in snd
+        # mask the FLAG, hold it in tmp
 
         lui tmp, %hi(FLAG_IMM)
 
-        and tmp, wrd, tmp
+        and tmp, tmp, trd
 
-        xor hsh, wrd, tmp
+        xor trd, trd, tmp
 
         # compare trd equ hash
 
-        bne wrd, hsh, 100b
+        bne trd, fth, 100b
         
         # found ! point to code or to list, aka xt
 
         addi nos, nos, CELL
+
+	# keep the flag
+
+	mv fth, tmp
 
 	ret
 
