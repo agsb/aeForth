@@ -467,6 +467,29 @@ def_word "base" hash_BASE
 	addi tos, tos, HEAP * CELL
 	j next
  
+#---------------------------------------------------------------------
+# minimal system ecalls 
+
+# ( return -- ) #; ( BYE )
+.equ hash_BYE, 0x0B87C61B #; ( BYE ) 
+def_word "bye" hash_BYE
+	call _exit
+	j next
+
+# ( -- c ) #; ( KEY )
+.equ hash_KEY, 0x0B87F112 #; ( KEY ) 
+def_word "key" hash_KEY
+	push tos spt
+	call _getc
+	j next
+
+# ( c -- ) #; ( EMIT )
+.equ hash_EMIT, 0x7C7C87D0 #; ( EMIT ) 
+def_word "emit" hash_EMIT
+	call _putc
+	pull tos spt
+	j next
+
 #--------------------------------------------------------------------- 
 
 # from milliforth-sector
@@ -492,6 +515,70 @@ def_word "nand" hash_NAND
 def_word "douse" hash_UAT 
 	push tos spt 
 	mv tos, usr 
+        j next 
+
+# ( -- ) #; ( : ) colon for hash and seek
+.equ hash_COLON, 0x0002B59F #; ( : )
+def_word "colon" hash_COLON
+# save here, panic if semis not follow elsewhere
+
+        lw nos, HEAP * CELL (usr)
+
+        sw nos, PIKE * CELL (usr)
+
+# stat is 'compile' == 1
+
+        li nos, COMPILE
+        sw nos, STAT * CELL (usr)
+
+# make a header
+
+header:
+
+# copy last into (here)
+
+        lw nos, LAST * CELL (usr)
+        call comma
+
+# get a hash of the next token
+
+        call hash
+
+# copy hash into (here)
+
+        mv nos, hsh
+
+docomma:
+
+        call comma
+
+        j next
+
+# ( -- ) #; ( ; ) semis for hash and seek
+.equ hash_SEMIS, 0x0002B59E #; ( ; )
+# update last, panic if colon not lead elsewhere
+def_word "semis" hash_SEMIS
+
+        lw nos, PIKE * CELL (usr)
+        sw nos, LAST * CELL (usr)
+
+# stat is 'execute' == 0
+
+        li nos, EXECUTE
+        sw nos, STAT * CELL (usr)
+
+# compound words must ends with exit
+
+        la nos, xt_exit
+        j docomma
+
+# ( -- ) #; ( ', ) like postpone 
+.equ hash_DONUT, 0x005965EE #; ( ', )
+def_word "donut" hash_DONUT
+	call hash
+	call seek
+	beqz nos, miss 
+	call comma
         j next 
 
 # code a ASCII $0-9A-F to value, hexadecimal

@@ -32,6 +32,18 @@
 
     Unlike millForth, version (2) uses SP, RP, IP, TOS in registers.
     
+    Split system words in:
+
+        done, ecalls for init, getc, putc, exit 
+
+        skel, efiles for open, close, read, write, seek
+
+        skel, extras for create, erase, fcntl, directory and memory
+
+    the ecalls provide support for emulate a dummy terminal   
+
+    the efiles provide support for emulate a tape/disk inside a file   
+    
 16/11/2026
 
     The aeForth could be a turnkey for ESP32 RISCV, bellow FreeRTOS.

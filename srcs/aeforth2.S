@@ -63,15 +63,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # RISCV ABI reserves a0, a1, a2, a3, a4, a5, a6, a7 for ecalls
 #
-# a0, a1, a2, a3, a7 used in file ecalls
+# a0, a1, a2, a3, a7 used in getc putc exit init ecalls
 #
 # s0, s1, a0, a1, a2, a3, a4, a5 used in 16 bits opcodes
 #
+# NOTE: 
+# How ecall ABI Works
+# FreeRTOS-MPU RISC-V, t0 is the call number, a6 is never used.
+# Linux systems, a7 is the call number, a6 is never used.
+#
+# Using Linux ABI for easy
+#
 #----------------------------------------------------------------------
 #
-# define register aliases
+# define register aliases  -st -nd -rd -th 
 #
-# -st -nd -rd -th 
+# abusing of "callee" registers :)
+
+#----------------------------------------------------------------------
+# those are used in _init _getc _putc _exit ecalls
 
 # forth top of stack, reserved, for easy
 #define tos a0
@@ -82,8 +92,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth third on stack, not reserved
 #define trd a2
 
+# always overwrited
+#define tmp a7
+
+#----------------------------------------------------------------------
+# those are used in ABI ecalls and outer loop
+
+#define hsh a3
+
+#define lnk a4
+
+#define wrd a5
+
 # forth fourth on stack, not reserved
-#define fth a3
+
+#define fth a6
 
 #----------------------------------------------------------------------
 
@@ -96,20 +119,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth instruction pointer, reserved
 #define ipt s2
 
-#----------------------------------------------------------------------
+# one level save/load ra
+#define rax s3
 
-# forth start of user area variables
-#define usr s3
-
-# forth start of compiled dictionary
-#define nib s4 
+# still not used s4, s5, s5, s6
 
 #----------------------------------------------------------------------
-
 # used to count forth word executions
-#define cn0 t0
-#define cn1 t1
-#define cn2 t2
+
+#define cn0 s7
+
+#define cn1 s8
+
+#define cn2 s9
+
+#----------------------------------------------------------------------
+
+# forth start of user area variables, reserved
+#define usr s10
+
+# forth start of compiled dictionary, reserved
+#define nib s11
 
 #----------------------------------------------------------------------
 # generics alias
@@ -191,11 +221,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-# allow more cells for extras scratch
+# allow more 24 cells for extras scratch
 
 .equ params, 32
 
-# user variables
+# user variables array
 
 .equ usr_size, params * CELL
 
@@ -362,15 +392,11 @@ main:
 
         call _init
 
-#----------------------------------------------------------------------
-# run baby
-
-        call is_setup
 
 #----------------------------------------------------------------------
 # do what need be only once
 
-is_setup:
+setup:
 
 # load constant pointer address of user array
 
@@ -423,27 +449,114 @@ is_setup:
         lui tos, 0x10
         sw tos, BASE (usr)
 
-is_abort:
+abort:
 # reset data stack
 
         lw tos, SPTR (usr) 
         mv spt, tos
 
-is_quit:
+quit:
 # reset return stack
 
         lw tos, RPTR (usr)
         mv rpt, tos
 
-is_stat:
+mode:
 # state of forth, aka STATE
 
         lui tos, EXECUTE
         sw tos, STAT (usr)
 
-is_warp:
+#----------------------------------------------------------------------
+miss:
+	# zzzz check if compiling and move PIKE to HEAP
+
+#----------------------------------------------------------------------
+# run baby
+warp:
         
-is_seek:
+	push tos spt
+
+	call hash
+
+	call seek
+
+	pull tos spt
+
+	j eval
+
+#---------------------------------------------------------------------
+# crude digest a word, any word must be between spaces
+# load a valid sequence of ascii from stream, wipes all controls.
+#----------------------------------------------------------------------
+# hash function classic djb2 hash algorithm with XOR
+#---------------------------------------------------------------------
+# magic numbers
+.equ DJB2, 5381
+.equ SFHT, 5
+#---------------------------------------------------------------------
+# return the hash of word in hsh
+# better do not change the registers !:)
+hash:
+
+	# save ra
+
+        mv rax, ra
+
+        # prepare for hash
+
+        lui hsh, %hi(DJB2)
+
+        addi hsh, hsh, %lo(DJB2)
+
+        # skip spaces
+100:
+        call _getc
+
+	li tmp, BL
+
+        ble tos, tmp, 100b
+
+        # djb2 hash function
+200:
+
+        mv tmp, hsh
+
+        slli hsh, hsh, SFHT
+
+        add hsh, hsh, tmp
+
+        xor hsh, hsh, tos
+
+        # scan spaces
+300:
+	
+        call _getc
+
+	li tmp, BL
+
+        blt tos, tmp, 300b
+
+        bne tos, tmp, 200b
+
+        # clear hash high bit
+400:
+
+        slli hsh, hsh, 1
+
+        srli hsh, hsh, 1
+
+        # load ra
+
+	mv ra, rax
+
+        ret
+
+#----------------------------------------------------------------------
+# seek a hash
+# nos the xt 
+# lnk the link
+seek:
         
         # get the latest link
         
@@ -452,138 +565,84 @@ is_seek:
  100:
         # verify end of dictionary
 
-        beqz lnk, is_miss
+        beqz lnk, miss
 
         # backward linked list
 
-        mv fst, lnk
+        mv nos, lnk
 
         # copy next link
 
-        lw lnk, 0 (fst)
+        lw lnk, 0 (nos)
 
         # copy the hash
 
-        addi fst, fst, CELL
+        addi nos, nos, CELL
 
-        lw hsh, 0 (fst)
+        lw wrd, 0 (nos)
 
         # mask the FLAG, hold it in snd
 
-        lui snd, %hi(FLAG_IMM)
+        lui tmp, %hi(FLAG_IMM)
 
-        and snd, hsh, snd
+        and tmp, wrd, tmp
 
-        xor hsh, hsh, snd
+        xor hsh, wrd, tmp
 
         # compare trd equ hash
 
-        bne trd, hsh, 100b
+        bne wrd, hsh, 100b
         
         # found ! point to code or to list, aka xt
 
-        addi fst, fst, CELL
+        addi nos, nos, CELL
+
+	ret
 
  #---------------------------------------------------------------------
- # snd have the flag
- # fst have the address after header
- is_eval:
+ # nos have xt (the address after header)
+ # tmp have the flag
+ # trd scratch 
+ eval:
         # what to do ?
 
-        lw wrd, STAT (usr)
+        lw trd, STAT * CELL (usr)
 
         # executing ? if state == 0
 
-        beqz wrd, is_execute
+        beqz trd, execute
 
         # immediate ? if flaged
 
-        bnez snd, is_execute
+        bnez tmp, execute
 
 # compiling
-is_compile:
+compile:
 
-        call is_comma
+        call comma
 
-        j is_warp
+        j warp
 
 # execute
-is_execute:
+execute:
 
-        mv ipt, bow
+	# could be a move instead of la  
+        la ipt, _warp
 
-        j is_pick
+        j pick
+
+_warp:
+	.word warp
 
 #---------------------------------------------------------------------
-# crude word
-# load a valid sequence of ascii from stream, wipes all controls,
-# any word must be between spaces
-#----------------------------------------------------------------------
-# djb2 hash function
-# classic djb2 hash algorithm, with XOR, adapted from cdb_hash
-#---------------------------------------------------------------------
-# magic numbers
-.equ DJB2, 5381
-.equ SFHT, 5
-#---------------------------------------------------------------------
-# return the hash of word in trd
-# do not change the registers !
-is_hash:
-
-        save_ra
-
-        # prepare for hash
-
-        lui trd, %hi(DJB2)
-        addi trd, trd, %lo(DJB2)
-
-        # load word separator, BL is space
-
-        li spc, BL
-
-        # skip spaces
- 100:
-        call _getc
-
-        ble fst, spc, 100b
-
-        # djb2 hash function
- 200:
-
-        mv snd, trd
-
-        slli trd, trd, SFHT
-
-        add trd, trd, snd
-
-        xor trd, trd, fst
-
-        # scan spaces
-        # scan spaces
- 300:
-        call _getc
-
-        blt fst, spc, 300b
-
-        bne fst, spc, 200b
-
-        # clear hash high bit
- 400:
-
-        slli trd, trd, 1
-
-        srli trd, trd, 1
-
-        load_ra
-
-        ret
-
- #---------------------------------------------------------------------
- is_comma:
-
+# push nos dpt
+# now xt
+# trd scratch
+comma:
+        
         lw trd, HEAP * CELL (usr)
 
-        sw fst, 0 (trd)
+        sw nos, 0 (trd)
 
         addi trd, trd, CELL
 
@@ -662,10 +721,10 @@ _linked:
 #include "assembled.S"
 
 #---------------------------------------------------------------------
-# minimal system init, getc, putc, bye
+# minimal system I/O init, getc, putc, bye
 #include "ecalls.S"
 
-# system memory, file and directory words
+# minimal system file open, close, read, write, seek
 #include "efiles.S"
 
 #---------------------------------------------------------------------
