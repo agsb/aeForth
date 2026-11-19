@@ -33,6 +33,7 @@
 .equ _GETC,     63
 .equ _PUTC,     64
 .equ _EXIT,     93
+.equ _TICK,	153
 
 .equ _SBRK,     45
 .equ _FCNT,     55
@@ -77,6 +78,16 @@ _exit:
 _init:
 	# doing nothing by now        
         ret
+# linux ecall times ticks
+_tick:
+
+	mv a0, zero
+	li a7, _TICK
+	ecall
+
+	mv tos, a0
+
+	ret
 
 # linux ecall for getc
 _getc:
@@ -112,6 +123,8 @@ _putc:
         li a7, _PUTC
 
         ecall
+
+	mv tos, a0
 
         ret
 

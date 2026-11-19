@@ -490,6 +490,14 @@ def_word "emit" hash_EMIT
 	pull tos spt
 	j next
 
+# ( -- w ) #; ( TIMES ) return clock ticks
+.equ hash_TIMES, 0x0D841FA3 #; ( TIMES )
+def_word "ticks" hash_TIMES
+	push tos spt
+	call _tick
+	j next
+
+
 #--------------------------------------------------------------------- 
 
 # from milliforth-sector
