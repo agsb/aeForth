@@ -98,7 +98,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------
 
 # never overwrited in ecalls
-#define scr a6
+#define spc a6
 
 # always overwrited in ecalls
 #define tmp a7
@@ -122,8 +122,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # forth start of compiled dictionary, reserved
 #define nib s3
-
-# still not used s4, s5, s5, s6
 
 #----------------------------------------------------------------------
 # used to count forth word executions
@@ -490,14 +488,16 @@ warp:
 .equ DJB2, 5381
 .equ SFHT, 5
 #---------------------------------------------------------------------
-# return the hash of word in hsh
+# Hash a Word
+# return the hash of word in fth
+# must save tos before
 # better do not change the registers !:)
 hash:
 
-	# push tos, spt
-
 	# saves
         mv rax, ra
+
+	li spc, BL
 
         # prepare for hash
 
@@ -507,35 +507,31 @@ hash:
 
         # skip spaces
 	
-	li tmp, BL
-
 100:
         call _getc
 
-        ble tos, tmp, 100b
+        ble tos, spc, 100b
 
         # djb2 hash function
 200:
 
-        mv tmp, fth
+        mv nos, fth
 
         slli fth, fth, SFHT
 
-        add fth, fth, tmp
+        add fth, fth, nos
 
         xor fth, fth, tos
 
         # scan spaces
 	
-	li tmp, BL
-
 300:
 	
         call _getc
 
-        blt tos, tmp, 300b
+        blt tos, spc, 300b
 
-        bne tos, tmp, 200b
+        bne tos, spc, 200b
 
         # clear hash high bit
 400:
@@ -551,11 +547,16 @@ hash:
         ret
 
 #----------------------------------------------------------------------
-# seek a hash
-# [ fth is the hash -- nos is the xt]
-# lnk the link
+# Seek a Hash
+# must save tos before
+# fth is the hash
+# nos is the xt
 seek:
         
+	# save rpt
+
+	mv spc, rpt
+
         # get the latest link
         
         lw tos, LAST * CELL (usr)
@@ -569,11 +570,11 @@ seek:
 
         mv nos, tos
 
-        # copy next link
+        # keep next link
 
         lw tos, 0 (nos)
 
-        # copy the hash
+        # take the hash
 
         addi nos, nos, CELL
 
@@ -581,11 +582,11 @@ seek:
 
         # mask the FLAG, hold it in tmp
 
-        lui tmp, %hi(FLAG_IMM)
+        lui rpt, %hi(FLAG_IMM)
 
-        and tmp, tmp, trd
+        and rpt, rpt, trd
 
-        xor trd, trd, tmp
+        xor trd, trd, rpt
 
         # compare trd equ hash
 
@@ -597,13 +598,17 @@ seek:
 
 	# keep the flag
 
-	mv fth, tmp
+	mv fth, rpt
+
+	# load pt 
+
+	mv rpt, spc
 
 	ret
 
  #---------------------------------------------------------------------
  # nos have xt (the address after header)
- # tmp have the flag
+ # fth have the flag
  # trd scratch 
  eval:
         # what to do ?
@@ -616,7 +621,7 @@ seek:
 
         # immediate ? if flaged
 
-        bnez tmp, execute
+        bnez fth, execute
 
 # compiling
 compile:
@@ -638,7 +643,7 @@ _warp:
 
 #---------------------------------------------------------------------
 # push nos dpt
-# now xt
+# nos xt
 # trd scratch
 comma:
         
