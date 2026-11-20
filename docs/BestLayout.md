@@ -1,10 +1,12 @@
 
-```
+## Ask GEMINI
 @GEMINI, 19/11/2026
-riscv compact instructions uses s0,s1,a0-a5 registers. linux ecall uses a0,a1,a2,a7 sometimes a3, a4, a5 never a6. Need keep 4 registers. Consider pull and push operation costs 2 cycles, any compact operations cost 2 bytes and other operations 4 bytes. Need use a virtual stack for data, a virtual stack for return, and 4 registers for scrath. what the best register allocation to minimize cycle and size ?
-do not use sp (x2)
-top-of-stack caching
-```
+
+Riscv compact instructions uses s0,s1,a0-a5 registers. Linux ecall uses a0,a1,a2,a7 sometimes a3, a4, a5 never a6. Need keep 4 registers. Consider pull and push operation costs 2 cycles, any compact operations cost 2 bytes and other operations 4 bytes. Need use a virtual stack for data, a virtual stack for return, and 4 registers for scrath. 
+what the best register allocation to minimize cycle and size ?
+do not use sp (x2) and do top-of-stack caching
+
+__results are edited__
 
 ## Top-of-Stack (TOS)
 
@@ -12,24 +14,31 @@ With Top-of-Stack (TOS) caching enabled (and sp excluded), dedicate a0 as your p
 
 ### Updated Register Map with TOS Caching
 
-Role Register(s)	Why This Maximizes Cycles & Size
-Data Top-of-Stack (TOS)	a0	Sits in the RVC window for 2-byte ALU/branch ops AND is already in the first argument/return slot (a0) for Linux ecalls.
-3 Scratch Registers	a1, a2, a3	Full 2-byte RVC support (c.add, c.sub, c.lw, c.sw, c.beqz) and zero moves needed for ecall arguments 2–4.
-Data Stack Pointer (NOS+)	a4	Points to the Next-on-Stack (NOS) in memory; uses 2-byte c.lw/c.sw + c.addi.
-Return Stack Pointer	a5	Uses 2-byte c.lw/c.sw + c.addi; only conflicts with rare 6-argument syscalls.
-4 Kept Registers	s0, s1, s2, s3 (or a6)	s0–s1 get 2-byte RVC ops; all 4 are untouched by Linux ecalls.
+Role Register(s). Why This Maximizes Cycles & Size.
+
+Data Top-of-Stack (TOS)	a0.  Sits in the RVC window for 2-byte ALU/branch ops and is already in the first argument/return slot (a0) for Linux ecalls.
+
+The 3 Scratch Registers	a1, a2, a3.	Full 2-byte RVC support (c.add, c.sub, c.lw, c.sw, c.beqz) and zero moves needed for ecall arguments 2–4.
+
+Data Stack Pointer (NOS+) a4. Points to the Next-on-Stack (NOS) in memory; uses 2-byte c.lw/c.sw + c.addi.
+
+Return Stack Pointer a5. Uses 2-byte c.lw/c.sw + c.addi. Only conflicts with rare 6-argument syscalls.
+
+Kept Registers	s0, s1, s2, s3. The s0–s1 get 2-byte RVC ops and all 4 are untouched by Linux ecalls.
 
 ### Cycle & Byte Savings on Common VM Operations (RV32C)
 
 Because a0 holds the top value in a register and a4 points directly to the second item in memory (NOS), most stack operations drop memory traffic by 50% to 100%:
 
-VM Operation	Without TOS Cache	With TOS Cache (a0 = TOS, a4 = NOS)	Savings
-ADD (pop 2, push sum)	c.lw a0, 0(a4)
+| VM Operation	| Without TOS Cache	| With TOS Cache (a0 = TOS, a4 = NOS)	| Savings |
+| -- | -- | -- | -- |
+| ADD (pop 2, push sum)	| c.lw a0, 0(a4)
 c.lw a1, 4(a4)
 c.addi a4, 4
 c.add a0, a1
 c.sw a0, 0(a4)
-(10 bytes, 5 cycles)	c.lw a1, 0(a4)
+(10 bytes, 5 cycles)	
+c.lw a1, 0(a4)
 c.addi a4, 4
 c.add a0, a1
 
@@ -81,7 +90,6 @@ c.addi a4, 4
 • 3 scratch registers (a1–a3) are plenty: With a0 holding the primary operand in place, binary operations only need a1 to load NOS, leaving a2 and a3 completely free for address math, loop counters, or multi-step primitives (SWAP, OVER, ROT).
 
 If you'd like, I can write out the compact RV32C/RV64C instruction sequences for trickier stack primitives like SWAP, OVER, and ROT under this register layout.
-
 
 ## Stack Manipulation
 
