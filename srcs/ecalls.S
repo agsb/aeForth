@@ -78,9 +78,9 @@ _exit:
 _init:
 	# doing nothing by now        
         ret
+
 # linux ecall times ticks
 _tick:
-
 	mv a0, zero
 	li a7, _TICK
 	ecall
@@ -91,9 +91,9 @@ _tick:
 
 # linux ecall for getc
 _getc:
+        la a1, _char
 
         li a0, _STDIN
-        la a1, _char
         li a2, _ONE
         li a7, _GETC
 
@@ -112,8 +112,6 @@ _getc:
 
 # linux ecall for putc
 _putc:
-
-
         la a1, _char
 
         sb tos, 0 (a1)

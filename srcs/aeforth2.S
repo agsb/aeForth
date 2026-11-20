@@ -267,6 +267,8 @@ xt_\label:
 
 .equ stacks, 32
 
+.equ stack_deep, (0xFFFFFFBF) 
+
 # data stack
 
 .equ sp_size, stacks * CELL
@@ -274,31 +276,6 @@ xt_\label:
 # return stack
 
 .equ rp_size, stacks * CELL
-
-.equ stack_deep, (0xFFFFFFBF) 
-
-.ifdef stack_macros
-
-# round robin hack mask bit for 128 bit, 32 * CELL
-
-
-# generic push into memory
-.macro push rg ps 
-        addi \ps, \ps, -1 * CELL
-        # round robin hack
-        andi \ps, \ps, stack_deep
-        sw \rg, 0 (\ps)
-.endm
-
-# generic pull from memory
-.macro pull rg ps
-        lw \rg, 0 (\ps)
-        addi \ps, \ps, +1 * CELL
-        # round robin hack
-        andi \ps, \ps, stack_deep
-.endm
-
-.endif
 
 #----------------------------------------------------------------------
 .macro putch cc
@@ -522,14 +499,13 @@ hash:
 
         li tmp, BL
 
-        # default hash
+        # default djb2 hash
 
         lui fth, %hi(DJB2)
 
         addi fth, fth, %lo(DJB2)
 
         # skip spaces
-        
 100:
         call _getc
 
@@ -547,7 +523,6 @@ hash:
         xor fth, fth, tos
 
         # scan spaces
-        
 300:
         
         call _getc
@@ -580,10 +555,6 @@ seek:
 
         mv rax, ra
 
-        # save pt, allow RVC
-
-        mv tmp, rpt
-
         # get the latest link
         
         lw tos, LAST * CELL (usr)
@@ -609,11 +580,11 @@ seek:
 
         # mask the FLAG, hold it 
 
-        lui rpt, %hi(FLAG_IMM)
+        lui tmp, %hi(FLAG_IMM)
 
-        and rpt, rpt, trd
+        and tmp, tmp, trd
 
-        xor trd, trd, rpt
+        xor trd, trd, tmp
 
         # compare trd equ hash
 
@@ -625,11 +596,7 @@ seek:
 
         # keep the flag
 
-        mv fth, rpt
-
-        # load pt 
-
-        mv rpt, tmp
+        mv fth, tmp
 
         # loads
 
@@ -645,15 +612,15 @@ seek:
 eval:
         # what to do ?
 
-        lw trd, STAT * CELL (usr)
-
-        # executing ? if state == 0
-
-        beqz trd, execute
-
         # immediate ? if flaged
 
         bnez fth, execute
+
+        # executing ? if state == 0
+
+        lw trd, STAT * CELL (usr)
+
+        beqz trd, execute
 
 # compiling
 compile:
