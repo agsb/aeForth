@@ -100,28 +100,32 @@ fs_write:
 # ( cname n mode fd -- fd ) #; ( FD_OPEN ), open or create
 .equ hash_FDOPEN, 0x19337D2C #; ( FD_OPEN ) 
 def_word "fileopen" hash_FDOPEN
-	push tos spt
+	#push tos spt
+	call pushtos
 	call fs_open
         j next
 
 # ( fd -- w ) #; ( FD_CLOSE )
 .equ hash_FDCLOSE, 0x3FF2400E #; ( FD_CLOSE ) 
 def_word "fileclose" hash_FDCLOSE
-	push tos spt
+	#push tos spt
+	call pushtos
 	call fs_close
         j next
 
 # ( size buffer fd -- w ) #; ( FD_READ )
 .equ hash_FDREAD, 0x192ED68A #; ( FD_READ ) 
 def_word "fileread" hash_FDREAD
-	push tos spt
+	#push tos spt
+	call pushtos
 	call fs_read
         j next
 
 # ( size buffer fd -- w ) #; ( FD_WRITE )
 .equ hash_FDWRITE, 0x3F24DDE5 #; ( FD_WRITE ) 
 def_word "filewrite" hash_FDWRITE
-	push tos spt
+	#push tos spt
+	call pushtos
 	call fs_write
         j next
 
@@ -131,7 +135,8 @@ def_word "filewrite" hash_FDWRITE
 # whence=2, offset=0, results in size of file 
 .equ hash_FDSEEK, 0x192D39A0 #; ( FD_SEEK ) 
 def_word "fileseek" hash_FDSEEK
-	push tos spt
+	#push tos spt
+	call pushtos
 	call fs_seek
         j next
 

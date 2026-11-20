@@ -82,7 +82,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # abusing of "callee" registers :)
 
-/*
 #----------------------------------------------------------------------
 # those are used in _init _getc _putc _exit ecalls
 # What are the ordinal numbers 1st, 2nd, 3rd, and 4th?
@@ -132,9 +131,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define cn2 s11
 
-*/
+#----------------------------------------------------------------------
 
-#include "defines.S"
+.ifdef test_defines
+        #include "defines.S"
+.endif
 
 #----------------------------------------------------------------------
 # generics alias
@@ -274,9 +275,12 @@ xt_\label:
 
 .equ rp_size, stacks * CELL
 
+.equ stack_deep, (0xFFFFFFBF) 
+
+.ifdef stack_macros
+
 # round robin hack mask bit for 128 bit, 32 * CELL
 
-.equ stack_deep, (0xFFFFFFBF) 
 
 # generic push into memory
 .macro push rg ps 
@@ -294,11 +298,14 @@ xt_\label:
         andi \ps, \ps, stack_deep
 .endm
 
+.endif
+
+#----------------------------------------------------------------------
 .macro putch cc
-        mv a6, ra
+        mv rax, ra
         li tos, \cc
         call _putc
-        mv ra, a6
+        mv ra, rax
 .endm
 
 #----------------------------------------------------------------------
@@ -454,7 +461,7 @@ quit:
 
 # clean TOS
 
-	mv tos, zero
+        mv tos, zero
 
 mode:
 # state of forth, aka STATE
@@ -466,13 +473,13 @@ mode:
 # missed a word ?
 miss:
 # check if compiling and move PIKE to HEAP
-	lw nos, STAT * CELL (usr)
-	# EXECUTE is FALSE
-	beqz nos, nack
-	lw nos, PIKE * CELL (usr)
-	sw nos, HEAP * CELL (usr)
+        lw nos, STAT * CELL (usr)
+        # EXECUTE is FALSE
+        beqz nos, nack
+        lw nos, PIKE * CELL (usr)
+        sw nos, HEAP * CELL (usr)
 nack:
-#	.ascii " ~missed~ "
+#        .ascii " ~missed~ "
 
 #----------------------------------------------------------------------
 # Outer Loop Interpreter
@@ -480,15 +487,15 @@ nack:
 # run baby ! run baby !
 warp:
         
-	push tos spt
+        # push tos spt
 
-	call hash
+        call hash
 
-	call seek
+        call seek
 
-	pull tos spt
+        # pull tos spt
 
-	j eval
+        j eval
 
 #---------------------------------------------------------------------
 # crude digest a word, any word must be between spaces
@@ -507,13 +514,13 @@ warp:
 # better do not change the registers !:)
 hash:
 
-	# saves
+        # saves
 
         mv rax, ra
 
-	# prepare space
+        # prepare space
 
-	li tmp, BL
+        li tmp, BL
 
         # default hash
 
@@ -522,7 +529,7 @@ hash:
         addi fth, fth, %lo(DJB2)
 
         # skip spaces
-	
+        
 100:
         call _getc
 
@@ -540,9 +547,9 @@ hash:
         xor fth, fth, tos
 
         # scan spaces
-	
+        
 300:
-	
+        
         call _getc
 
         blt tos, tmp, 300b
@@ -558,7 +565,7 @@ hash:
 
         # loads
 
-	mv ra, rax
+        mv ra, rax
 
         ret
 
@@ -569,13 +576,13 @@ hash:
 # output: nos with the xt, fth with word flag
 seek:
         
-	# saves 
+        # saves 
 
         mv rax, ra
 
-	# save pt, allow RVC
+        # save pt, allow RVC
 
-	mv tmp, rpt
+        mv tmp, rpt
 
         # get the latest link
         
@@ -616,19 +623,19 @@ seek:
 
         addi nos, nos, CELL
 
-	# keep the flag
+        # keep the flag
 
-	mv fth, rpt
+        mv fth, rpt
 
-	# load pt 
+        # load pt 
 
-	mv rpt, tmp
+        mv rpt, tmp
 
-	# loads
+        # loads
 
-	mv ra, rax
+        mv ra, rax
 
-	ret
+        ret
 
 #---------------------------------------------------------------------
 # Eval What Do
@@ -658,13 +665,13 @@ compile:
 # execute
 execute:
 
-	# could be a move instead of la  
+        # could be a move instead of la  
         la ipt, _warp
 
         j pick
 
 _warp:
-	.word warp
+        .word warp
 
 #---------------------------------------------------------------------
 # Comma, push nos into dpt
@@ -682,7 +689,7 @@ comma:
         sw trd, HEAP * CELL (usr)
 
         ret
-	
+        
 #---------------------------------------------------------------------
 
 #======================================================================
@@ -693,48 +700,51 @@ comma:
 #
 # beats counts executions 
 #
-
+# using round robin return stack, with 32 * 4 bytes
+#
 #---------------------------------------------------------------------- 
 # aka EXIT
 unnest: 
-	pull ipt rpt 
- 
-	j next 
+        lw ipt, 0 (rpt)
+        addi rpt, rpt, CELL
+	andi rpt, rpt, stack_deep 
+        j next 
 
 #---------------------------------------------------------------------- 
 # aka DOCOL 
 nest: 
 .ifdef beats
-	addi cn2, cn2, 1
+        addi cn2, cn2, 1
 .endif
-	push ipt rpt 
- 
+        addi rpt, rpt, -1*CELL
+	andi rpt, rpt, stack_deep 
+	sw ipt, 0 (rpt)
 move: 
-	mv ipt, nos 
+        mv ipt, nos 
  
 #---------------------------------------------------------------------- 
 # aka NEXT 
 next: 
 .ifdef beats
-	addi cn0, cn0, 1
+        addi cn0, cn0, 1
 .endif
-	# no round-robin limit
-	lw nos, 0 (ipt)
-	addi ipt, ipt, CELL
+        # no round-robin limit
+        lw nos, 0 (ipt)
+        addi ipt, ipt, CELL
 
 #---------------------------------------------------------------------- 
 # this is the tipping point, above nib only compiled words 
 # when (nos > nib) goto nest
 pick: 
-	bge nos, nib, nest 
+        bge nos, nib, nest 
  
 #---------------------------------------------------------------------- 
 # then jump to a primitive word
 jump: 
 .ifdef beats
-	addi cn1, cn1, 1
+        addi cn1, cn1, 1
 .endif
-	jalr ra, 0 (nos) 
+        jalr ra, 0 (nos) 
  
 #======================================================================
 #---------------------------------------------------------------------
@@ -745,7 +755,6 @@ _linked:
         .word TRUE
 
 9999:
-
 
 #----------------------------------------------------------------------i
 # only native machine code, no compiled words

@@ -25,6 +25,24 @@
 
 ## Done
 
+20/11/2026
+
+    Size or Speed ? Using macros or functions for stack operations ?
+
+    Use macros allow a compact definition of operations and 
+    variable parameters, basic only need define one pull and one push
+    and each uses 3 operations and 3 cycles. All code is inline.
+
+    Use functions needs define one for each argument and operation,
+    a push_tos_spt, a pull_tos_spt, a push_nos_spt, a push_nos_spt,
+    a push_tos_dpt, a pull_tos_rpt, and each uses 4 operations and 
+    4 cycles, including the call and return.
+
+    For 66 uses of push and pull: the inline code is 198 opcodes 
+    long and takes 198 cycles; the functions code is 90 lines long
+    (6 * 4 + 66 * 1) opcodes long and takes 330 (66 * 4) cycles,  
+
+
 18/11/2026
 
     Start merge the "outer and inner" interpreter from milli-forth
