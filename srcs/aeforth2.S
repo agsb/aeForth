@@ -54,7 +54,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Using 
 #        Minimal Indirect Thread Code
 #        ip, sp, rp, tos, in dedicated registers
-#         usr, nib in dedicated register
+#        usr, nib in dedicated register
 #        nos, trd, fth as generic registers
 #        hash of words in uppercase
 #        no buffer input.
@@ -67,8 +67,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # s0, s1, a0, a1, a2, a3, a4, a5 used in 16 bits opcodes
 #
+# a6 is never used
+#
 # NOTE: 
-# How ecall ABI Works
+# How ecall ABI Works:
 # FreeRTOS-MPU RISC-V, t0 is the call number, a6 is never used.
 # Linux systems, a7 is the call number, a6 is never used.
 #
@@ -80,8 +82,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # abusing of "callee" registers :)
 
+/*
 #----------------------------------------------------------------------
 # those are used in _init _getc _putc _exit ecalls
+# What are the ordinal numbers 1st, 2nd, 3rd, and 4th?
+
+# forth parameter stack pointer, reserved
+#define spt s0
+
+# forth return stack pointer, reserved
+#define rpt s1
 
 # forth top of stack, reserved, for easy
 #define tos a0
@@ -95,29 +105,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth fourth on stack, not reserved
 #define fth a3
 
-#----------------------------------------------------------------------
+# forth instruction pointer, reserved
+#define ipt a4
+
+# forth user array pointer, reserved
+#define usr a5
 
 # never overwrited in ecalls
-#define spc a6
+#define nth a6
 
 # always overwrited in ecalls
 #define tmp a7
 
-#----------------------------------------------------------------------
-
-# forth parameter stack pointer, reserved
-#define spt a4
-
-# forth return stack pointer, reserved
-#define rpt a5
-
-# forth instruction pointer, reserved
-#define ipt s0
-
-# user array pointer, reserved
-#define usr s1
-
-# one level save/load ra
+# one deep save/load ra
 #define rax s2
 
 # forth start of compiled dictionary, reserved
@@ -131,6 +131,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define cn1 s10
 
 #define cn2 s11
+
+*/
+
+#include "defines.S"
 
 #----------------------------------------------------------------------
 # generics alias
@@ -408,6 +412,8 @@ setup:
         li cn2, 0
 .endif
 
+# using tos just could be any, no RVC 
+
 # hold us0
         la tos, _us0
         sw tos, VOID * CELL (usr) 
@@ -433,7 +439,7 @@ setup:
         sw tos, PIKE * CELL (usr) 
 
 # base radix for numbers, aka BASE, defaults to 16
-        lui tos, 0x10
+        li tos, 0x10
         sw tos, BASE * CELL (usr) 
 
 abort:
@@ -446,10 +452,14 @@ quit:
         lw tos, RPTR * CELL (usr) 
         mv rpt, tos
 
+# clean TOS
+
+	mv tos, zero
+
 mode:
 # state of forth, aka STATE
 
-        lui tos, EXECUTE
+        # EXECUTE is 0
         sw tos, STAT * CELL (usr) 
 
 #----------------------------------------------------------------------
@@ -465,7 +475,9 @@ nack:
 #	.ascii " ~missed~ "
 
 #----------------------------------------------------------------------
-# run baby
+# Outer Loop Interpreter
+# 
+# run baby ! run baby !
 warp:
         
 	push tos spt
@@ -489,17 +501,21 @@ warp:
 .equ SFHT, 5
 #---------------------------------------------------------------------
 # Hash a Word
-# return the hash of word in fth
 # must save tos before
+# input: tos from _getc
+# output: fth with the hash
 # better do not change the registers !:)
 hash:
 
 	# saves
+
         mv rax, ra
 
-	li spc, BL
+	# prepare space
 
-        # prepare for hash
+	li tmp, BL
+
+        # default hash
 
         lui fth, %hi(DJB2)
 
@@ -510,7 +526,7 @@ hash:
 100:
         call _getc
 
-        ble tos, spc, 100b
+        ble tos, tmp, 100b
 
         # djb2 hash function
 200:
@@ -529,9 +545,9 @@ hash:
 	
         call _getc
 
-        blt tos, spc, 300b
+        blt tos, tmp, 300b
 
-        bne tos, spc, 200b
+        bne tos, tmp, 200b
 
         # clear hash high bit
 400:
@@ -549,13 +565,17 @@ hash:
 #----------------------------------------------------------------------
 # Seek a Hash
 # must save tos before
-# fth is the hash
-# nos is the xt
+# input: fth with the hash
+# output: nos with the xt, fth with word flag
 seek:
         
-	# save rpt
+	# saves 
 
-	mv spc, rpt
+        mv rax, ra
+
+	# save pt, allow RVC
+
+	mv tmp, rpt
 
         # get the latest link
         
@@ -580,7 +600,7 @@ seek:
 
         lw trd, 0 (nos)
 
-        # mask the FLAG, hold it in tmp
+        # mask the FLAG, hold it 
 
         lui rpt, %hi(FLAG_IMM)
 
@@ -602,15 +622,20 @@ seek:
 
 	# load pt 
 
-	mv rpt, spc
+	mv rpt, tmp
+
+	# loads
+
+	mv ra, rax
 
 	ret
 
- #---------------------------------------------------------------------
- # nos have xt (the address after header)
- # fth have the flag
- # trd scratch 
- eval:
+#---------------------------------------------------------------------
+# Eval What Do
+# input: nos have the xt, fth have the flag
+# output: none
+# trd scratch 
+eval:
         # what to do ?
 
         lw trd, STAT * CELL (usr)
@@ -642,8 +667,9 @@ _warp:
 	.word warp
 
 #---------------------------------------------------------------------
-# push nos dpt
-# nos xt
+# Comma, push nos into dpt
+# input: nos with the word
+# output: none
 # trd scratch
 comma:
         

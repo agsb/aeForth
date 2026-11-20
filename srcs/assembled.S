@@ -369,7 +369,7 @@ by_over: 	# stack overflow
 by_under: 	# stack underflow
 by_error: 	# return error
 	push tos spt 
-	lui tos, 0x8000 
+        lui tos, %hi(FLAG_IMM)
         j next 
  
 # ( -- 1 ) #; ( CHAR ) #; ASCII sizeof a CHAR, usualy 8 bits 
@@ -631,7 +631,7 @@ tonumber:
 
 # must return NaN when error
 
-	lui a4, 0x8000
+        lui a4, %hi(FLAG_IMM)
 
 # skip spaces
 100:

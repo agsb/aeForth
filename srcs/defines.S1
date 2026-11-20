@@ -1,0 +1,54 @@
+#----------------------------------------------------------------------
+# those are used in _init _getc _putc _exit ecalls
+
+# forth top of stack, reserved, for easy
+#define tos a0
+
+# forth second on stack, not reserved
+#define nos a1
+
+# forth third on stack, not reserved
+#define trd a2
+
+# forth fourth on stack, not reserved
+#define fth a3
+
+#----------------------------------------------------------------------
+
+# never overwrited in ecalls
+#define scr a6
+
+# always overwrited in ecalls
+#define tmp a7
+
+#----------------------------------------------------------------------
+
+# forth parameter stack pointer, reserved
+#define spt a4
+
+# forth return stack pointer, reserved
+#define rpt a5
+
+# forth instruction pointer, reserved
+#define ipt s0
+
+# user array pointer, reserved
+#define usr s1
+
+# one level save/load ra
+#define rax s2
+
+# forth start of compiled dictionary, reserved
+#define nib s3
+
+# still not used s4, s5, s5, s6
+
+#----------------------------------------------------------------------
+# used to count forth word executions
+
+#define cn0 s9
+
+#define cn1 s10
+
+#define cn2 s11
+
