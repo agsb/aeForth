@@ -48,7 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */ 
  
 \ --------------------------------------------------------------------- 
-  AEFORTH2 compiled words 
+\  AEFORTH2 compiled words 
 \ --------------------------------------------------------------------- 
 \ 
 \  controls backwards 
@@ -76,101 +76,101 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \ --------------------------------------------------------------------- 
 \ constants 
  
-\ ( -- 0 )   ( 0 )  
+\ ( -- 0 ) ( 0 ); 
 : 0 
     $ 0 
     ; 
  
-\ ( -- 1 )  ( 1 ); 
+\ ( -- 1 ) ( 1 ); 
 : 1 
     $ 1 
     ; 
  
-\ ( -- 2 )  ( 2  ); 
+\ ( -- 2 ) ( 2 ) ; 
 : 2 
     $ 2  
     ; 
  
-\ ( -- 10 )  ( 10 ); 
+\ ( -- 10 ) ( 10 ); 
 : 10 
     $ 10 
     ; 
  
 \ --------------------------------------------------------------------- 
  
-\ ( w -- f )  ( 0= ) 
+\ ( w -- f ) ( 0= ) 
 : 0= 
     0 =
     ; 
  
-\ ( w -- f )  ( 0< ) 
+\ ( w -- f ) ( 0< ) 
 : 0< 
     0 < 
     ; 
  
-\ ( w -- f )  ( 0> ) 
+\ ( w -- f ) ( 0> ) 
 : 0> 
     0 SWAP <
     ; 
  
 \ --------------------------------------------------------------------- 
  
-\ ( -- w )  ( LIT ) 
+\ ( -- w ) ( LIT ) 
 : LIT 
     DOCON 
     ; 
  
-\ ( -- a )  ( HERE ) 
+\ ( -- a ) ( HERE ) 
 : HERE 
     HEAP @ 
     ; 
  
-\ ( u -- )  ( ALLOT ) 
+\ ( u -- ) ( ALLOT ) 
 : ALLOT 
     HERE + HEAP !
     ; 
  
-\ ( c -- )  ( C, ) compile a char 
+\ ( c -- ) ( C, ) compile a char 
 : C,
     HERE C! 1 ALLOT 
     ; 
  
-\ ( w -- )  ( , ) compile a word 
+\ ( w -- ) ( , ) compile a word 
 : ,
     HERE ! CELL ALLOT 
     ; 
  
-\ ( w1 -- w2 )  ( ALIGNED ) align a address to CELLS 
+\ ( w1 -- w2 ) ( ALIGNED ) align a address to CELLS 
 : ALIGNED 
     CELL 1 - >R R@ + R> INVERSE + 
     ; 
  
-\ ( w1 -- w2  )  ( ALIGN ) align to CELLS 
+\ ( w1 -- w2 ) ( ALIGN ) align to CELLS 
 : ALIGN 
     HERE ALIGNED HEAP ! 
     ; 
  
-\ ( --  )  ( IMMEDIATE ) makes LATEST defined word IMMEDIATE 
+\ ( -- ) ( IMMEDIATE ) makes LATEST defined word IMMEDIATE 
 : IMMEDIATE 
     LATEST @ CELL + DUP @ NAN OR SWAP ! 
     ; 
  
-\ ( a -- a F  )  ( IMMEDIATE? ) verify if a word is a immediate  
+\ ( a -- a F ) ( IMMEDIATE? ) verify if a word is a immediate  
 : IMMEDIATE? 
     CELL + @ NAN AND 0# 
     ; 
  
-\ ( --  )  ( LITERAL ) compiles the value at top of stack 
+\ ( -- ) ( LITERAL ) compiles the value at top of stack 
 : LITERAL 
     LIT LIT , ,
     ; IMMEDIATE
  
-\ ( --  )  ( [ ) change to EXECUTE mode
+\ ( -- ) ( [ ) change to EXECUTE mode
 : [ 
     FALSE STATE ! 
     ; IMMEDIATE
  
-\ ( --  )  ( ] ) change to COMPILE mode
+\ ( -- ) ( ] ) change to COMPILE mode
 : ] 
     TRUE STATE ! 
     ; 
@@ -178,7 +178,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     
 \ USE NOT CLEAR COULD BE: BEGIN WHILE REPEAT 
  
-\ ( --  )  ( RECURSE ) compiles the word been compiled 
+\ ( -- ) ( RECURSE ) compiles the word been compiled 
 : RECURSE 
     \ there is no return, 
     LIT R> , 
@@ -214,7 +214,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     R> BEHAVE 
     ; 
  
-\ ( w -- )  ( CODE; ), does a native return ZZZZ 
+\ ( w -- ) ( CODE; ), does a native return ZZZZ 
 \  in RISCV 8067 is jalr zero, 0 (ra) 
 : CODE; 
     $ 8067 ,  
@@ -225,30 +225,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \  remember 0x0 is FALSE, ever 
   
  
-\ ( -- a )  ( BEGIN ), mark a backward offset 
+\ ( -- a ) ( BEGIN ), mark a backward offset 
 : BEGIN 
     HERE 
     ; IMMEDIATE
  
-\ ( -- )  ( BACK ), goes backward 
+\ ( -- ) ( BACK ), goes backward 
 : BACK 
     HERE - , 
     ; IMMEDIATE
  
-\ ( a -- )  ( AGAIN ) goes back always 
+\ ( a -- ) ( AGAIN ) goes back always 
 : AGAIN 
     LIT BRANCH , 
     BACK 
     ; IMMEDIATE
  
-\ ( a -- )  ( UNTIL ) goes back, when TOS is zero 
+\ ( a -- ) ( UNTIL ) goes back, when TOS is zero 
 : UNTIL 
     LIT ZBRANCH , 
     BACK 
     ; IMMEDIATE
  
   strange word 
-\ ( a -- )  ( WHILST ) goes back, when TOS greater than zero 
+\ ( a -- ) ( WHILST ) goes back, when TOS greater than zero 
 : WHILST 
     LIT GBRANCH , 
     BACK 
@@ -257,61 +257,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
 \ --------------------------------------------------------------------- 
  
-\ ( -- a )  ( MARK ) mark a forward offset 
+\ ( -- a ) ( MARK ) mark a forward offset 
 : MARK 
     HERE 0 , 
     ; IMMEDIATE
  
-\ ( -- )  ( ENDIF ) resolves a forwad branch 
+\ ( -- ) ( ENDIF ) resolves a forwad branch 
 : ENDIF 
     HERE OVER - SWAP ! 
     ; IMMEDIATE
  
-\ ( -- a  )  ( AHEAD ) goes forward
+\ ( -- a ) ( AHEAD ) goes forward
 : AHEAD 
     LIT BRANCH , 
     MARK 
     ; IMMEDIATE
  
-\ ( --  )  ( IF ) goes forward when TOS = 0
+\ ( -- ) ( IF ) goes forward when TOS = 0
 : IF 
     LIT ZBRANCH , 
     MARK 
     ; IMMEDIATE
  
 \ strange word 
-\ ( --  )  ( UNTO ) goes forward when TOS > 0
+\ ( -- ) ( UNTO ) goes forward when TOS > 0
 : UNTO 
     LIT GBRANCH , 
     MARK 
     ; IMMEDIATE
  
-\ ( --  )  ( ELSE ) resolves a IF
+\ ( -- ) ( ELSE ) resolves a IF
 : ELSE 
     LIT BRANCH , 
     MARK SWAP ENDIF 
     ; IMMEDIATE
  
-\ ( --  )  ( THEN ) ends a IF
+\ ( -- ) ( THEN ) ends a IF
 : THEN 
     ENDIF 
     ; IMMEDIATE
  
 \ --------------------------------------------------------------------- 
  
-\ ( --  )  ( WHILE ) goes forward, when TOS is zero
+\ ( -- ) ( WHILE ) goes forward, when TOS is zero
 : WHILE 
     LIT ZBRANCH , 
     MARK SWAP 
     ; IMMEDIATE
  
-\ ( --  )  ( REPEAT ) goes backward to begin 
+\ ( -- ) ( REPEAT ) goes backward to begin 
 : REPEAT 
     LIT BRANCH , 
     BACK ENDIF 
     ; IMMEDIATE 
  
-\ ( -- a  )  ( AFT ) goes forward, AFTER 
+\ ( -- a ) ( AFT ) goes forward, AFTER 
 : AFT 
     DROP 
     LIT BRANCH , 
@@ -320,8 +320,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
 \ --------------------------------------------------------------------- 
  
-\ ( w1 w2 -- ; -- w2 w1  )  ( DO ) makes a count up 
+\ ( w1 w2 -- ; -- w2 w1 ) ( DO ) makes a count up 
 \  limit index DO 
+: DO 
     HERE 
     LIT >R , 
     LIT >R , 
@@ -344,7 +345,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     LIT DROP , 
     ; IMMEDIATE
  
-\ ( -- ; w2 w1 -- w2 w1  )  ( LOOP ) 
+\ ( -- ; w2 w1 -- w2 w1 ) ( LOOP ) 
 : LOOP
     \  limit 
     LIT R> , 
@@ -354,7 +355,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     do_pass 
     ; IMMEDIATE
  
-\ ( w -- ; w2 w1 -- w2 w1  )  ( +LOOP ) 
+\ ( w -- ; w2 w1 -- w2 w1 ) ( +LOOP ) 
 : +LOOP
     \  limit 
     LIT R> , 
@@ -364,12 +365,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
      DO_PASS 
     ; IMMEDIATE 
  
-\ ( -- w1 ; w2 w1 -- w2 w1  )  ( I ) 
+\ ( -- w1 ; w2 w1 -- w2 w1 ) ( I ) 
 : I
     LIT R@ , 
     ; IMMEDIAT
  
-\ ( -- w3 ; w4 w3 w2 w1 -- w4 w3 w2 w1  )  ( J ) 
+\ ( -- w3 ; w4 w3 w2 w1 -- w4 w3 w2 w1 ) ( J ) 
+: J
     LIT R> , 
     LIT R> , 
     LIT R@ , 
@@ -380,7 +382,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     LIT >R , 
     ; IMMEDIATE
  
-\ ( -- ; w2 w1 --  )  ( LEAVE ) 
+\ ( -- ; w2 w1 -- ) ( LEAVE ) 
+: LEAVE
     LIT R> , 
     LIT R> , 
     DO_DROPS 
@@ -388,12 +391,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
 \ --------------------------------------------------------------------- 
  
-\ ( w -- ; -- w  )  ( FOR ) make a count down to zero 
+\ ( w -- ; -- w ) ( FOR ) make a count down to zero 
+: FOR
     HERE 
     LIT >R , 
     ; IMMEDIATE
  
-\ ( -- ; w -- w  )  ( NEXT ) 
+\ ( -- ; w -- w ) ( NEXT ) 
+: NEXT 
     LIT R> , 
     LIT 1 , 
     LIT - , 
@@ -416,7 +421,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \     DROP ... ; ; 
   
  
-\ ( --  )  ( CASE ) 
+\ ( -- ) ( CASE ) 
 : CASE
     0 
     ; 
@@ -449,16 +454,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
 \ --------------------------------------------------------------------- 
  
-\ ( --  )  ( :ISNAME ) makes a header 
+\ ( -- ) ( :ISNAME ) makes a header 
     LATEST @ , 
     HASH , 
     ; 
  
-\ ( --  )  ( :NONAME ) makes a content 
+\ ( -- ) ( :NONAME ) makes a content 
     HERE LBRACK 
     ; 
  
-\ ( --  )  ( : ) aka figforth semicolon 
+\ ( -- ) ( : ) aka figforth semicolon 
       SAVE HERE, PANIC IF SEMIS NOT FOLLOW ELSEWHERE 
     HEAP @ PIKE ! 
       STAT IS COMPILE 
@@ -467,7 +472,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     ISNAME 
     ; 
  
-\ ( --  )  ( ; ) aka figforth semicolon, is IMMEDIATE 
+\ ( -- ) ( ; ) aka figforth semicolon, is IMMEDIATE 
       LOAD LAST, PANIC IF COLON NOT LEAD ELSEWHERE 
     PIKE @ LATEST ! 
       STATE IS EXECUTE 
@@ -476,17 +481,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     LIT ; , 
     ; 
  
-  classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
-\ ( c w -- w  )  ( DJB2 ) 
+\ classic djb2 hash algorithm, with XOR, adapted from cdb_hash 
+\ ( c w -- w ) ( DJB2 ) 
+: DJB2
     DUP DUP + 
     DUP + DUP + 
     DUP + DUP + 
     + XOR 
     ; 
  
-  crude token consumes a unlimited between spaces 
-  return the hash of a token word 
-\ ( -- h  )  ( ) 
+\ crude token consumes a unlimited between spaces 
+\ return the hash of a token word 
+\ ( -- h ) ( HASH ) 
+: HASH 
       SKIP SPACES 
     LITERAL BL 
     BEGIN 
@@ -504,7 +511,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     R> LITERAL MASK_IMM AND 
     ; 
  
-\ ( h -- a | 0  )  ( SEEK ) 0 is not found 
+\ ( h -- a | 0 ) ( SEEK ) 0 is not found 
+: SEEK 
     LATEST 
       FIND THE HASH 
     BEGIN 
@@ -525,18 +533,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     SWAP DROP 
     ; 
  
-\ ( -- xt  )  ( ' ) tick, return the xt of a 
+\ ( -- xt ) ( ' ) tick, return the xt of a 
+: ' 
     HASH SEEK DUP 
     IF CELL + CELL + 
     ELSE DROP ABORT 
     THEN 
     ; 
  
-\ ( --  )  ( POSTP1 ) compile the xt of a 
-    TICK , 
+\ ( -- ) ( POSTPONE ) compile the xt of a 
+: POSTPONE 
+    ' , 
     ; 
  
-\ ( --  )  ( INTERPRET ) 
+\ ( -- ) ( INTERPRET ) 
+: INTERPRET
     BEGIN 
     \   found and eval ? 
     HASH SEEK DUP IF 
@@ -555,29 +566,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
 \ --------------------------------------------------------------------- 
  
-  those must be compiled 
- 
+\  those must be executed
 : EXECUTE 
-\ ( w1 -- ; -- w2  )  ( EXECUTE ), execute a in Forth 
+\ ( w1 -- ; -- w2 ) ( EXECUTE ), execute a in Forth 
     >R 
     ; 
  
+\  those must be compiled 
 : COMPILE 
     , 
     ; 
  
-  defined by GForth-0.0 
+\  defined by GForth-0.0 
 : PERFORM 
     @ EXECUTE 
     ; 
  
 \ --------------------------------------------------------------------- 
  
+\ emit one space
+( -- )
 : SPACE 
     LITERAL BL EMIT 
     ; 
  
-\ ( u --  )  emits u spaces 
+\ ( u -- ) emits u spaces 
 : SPACES 
     BEGIN DUP 
     WHILE SPACE EMIT 
@@ -585,8 +598,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     REPEAT DROP 
     ; 
  
-\ ( a u --  )  emits u characters from address a, 
-  return next aligned address 
+\ ( a u -- ) emits u characters from address a, 
+\ return next aligned address 
 : TYPE 
     BEGIN DUP 
     WHILE >R 
@@ -597,9 +610,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     1 + 
     ; 
  
-  :nonames :) 
+\ as :nonames :) 
  
-\ ( a -- F) )  valid ascii character ? space to tilde 
+\ ( a -- F) ) valid ascii character ? space to tilde 
 dot_ascii: 
     DUP 
     LITERAL BL SWAP LESS IF 
@@ -618,8 +631,8 @@ do_commas:  copy characters
     C, ALIGN 
     ; 
  
-\ ( a -- a  )  emits a asciiz from address a 
-  returns next address 
+\ ( a -- a ) emits a asciiz from address a 
+\  returns next address 
 : TYPEZ 
 do_typez: 
     BEGIN DUP C@ DUP 
@@ -631,16 +644,15 @@ do_quotes:
     RTO, DO_TYPEZ >R 
     ; 
  
-\ ( "<ccc>" --  )  compiles asciiz and type it at executing 
+\ ( "<ccc>" -- ) compiles asciiz and type it at executing 
 : ." 
     LITERAL DO_QUOTES ,, DO_COMMAS 
     ; 
  
 \ --------------------------------------------------------------------- 
   
-\ All numbers are prefixed by a dollar :) $ NNN 
-  
-\ >number not made, only $ and . for hexadecimals 
+\ number> and >number not implemented yet
+\ only $ and . for hexadecimals 
   
 : HEX 
     $ 16 BASE ! 
@@ -660,7 +672,7 @@ do_quotes:
  
 \ --------------------------------------------------------------------- 
  
-\ ( --  )  ( CREATE ) 
+\ ( -- ) ( CREATE ) 
 : CREATE
     ISNAME LIT LIT , 
     HERE CELL + CELL + , 
@@ -668,32 +680,32 @@ do_quotes:
     LIT EXIT , 
     ; IMMEDIATE
  
-\ ( --  )  ( DOES> ) 
+\ ( -- ) ( DOES> ) 
 : DOES>
     R> LATEST @ CELL + CELL + CELL + CELL + ! 
     ; IMMEDIATE
  
-\ ( --  )  ( BUILDS ) 
+\ ( -- ) ( BUILDS ) 
 : <BUILDS
     CREATE 
     ; 
  
-\ ( --  )  ( VARIABLE ) 
+\ ( -- ) ( VARIABLE ) 
 : VARIABLE
     CREATE 0 , 
     ; 
  
-\ ( w --  )  ( CONSTANT ) 
+\ ( w -- ) ( CONSTANT ) 
 : CONSTANT
     CREATE , DOES @ 
     ; 
  
-\ ( w --  )  ( BUFFER ) 
+\ ( w -- ) ( BUFFER ) 
 : BUFFER
     CREATE ALLOT 
     ; 
  
-\ ( w --  )  ( ARRAY ) 
+\ ( w -- ) ( ARRAY ) 
 : ARRAY
     CREATE ALLOT 
     DOES + @ 
@@ -701,12 +713,12 @@ do_quotes:
  
 \ --------------------------------------------------------------------- 
  
-\ ( w --  )  ( VALUE ) 
+\ ( w -- ) ( VALUE ) 
 : VALUE
     CONSTANT 
     ; 
  
-\ ( w --  )  ( TO ) 
+\ ( w -- ) ( TO ) 
 : TO
     TICK 
     STATE @ 
@@ -719,40 +731,40 @@ do_quotes:
  
 \ --------------------------------------------------------------------- 
  
-\ ( --  )  ( DEFER ) 
+\ ( -- ) ( DEFER ) 
 : DEFER
     ISNAME 
     LIT ; , 
     LIT ; , 
     ; IMMEDIATE
  
-\ ( --  )  ( IS ) 
+\ ( -- ) ( IS ) 
 : IS
     TICK ! 
     ; 
  
 \ --------------------------------------------------------------------- 
  
-\ ( c --  )  ( SKIPK ) skip while equal key 
+\ ( c -- ) ( SKIPK ) skip while equal key 
 : SKIPK
     BEGIN KEY OVER OVER = 
     IF DROP FALSE ELSE TRUE THEN 
     UNTIL 
     ; 
  
-\ ( c --  )  ( SCANK ) scan while not equal key 
+\ ( c -- ) ( SCANK ) scan while not equal key 
 : SCANK
     BEGIN KEY OVER OVER = INVERSE 
     IF DROP FALSE ELSE TRUE THEN 
     UNTIL 
     ; 
  
-\ ( --  )  ( ( ) scan while not ') 
+\ ( -- ) ( ( ) scan while not ') 
 : (
     LITERAL ')' SCANK DROP 
     ; 
  
-\ ( --  )  ( \ ) scan to new line 
+\ ( -- ) ( \ ) scan to new line 
 : \
     LITERAL '\N' SCANK DROP 
     ; 
@@ -761,65 +773,65 @@ do_quotes:
 \ two cells stuff 
  
  
-\ ( w1 w2 -- w1 w2 w1 w2  )  ( 2DUP ) 
+\ ( w1 w2 -- w1 w2 w1 w2 ) ( 2DUP ) 
 : 2DUP 
     OVER OVER 
     ; 
  
-\ ( w1 w2 --  )  ( 2DROP ) 
+\ ( w1 w2 -- ) ( 2DROP ) 
 : 2DROP 
     DROP DROP 
     ; 
  
-\ ( w1 w2 w3 w4 -- w3 w4 w1 w2  )  ( 2DROP ) 
+\ ( w1 w2 w3 w4 -- w3 w4 w1 w2 ) ( 2DROP ) 
 : 2SWAP 
     ROT >R ROT R> 
     ; 
  
-\ ( w1 w2 w3 w4 -- w1 w2 w3 w4 w1 w2  )  ( 2OVER ) 
+\ ( w1 w2 w3 w4 -- w1 w2 w3 w4 w1 w2 ) ( 2OVER ) 
 : 2OVER 
     >R OVER OVER R> 
     SWAP >R SWAP R> 
     ; 
  
-\ ( w1 w2 -- u1 u2  )  ( 2@ ) 
+\ ( w1 w2 -- u1 u2 ) ( 2@ ) 
 : 2@ 
     DUP CELL + @ SWAP @ 
     ; 
  
-\ ( w1 w2 w3 w4 --  )  ( 2! ) 
+\ ( w1 w2 w3 w4 -- ) ( 2! ) 
 : 2! 
     SWAP OVER ! CELL + ! 
     ; 
  
-\ ( w1 w2 -- ; -- w2 w1  )  ( 2>R ) 
+\ ( w1 w2 -- ; -- w2 w1 ) ( 2>R ) 
 : 2>R 
     SWAP >R >R 
     ; 
  
-\ (  -- w1 w2 ; w2 w1 --  )  ( 2R> ) 
+\ (  -- w1 w2 ; w2 w1 -- ) ( 2R> ) 
 : 2R> 
     R> R> SWAP 
     ; 
  
-\ ( -- w1 w2 ; w2 w1 -- w2 w1  )  ( 2R@ ) 
+\ ( -- w1 w2 ; w2 w1 -- w2 w1 ) ( 2R@ ) 
 : 2R@ 
     R> R> 2DUP >R >R SWAP 
     ; 
  
-\ ( w1 w2 w3 w4 -- w3 w4  )  ( 2NIP ) 
+\ ( w1 w2 w3 w4 -- w3 w4 ) ( 2NIP ) 
 : 2NIP 
     NIP NIP 
     ; 
  
 \ --------------------------------------------------------------------- 
  
-\ ( w -- w/2  )  ( 2/ ) 
+\ ( w -- w/2 ) ( 2/ ) 
 : 2/ 
     1 RSHIFT 
     ; 
  
-\ ( w -- w*2  )  ( 2* ) 
+\ ( w -- w*2 ) ( 2* ) 
 : 2* 
     1 LSHIFT 
     ; 
@@ -848,7 +860,7 @@ do_quotes:
  
 \ --------------------------------------------------------------------- 
  
-\ ( a w --  )  ( +! ) plus and store 
+\ ( a w -- ) ( +! ) plus and store 
 : +! 
     DUP @ + SWAP ! 
     ; 
@@ -858,27 +870,27 @@ do_quotes:
     >R BYMUL R> BYMOD DROP
     ;
  
-\ ( w1 w2 -- w2  )  ( NIP ) 
+\ ( w1 w2 -- w2 ) ( NIP ) 
 : NIP 
     SWAP DROP 
     ; 
  
-\ ( w1 w2 -- w2 w1 w2  )  ( TUCK ) 
+\ ( w1 w2 -- w2 w1 w2 ) ( TUCK ) 
 : TUCK 
     DUP >R SWAP R> 
     ; 
  
-\ ( w -- w | w w   )  ( ?DUP ) 
+\ ( w -- w | w w  ) ( ?DUP ) 
 : ?DUP 
     DUP IF DUP THEN 
     ; 
  
 : PICK 
-\ ( u --  )  ( PICK ) 
+\ ( u -- ) ( PICK ) 
     CELLS SP@ + @ 
     ; 
  
-\ ( u --  )  ( ROLL ) ZZZZ 
+\ ( u -- ) ( ROLL ) ZZZZ 
 : ROLL 
     DUP 
     BEGIN 
@@ -934,3 +946,6 @@ $ 0 HANDLER !
     ; 
  
 \ --------------------------------------------------------------------- 
+
+BYE
+

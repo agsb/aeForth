@@ -104,6 +104,8 @@ _getc:
         # EOF?
         # beq a0, zero, _exit
 
+.equ echoo, 1
+
 .ifndef echoo
 
         ret

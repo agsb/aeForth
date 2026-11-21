@@ -293,7 +293,6 @@ xt_\label:
 
 #----------------------------------------------------------------------
 # Nothing here, void.
-
 .section .data
 .p2align 4, 0x0
 
@@ -371,6 +370,7 @@ main:
 
         call _init
 
+	putch '0'
 
 #----------------------------------------------------------------------
 # do what need be only once
@@ -395,6 +395,8 @@ setup:
         # tack, count compiled executions
         li cn2, 0
 .endif
+
+	putch '1'
 
 # using tos just could be any, no RVC 
 
@@ -426,6 +428,7 @@ setup:
         li tos, 0x10
         sw tos, BASE * CELL (usr) 
 
+	putch '2'
 abort:
 # reset data stack
         lw tos, SPTR * CELL (usr)  
@@ -446,6 +449,8 @@ mode:
         # EXECUTE is 0
         sw tos, STAT * CELL (usr) 
 
+	putch '3'
+
 #----------------------------------------------------------------------
 # missed a word ?
 miss:
@@ -464,6 +469,8 @@ nack:
 # run baby ! run baby !
 warp:
         
+	putch '4'
+
         # push tos spt
 
         call hash

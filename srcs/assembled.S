@@ -618,7 +618,7 @@ def_word "semis" hash_SEMIS
         la nos, xt_exit
         j docomma
 
-# ( -- ) #; ( ', ) like postpone 
+# ( -- ) #; ( ', ) I call donut, is postpone 
 .equ hash_DONUT, 0x005965EE #; ( ', )
 def_word "donut" hash_DONUT
 	push tos spt
@@ -628,6 +628,18 @@ def_word "donut" hash_DONUT
 	beqz nos, miss 
 	call comma
         j next 
+
+# skip till end-of-line (\n)
+.equ hash_BACKSLASH, 0x0002B5F9 #; ( \ )
+# ( --  ) #; ( \ ) 
+def_word "backslashr" hash_BACKSLASH
+	push tos spt
+	li nos, 10
+100:
+	call _getc
+	bne tos, nos, 100b
+	pull tos spt
+	j next
 
 # code a ASCII $0-9A-F to value, hexadecimal
 .equ hash_dollar, 0x0002B581 #; ( $ )
