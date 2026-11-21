@@ -25,6 +25,15 @@
 
 ## Done
 
+21/11/2026
+
+    Include some words for easy debug
+
+    $  ( insert numbers in hexagesimal ) 
+    .  ( diplay TOS in hexagesimal )
+    ', ( as postpone )
+    \  ( as comments to end of line \n )
+    
 20/11/2026
 
     Size or Speed ? Using macros or functions for stack operations ?
