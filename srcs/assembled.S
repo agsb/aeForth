@@ -250,9 +250,19 @@ def_word "cstore" hash_CSTORE
 #---------------------------------------------------------------------- 
 # arithmetic 
  
-# ( w1 w2 -- w3 ) #; ( + ) addiction w1 + w2
-.equ hash_PLUS, 0x7C8A057F #; ( + ) 
-def_word "plus" hash_PLUS 
+# ( w1 -- w2 ) #; ( ABS ) w2 = |w1|
+.equ hash_ABS, 0x0B87B6B5 #; ( ABS )
+def_word "ABS" hash_ABS
+	bge zero, tos, 100f
+	li nos, -1
+	xor tos, tos, nos
+	addi tos, tos, 1 
+100:
+        j next 
+ 
+# ( w1 w2 -- w3 ) #; ( - ) addition w1 + w2
+.equ hash_PLUS, 0x0002B58E #; ( + )
+def_word "plus" hash_PLUS
 	pull nos spt 
 	add tos, nos, tos 
         j next 
@@ -646,7 +656,6 @@ def_word "gbranch" hash_GBRANCH
         j next 
  
 #----------------------------------------------------------------------
-# only hexadecimal strings
 hexto:
 # safe inside Forth words, direct use getc
 # strict to use a0, a1, a2, a7 in getc 
@@ -723,47 +732,45 @@ hexto:
 	beqz zero, 500b
 
 #---------------------------------------------------------------------
-# only hexadecimal print
+# number>	only hexadecimal print
 # 
 tohex:
 
 	# save ra
 	mv rax, ra
 
-	li tmp, 10
-
         mv trd, tos
 
-        li a4, 58
-
-        li a5, 32
+	li fth, 32
 
         # rolls
 100:
-        beqz a5, 300f
+        beqz fth, 300f
 
-        addi a5, a5, -4
+        addi fth, fth, -4
 
-        srl tos, a3, a5
+        srl tos, trd, fth
 
 # mask
 
         andi tos, tos, 15
 
-        ori tos, tos, 48
+	li tmp, 10
 
         blt tos, tmp, 200f
 
         addi tos, tos, 7
 
 200:
+        ori tos, tos, 48
+
         call _putc
 
         j 100b
 300:
 
 	# load ra
-	mv ra, a6
+	mv ra, rax
 
         ret
 

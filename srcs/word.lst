@@ -19,7 +19,8 @@ assembled.S:def_word "fetch" hash_FETCH
 assembled.S:def_word "store" hash_STORE 
 assembled.S:def_word "cfetch" hash_CFETCH 
 assembled.S:def_word "cstore" hash_CSTORE 
-assembled.S:def_word "plus" hash_PLUS 
+assembled.S:def_word "ABS" hash_ABS
+assembled.S:def_word "plus" hash_PLUS
 assembled.S:def_word "minus" hash_MINUS 
 assembled.S:def_word "bymul", hash_BYMUL 
 assembled.S:def_word "bymod", hash_BYMOD 

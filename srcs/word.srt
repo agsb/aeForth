@@ -1,3 +1,4 @@
+assembled.S:def_word "ABS" hash_ABS
 assembled.S:def_word "and" hash_AND 
 assembled.S:def_word "base" hash_BASE 
 assembled.S:def_word "beatsto" hash_BEATSTO 
@@ -41,7 +42,7 @@ assembled.S:def_word "nilq", hash_NILQ
 assembled.S:def_word "orr" hash_ORR 
 assembled.S:def_word "over" hash_OVER 
 assembled.S:def_word "pike" hash_PIKE 
-assembled.S:def_word "plus" hash_PLUS 
+assembled.S:def_word "plus" hash_PLUS
 assembled.S:def_word "rat" hash_RAT 
 assembled.S:def_word "rot" hash_ROT 
 assembled.S:def_word "rp0" hash_RP0 
