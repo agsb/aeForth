@@ -267,7 +267,7 @@ xt_\label:
 
 .equ stacks, 32
 
-.equ stack_deep, (0xFFFFFFBF) 
+.equ stack_deep, (0xFFFFFF7F) 
 
 # data stack
 
@@ -497,7 +497,7 @@ hash:
 
         # prepare space
 
-        li tmp, BL
+        li nth, BL
 
         # default djb2 hash
 
@@ -509,7 +509,7 @@ hash:
 100:
         call _getc
 
-        ble tos, tmp, 100b
+        bleu tos, nth, 100b
 
         # djb2 hash function
 200:
@@ -522,14 +522,16 @@ hash:
 
         xor fth, fth, tos
 
-        # scan spaces
+        # scan space 
 300:
         
         call _getc
 
-        blt tos, tmp, 300b
+	# less than space ?
+        bltu tos, nth, 300b
 
-        bne tos, tmp, 200b
+	# more than space ?
+        bltu nth, tos, 200b
 
         # clear hash high bit
 400:

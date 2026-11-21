@@ -60,6 +60,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #---------------------------------------------------------------------- 
 # macros for inline stacks code
 
+# mask for round-robin stack of 32 * 4 bytes, valid 0 to 31
+
+.equ stack_deep, (0xFFFFFF7F) 
+
 # generic push into memory
 .macro push reg stk 
         addi \stk, \stk, -1 * CELL
@@ -383,10 +387,10 @@ isfalse:
 .equ hash_NAN, 0x0B87D404 #; ( NAN ) 
 def_word "nan" hash_NAN 
 # all errors 
-by_zero: 	# division by zero
+by_error: 	# return error
 by_over: 	# stack overflow
 by_under: 	# stack underflow
-by_error: 	# return error
+by_zero: 	# division by zero
 	push tos spt 
         lui tos, %hi(FLAG_IMM)
         j next 
@@ -401,7 +405,7 @@ def_word "char" hash_CHAR
 # ( w -- w ) #; ( CHAR ) #; sized to CHAR 
 .equ hash_CHARS, 0x0CBFC26E #; ( CHARS ) 
 def_word "chars" hash_CHARS
-	slli tos, tos, 0
+	# slli tos, tos, 0
         j next 
  
 # ( -- 4 ) #; ( CELL ) #; sizeof a CELL, usualy 32 bits 
@@ -516,7 +520,6 @@ def_word "ticks" hash_TIMES
 	call _tick
 	j next
 
-
 #--------------------------------------------------------------------- 
 
 # from milliforth-sector
@@ -569,7 +572,13 @@ header:
 
 # get a hash of the next token
 
+	# safe tos
+	mv nth, tos
+
         call hash
+
+	# safe tos
+	mv tos, nth
 
 # copy hash into (here)
 
@@ -602,8 +611,10 @@ def_word "semis" hash_SEMIS
 # ( -- ) #; ( ', ) like postpone 
 .equ hash_DONUT, 0x005965EE #; ( ', )
 def_word "donut" hash_DONUT
+	push tos spt
 	call hash
 	call seek
+	pull tos spt
 	beqz nos, miss 
 	call comma
         j next 
@@ -613,14 +624,14 @@ def_word "donut" hash_DONUT
 # (  -- w ) #; ( $ ) 
 def_word "dollar" hash_dollar
 	push tos spt
-	call tonumber
+	call tohex
 	j next
 
 # code a 32-bit value into $0-9A-F ASCII, hexadecimal
 # ( w -- ) #; ( . ) 
 .equ hash_DOT, 0x0002B58B #; ( . )
 def_word "dot" hash_DOT
-	call numberto
+	call hexto
 	pull tos spt
 	j next
 
@@ -635,35 +646,29 @@ def_word "gbranch" hash_GBRANCH
         j next 
  
 #----------------------------------------------------------------------
-# >number
-tonumber:
+# only hexadecimal strings
+hexto:
 # safe inside Forth words, direct use getc
-# strict to use a0, a1, a2 in getc 
-# using a3 a4 a5 as extras for easy
+# strict to use a0, a1, a2, a7 in getc 
+# using a3 a6 a7 as extras for easy
 
 	# save ra
-	mv a6, ra
+	mv rax, ra
+
+	# prepare space
+	li nth, 32
 
         # clear result
+        mv trd, zero
 
-        li a3, 0
-
-# must return NaN when error
-
-        lui a4, %hi(FLAG_IMM)
-
-# skip spaces
+	# skip spaces
 100:
-
         call _getc
 
 	# while space or controls
+        ble tos, nth, 100b
 
-	li nos, BL
-
-        bleu tos, nos, 100b
-
-# verify ASCII valid digit and convert it
+	# verify ASCII valid digit and convert it
 200:
 
         # valid digit, 0-9 and A-Z
@@ -682,60 +687,52 @@ tonumber:
 	# verify radix
 	li nos, 16
 
-        bgt tos, nos, 600f
+        bgt tos, nos, 700f
 
-400:
 	# multiply by base 
 
-        slli a3, a3, 4
+        slli trd, trd, 4
 
 	# add the value
 
-        add a3, a3, tos
+        add trd, trd, tos
 
-        # mul a3, a3, a5
-
-        # add a3, a3, tos
-
-# scan spaces
-500:
-
+	# scan spaces
+400:
         call _getc
 
-	# until space
-
-	li nos, BL
-
 	# less than space ?
-        bltu tos, nos, 500b
+        bltu tos, nth, 400b
 
 	# more than space ?
-        bltu nos, tos, 200b
+        bltu nth, tos, 200b
 
-# copy value 
-
-	mv a4, a3
-
-600:
-
-        mv tos, a4
+	# copy value 
+500:
+	mv tos, trd
 
 	# load ra
-	mv ra, a6
+	mv ra, rax
 
         ret
 
+	# return NaN when error
+700:
+        lui trd, %hi(FLAG_IMM)
+
+	beqz zero, 500b
+
 #---------------------------------------------------------------------
-# number>	only hexadecimal print
+# only hexadecimal print
 # 
-numberto:
+tohex:
 
 	# save ra
 	mv rax, ra
 
 	li tmp, 10
 
-        mv a3, tos
+        mv trd, tos
 
         li a4, 58
 
