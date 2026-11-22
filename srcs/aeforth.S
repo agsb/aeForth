@@ -51,6 +51,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # aeForth with MITC, 
 #
+#   	praise 1/9967
+#
 # Using 
 #        Minimal Indirect Thread Code
 #        ip, sp, rp, tos, in dedicated registers
@@ -60,6 +62,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #        no buffer input.
 #
 #---------------------------------------------------------------------
+#
+#	about hash:
 #
 # 	loads a valid sequence of ascii from input stream, 
 # 	does a crude digest a word, 
@@ -74,10 +78,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # s0, s1, a0, a1, a2, a3, a4, a5 used in 16 bits opcodes
 #
-# a6 is never used
+# a6 is never used in ecalls :)
 #
 # NOTE: 
 # How ecall ABI Works:
+#
 # FreeRTOS-MPU RISC-V, t0 is the call number, a6 is never used.
 # Linux systems, a7 is the call number, a6 is never used.
 #
@@ -123,11 +128,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # always overwrited in ecalls
 #define tmp a7
 
-# one deep save/load ra
-#define rax s2
-
 # forth start of compiled dictionary, reserved
-#define nib s3
+#define nib s2
+
+# one deep save/load ra
+#define rax s3
 
 #----------------------------------------------------------------------
 # used to count forth word executions
@@ -220,7 +225,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-# allow more 24 cells for extras scratch
+# allow more (32 - 8) 24 cells for extras scratch
 
 .equ params, 32
 
@@ -263,7 +268,7 @@ xt_\label:
 # aeForth use round-robin stacks of 32 deep, (or chose a 2^N)
 # the stack must start at a multiple of it 
 # and magics by == NOT(DEEP*CELL)
-# 32 * 4 is 128 as 0b10000000
+# for 32 * 4 is 128 as 0xFFFFFF7F
 #
 
 # moves backwards
@@ -281,6 +286,7 @@ xt_\label:
 .equ rp_size, stacks * CELL
 
 #----------------------------------------------------------------------
+
 .macro putch cc
         li tos, \cc
         call _putc
@@ -295,6 +301,7 @@ xt_\label:
 	lw \reg, 0 (sp)
 	addi sp, sp, +4
 .endm
+
 #----------------------------------------------------------------------
 # Nothing here, void.
 
@@ -303,6 +310,7 @@ xt_\label:
 
 #----------------------------------------------------------------------
 # Nothing here, void.
+
 .section .data
 .p2align 4, 0x0
 
@@ -350,7 +358,7 @@ _rp0:
 #----------------------------------------------------------------------
 # use for free 
 
-_char: # 4 bytes for getc putc use
+_char: # a tiny buffer of 4 bytes for getc putc use
         .word FALSE
         
 #----------------------------------------------------------------------
@@ -481,27 +489,37 @@ warp:
         
         mv t0, tos
 
-	putch '4'
-
         call hash
+
+#>>>>>>>>>>>>>>>>>>>>>>
 
 	mv t1, tos
 
 	call tohex
 
+	putch '['
+
+	putch '\n'
+
 	mv tos, t1
 
-	putch '5'
+#>>>>>>>>>>>>>>>>>>>>>>
 
         call seek
+
+#>>>>>>>>>>>>>>>>>>>>>>
 
 	mv t1, tos
 
 	call tohex 
 
+	putch '='
+
+	putch '\n'
+
 	mv tos, t1
 
-	putch '6'
+#>>>>>>>>>>>>>>>>>>>>>>
 
         mv nos, tos
 	
@@ -511,7 +529,7 @@ warp:
 
 #---------------------------------------------------------------------
 # Eval What Do
-# input: nos have the xt, fth have the flag
+# input: tos have the xt, fth have the flag
 # output: none
 # trd scratch 
 eval:
@@ -521,11 +539,17 @@ eval:
 
         lw trd, STAT * CELL (usr)
 
-        beqz trd, execute
+	li tmp, EXECUTE
+
+        beq trd, tmp, execute
 
         # immediate ? if flag in tmp
 
-        bnez tmp, execute
+        lw tmp, -1 * CELL (tos)
+	
+	srl tmp, tmp, 31
+
+	bne tmp, zero, execute
 
 # must uses for argument
 
@@ -647,6 +671,22 @@ seek:
         slli trd, trd, 1
 
         srli trd, trd, 1
+
+	mv t2, tos
+
+	mv tos, trd
+
+	call tohex
+
+	putch '='
+
+	mv tos, fth
+
+	call tohex
+
+	putch '\n'
+
+	mv tos, t2
 
         # compare trd equ hash
 
