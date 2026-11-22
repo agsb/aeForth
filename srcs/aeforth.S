@@ -275,18 +275,19 @@ xt_\label:
 
 #----------------------------------------------------------------------
 .macro putch cc
-        mv rax, ra
         li tos, \cc
         call _putc
-        mv ra, rax
 .endm
 
-.macro putchr cc
-        mv rax, ra
-        call _putc
-        mv ra, rax
+.macro spush reg
+	addi sp, sp, -4
+	sw \reg, 0 (sp)
 .endm
 
+.macro spull reg
+	lw \reg, 0 (sp)
+	addi sp, sp, +4
+.endm
 #----------------------------------------------------------------------
 # Nothing here, void.
 
@@ -471,37 +472,33 @@ nack:
 # run baby ! run baby !
 warp:
         
-	putch '4'
-
         mv t0, tos
+
+	putch '4'
 
         call hash
 
-	putch '5'
-
-	mv t2, fth
-
-	mv tos, fth
+	mv t1, tos
 
 	call tohex
 
-	mv fth, t2
+	mv tos, t1
 
-	putch '6'
+	putch '5'
 
         call seek
 
-	mv t1, nos
-
-	mv tos, nos
+	mv t1, tos
 
 	call tohex 
 
-	mv nos, t1
+	mv tos, t1
 
-	putch '7'
+	putch '6'
 
-        mv tos, t0
+        mv nos, tos
+	
+	mv tos, t0
 
         j eval
 
@@ -517,11 +514,10 @@ warp:
 #---------------------------------------------------------------------
 # Hash a Word
 # must save tos before
-# input: tos from _getc
-# output: fth with the hash
+# input: characters from _getc
+# output: tos with the hash
 # better do not change the registers !:)
 hash:
-
         # saves
 
         mv rax, ra
@@ -536,21 +532,11 @@ hash:
 
         addi fth, fth, %lo(DJB2)
 
-	mv tos, fth
-
-	call tohex
-
         # skip spaces
 100:
         call _getc
 
-	mv t1, tos
-
-	call _putc
-
-	mv tos, t1
-
-        bleu tos, nth, 100b
+        ble tos, nth, 100b
 
         # djb2 hash function
 200:
@@ -564,31 +550,21 @@ hash:
 
         # scan space 
 300:
-        
         call _getc
 	
-	mv t1, tos
-
-	call _putc
-
-	mv tos, t1
-
 	# less than space ?
-        bltu tos, nth, 300b
+        blt tos, nth, 300b
 
 	# more than space ?
-        bltu nth, tos, 200b
+        blt nth, tos, 200b
 
         # clear hash high bit
 400:
-
         slli fth, fth, 1
 
         srli fth, fth, 1
 
 	mv tos, fth
-
-	call tohex
 
         # loads
 
@@ -599,30 +575,29 @@ hash:
 #----------------------------------------------------------------------
 # Seek a Hash
 # must save tos before
-# input: fth with the hash
-# output: nos with the xt, fth with word flag
+# input: tos with the hash
+# output: tos with xt or 0x0 not found, tmp with word flag
 seek:
-        
         # saves 
 
         mv rax, ra
 
         # get the latest link
         
-        lw tos, LAST * CELL (usr)
+        lw fth, LAST * CELL (usr)
 
  100:
         # verify end of dictionary
 
-        beqz tos, miss
+        beqz fth, 300
 
         # backward linked list
 
-        mv nos, tos
+        mv nos, fth
 
         # keep next link
 
-        lw tos, 0 (nos)
+        lw fth, 0 (nos)
 
         # take the hash
 
@@ -640,21 +615,24 @@ seek:
 
         # compare trd equ hash
 
-        bne trd, fth, 100b
+        bne trd, tos, 100b
         
         # found ! point to code or to list, aka xt
 
-        addi nos, nos, CELL
-
-        # keep the flag
-
-        mv fth, tmp
+        addi tos, nos, CELL
 
         # loads
+200:
 
         mv ra, rax
 
         ret
+
+	# not found
+300:
+	mv tos, zero
+
+	beq zero, zero, 200b
 
 #---------------------------------------------------------------------
 # Eval What Do
@@ -664,15 +642,17 @@ seek:
 eval:
         # what to do ?
 
-        # immediate ? if flaged
-
-        bnez fth, execute
-
         # executing ? if state == 0
 
         lw trd, STAT * CELL (usr)
 
         beqz trd, execute
+
+        # immediate ? if flag in tmp
+
+        bnez tmp, execute
+
+# must uses for argument
 
 # compiling
 compile:
@@ -681,7 +661,7 @@ compile:
 
         j warp
 
-# execute
+# executing
 execute:
 
         # could be a move instead of la  
@@ -694,7 +674,7 @@ _warp:
 
 #---------------------------------------------------------------------
 # Comma, push nos into dpt
-# input: nos with the word
+# input: nos with the xt
 # output: none
 # trd scratch
 comma:

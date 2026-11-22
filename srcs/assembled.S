@@ -744,25 +744,19 @@ hexto:
 	beqz zero, 500b
 
 #---------------------------------------------------------------------
-# number>	only hexadecimal print
-# input: tos 
+# number>	( only hexadecimal )
+# input: tos	( w -- ) 
 # output: display hexadecimal value
 # 
 tohex:
 
-	# save ra
+	# saves
 
 	mv rax, ra
 
-        mv tmp, tos
-
-	li tmp, 0x87654321
+	mv nth, tos
 
 	li fth, CELL * 8
-
-	li tos, '|'
-
-	call _putc
 
         # rolls
 100:
@@ -770,17 +764,9 @@ tohex:
 
         addi fth, fth, -4
 
-        srl tos, tmp, fth
+        srl tos, nth, fth
 
         andi tos, tos, 15
-
-	mv t1, tos
-
-	addi tos, tos, 'A'
-
-	call _putc
-
-	mv tos, t1
 
 # mask
 
@@ -791,17 +777,14 @@ tohex:
         addi tos, tos, 7
 
 200:
-        ori tos, tos, 48
+	addi tos, tos, 48
 
         call _putc
 
         j 100b
 300:
-	li tos, '|'
-
-	call _putc
-
 	# load ra
+
 	mv ra, rax
 
         ret
