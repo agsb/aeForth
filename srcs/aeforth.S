@@ -133,10 +133,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-.ifdef test_defines
-        #include "defines.S"
-.endif
-
 #----------------------------------------------------------------------
 # generics alias
 
@@ -281,6 +277,12 @@ xt_\label:
 .macro putch cc
         mv rax, ra
         li tos, \cc
+        call _putc
+        mv ra, rax
+.endm
+
+.macro putchr cc
+        mv rax, ra
         call _putc
         mv ra, rax
 .endm
@@ -471,13 +473,35 @@ warp:
         
 	putch '4'
 
-        # push tos spt
+        mv t0, tos
 
         call hash
 
+	putch '5'
+
+	mv t2, fth
+
+	mv tos, fth
+
+	call tohex
+
+	mv fth, t2
+
+	putch '6'
+
         call seek
 
-        # pull tos spt
+	mv t1, nos
+
+	mv tos, nos
+
+	call tohex 
+
+	mv nos, t1
+
+	putch '7'
+
+        mv tos, t0
 
         j eval
 
@@ -512,15 +536,24 @@ hash:
 
         addi fth, fth, %lo(DJB2)
 
+	mv tos, fth
+
+	call tohex
+
         # skip spaces
 100:
         call _getc
+
+	mv t1, tos
+
+	call _putc
+
+	mv tos, t1
 
         bleu tos, nth, 100b
 
         # djb2 hash function
 200:
-
         mv nos, fth
 
         slli fth, fth, SFHT
@@ -533,6 +566,12 @@ hash:
 300:
         
         call _getc
+	
+	mv t1, tos
+
+	call _putc
+
+	mv tos, t1
 
 	# less than space ?
         bltu tos, nth, 300b
@@ -546,6 +585,10 @@ hash:
         slli fth, fth, 1
 
         srli fth, fth, 1
+
+	mv tos, fth
+
+	call tohex
 
         # loads
 

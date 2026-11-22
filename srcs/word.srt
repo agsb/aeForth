@@ -1,5 +1,6 @@
 assembled.S:def_word "ABS" hash_ABS
 assembled.S:def_word "and" hash_AND 
+assembled.S:def_word "backslashr" hash_BACKSLASH
 assembled.S:def_word "base" hash_BASE 
 assembled.S:def_word "beatsto" hash_BEATSTO 
 assembled.S:def_word "behave", hash_BEHAVE

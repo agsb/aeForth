@@ -634,10 +634,10 @@ def_word "donut" hash_DONUT
 # ( --  ) #; ( \ ) 
 def_word "backslashr" hash_BACKSLASH
 	push tos spt
-	li nos, 10
+	li nth, 10
 100:
 	call _getc
-	bne tos, nos, 100b
+	bne tos, nth, 100b
 	pull tos spt
 	j next
 
@@ -745,27 +745,44 @@ hexto:
 
 #---------------------------------------------------------------------
 # number>	only hexadecimal print
+# input: tos 
+# output: display hexadecimal value
 # 
 tohex:
 
 	# save ra
+
 	mv rax, ra
 
-        mv trd, tos
+        mv tmp, tos
 
-	li fth, 32
+	li tmp, 0x87654321
+
+	li fth, CELL * 8
+
+	li tos, '|'
+
+	call _putc
 
         # rolls
 100:
-        beqz fth, 300f
+        blez fth, 300f
 
         addi fth, fth, -4
 
-        srl tos, trd, fth
-
-# mask
+        srl tos, tmp, fth
 
         andi tos, tos, 15
+
+	mv t1, tos
+
+	addi tos, tos, 'A'
+
+	call _putc
+
+	mv tos, t1
+
+# mask
 
 	li tmp, 10
 
@@ -780,6 +797,9 @@ tohex:
 
         j 100b
 300:
+	li tos, '|'
+
+	call _putc
 
 	# load ra
 	mv ra, rax

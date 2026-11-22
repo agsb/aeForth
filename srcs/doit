@@ -1,0 +1,1 @@
+cat compiled.fs | sh doit.sh | tee z 

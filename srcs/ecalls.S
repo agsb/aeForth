@@ -83,6 +83,7 @@ _init:
 _tick:
 	mv a0, zero
 	li a7, _TICK
+
 	ecall
 
 	mv tos, a0
@@ -99,23 +100,19 @@ _getc:
 
         ecall
 
+        # EOF or error ?
+        ble a0, zero, _exit
+
+	# load the char
         lb tos, 0 (a1)
 
-        # EOF?
-        # beq a0, zero, _exit
-
-.equ echoo, 1
-
-.ifndef echoo
-
         ret
-
-.endif
 
 # linux ecall for putc
 _putc:
         la a1, _char
 
+	# save the char
         sb tos, 0 (a1)
 
         li a0, _STDOUT

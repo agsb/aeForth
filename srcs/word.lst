@@ -59,6 +59,7 @@ assembled.S:def_word "douse" hash_UAT
 assembled.S:def_word "colon" hash_COLON
 assembled.S:def_word "semis" hash_SEMIS
 assembled.S:def_word "donut" hash_DONUT
+assembled.S:def_word "backslashr" hash_BACKSLASH
 assembled.S:def_word "dollar" hash_dollar
 assembled.S:def_word "dot" hash_DOT
 assembled.S:def_word "gbranch" hash_GBRANCH 
