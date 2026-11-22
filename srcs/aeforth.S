@@ -59,6 +59,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #        hash of words in uppercase
 #        no buffer input.
 #
+#---------------------------------------------------------------------
+#
+# 	loads a valid sequence of ascii from input stream, 
+# 	does a crude digest a word, 
+# 	does not handle EOF or errors, wipes all controls.
+#	any word must be between spaces
+#
 #----------------------------------------------------------------------
 #
 # RISCV ABI reserves a0, a1, a2, a3, a4, a5, a6, a7 for ecalls
@@ -503,138 +510,6 @@ warp:
         j eval
 
 #---------------------------------------------------------------------
-# crude digest a word, any word must be between spaces
-# load a valid sequence of ascii from stream, wipes all controls.
-#----------------------------------------------------------------------
-# hash function classic djb2 hash algorithm with XOR
-#---------------------------------------------------------------------
-# magic numbers
-.equ DJB2, 5381
-.equ SFHT, 5
-#---------------------------------------------------------------------
-# Hash a Word
-# must save tos before
-# input: characters from _getc
-# output: tos with the hash
-# better do not change the registers !:)
-hash:
-        # saves
-
-        mv rax, ra
-
-        # prepare space
-
-        li nth, BL
-
-        # default djb2 hash
-
-        lui fth, %hi(DJB2)
-
-        addi fth, fth, %lo(DJB2)
-
-        # skip spaces
-100:
-        call _getc
-
-        ble tos, nth, 100b
-
-        # djb2 hash function
-200:
-        mv nos, fth
-
-        slli fth, fth, SFHT
-
-        add fth, fth, nos
-
-        xor fth, fth, tos
-
-        # scan space 
-300:
-        call _getc
-	
-	# less than space ?
-        blt tos, nth, 300b
-
-	# more than space ?
-        blt nth, tos, 200b
-
-        # clear hash high bit
-400:
-        slli fth, fth, 1
-
-        srli fth, fth, 1
-
-	mv tos, fth
-
-        # loads
-
-        mv ra, rax
-
-        ret
-
-#----------------------------------------------------------------------
-# Seek a Hash
-# must save tos before
-# input: tos with the hash
-# output: tos with xt or 0x0 not found, tmp with word flag
-seek:
-        # saves 
-
-        mv rax, ra
-
-        # get the latest link
-        
-        lw fth, LAST * CELL (usr)
-
- 100:
-        # verify end of dictionary
-
-        beqz fth, 300
-
-        # backward linked list
-
-        mv nos, fth
-
-        # keep next link
-
-        lw fth, 0 (nos)
-
-        # take the hash
-
-        addi nos, nos, CELL
-
-        lw trd, 0 (nos)
-
-        # mask the FLAG, hold it 
-
-        lui tmp, %hi(FLAG_IMM)
-
-        and tmp, tmp, trd
-
-        xor trd, trd, tmp
-
-        # compare trd equ hash
-
-        bne trd, tos, 100b
-        
-        # found ! point to code or to list, aka xt
-
-        addi tos, nos, CELL
-
-        # loads
-200:
-
-        mv ra, rax
-
-        ret
-
-	# not found
-300:
-	mv tos, zero
-
-	beq zero, zero, 200b
-
-#---------------------------------------------------------------------
 # Eval What Do
 # input: nos have the xt, fth have the flag
 # output: none
@@ -656,7 +531,7 @@ eval:
 
 # compiling
 compile:
-
+	
         call comma
 
         j warp
@@ -667,25 +542,140 @@ execute:
         # could be a move instead of la  
         la ipt, _warp
 
+	mv nos, tos
+
         j pick
 
 _warp:
         .word warp
 
 #---------------------------------------------------------------------
-# Comma, push nos into dpt
-# input: nos with the xt
-# output: none
-# trd scratch
+# Hash a Word from input stream ( -- hash )
+# hash function classic djb2 hash algorithm with XOR
+# magic djb2 numbers
+.equ DJB2, 5381
+.equ SFHT, 5
+hash:
+        # saves
+
+        spush ra
+
+        # prepare space
+
+        li nth, BL
+
+        # default djb2 hash
+
+        lui fth, %hi(DJB2)
+
+        addi fth, fth, %lo(DJB2)
+
+        # skip spaces and controls, not handle EOF or error
+100:
+        call _getc
+
+        ble tos, nth, 100b
+
+        # djb2 hash function
+200:
+        mv nos, fth
+
+        slli fth, fth, SFHT
+
+        add fth, fth, nos
+
+        xor fth, fth, tos
+
+        # scan spaces and controls, not handle EOF or error
+300:
+        call _getc
+	
+	# less than space ?
+        blt tos, nth, 300b
+
+	# more than space ?
+        blt nth, tos, 200b
+
+        # clear hash high bit
+400:
+        slli fth, fth, 1
+
+        srli fth, fth, 1
+
+	mv tos, fth
+
+        # loads
+
+        spull ra
+
+        ret
+
+#----------------------------------------------------------------------
+# Seek a Hash ( hash -- xt | 0x0 )
+seek:
+        # saves 
+
+        spush ra
+
+        # prepare
+        
+	mv fth, tos
+
+        lw tos, LAST * CELL (usr)
+
+ 100:
+        # verify end of dictionary
+
+        beqz tos, 200
+
+        # backward linked list
+
+        mv nos, tos
+
+        # keep next link
+
+        lw tos, 0 (nos)
+
+        # take the hash
+
+        addi nos, nos, CELL
+
+        lw trd, 0 (nos)
+
+        # mask the FLAG  
+
+        slli trd, trd, 1
+
+        srli trd, trd, 1
+
+        # compare trd equ hash
+
+        bne trd, fth, 100b
+        
+        # found ! point to code or to list, aka xt
+
+        addi tos, nos, CELL
+
+200:
+        # loads
+
+        spull ra
+
+        ret
+
+#---------------------------------------------------------------------
+# Comma ( xt -- xt )
+# input: tos with the xt
+# output: tos with the xt
 comma:
         
-        lw trd, HEAP * CELL (usr)
+        lw nos, HEAP * CELL (usr)
 
-        sw nos, 0 (trd)
+        sw tos, 0 (nos)
 
-        addi trd, trd, CELL
+        addi nos, nos, CELL
 
-        sw trd, HEAP * CELL (usr)
+        sw nos, HEAP * CELL (usr)
 
         ret
         
@@ -730,7 +720,7 @@ next:
         # no round-robin limit
         lw nos, 0 (ipt)
         addi ipt, ipt, CELL
-
+	
 #---------------------------------------------------------------------- 
 # this is the tipping point, above nib only compiled words 
 # when (nos > nib) goto nest
