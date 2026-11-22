@@ -489,41 +489,15 @@ warp:
         
         mv t0, tos
 
+	mv t2, tos
+
+	putch 'W'
+
+	mv tos, t2
+
         call hash
 
-#>>>>>>>>>>>>>>>>>>>>>>
-
-	mv t1, tos
-
-	call tohex
-
-	putch '['
-
-	putch '\n'
-
-	mv tos, t1
-
-#>>>>>>>>>>>>>>>>>>>>>>
-
         call seek
-
-#>>>>>>>>>>>>>>>>>>>>>>
-
-	mv t1, tos
-
-	call tohex 
-
-	putch '='
-
-	putch '\n'
-
-	mv tos, t1
-
-#>>>>>>>>>>>>>>>>>>>>>>
-
-        mv nos, tos
-	
-	mv tos, t0
 
         j eval
 
@@ -533,6 +507,7 @@ warp:
 # output: none
 # trd scratch 
 eval:
+
         # what to do ?
 
         # executing ? if state == 0
@@ -556,7 +531,15 @@ eval:
 # compiling
 compile:
 	
+	mv t1, tos
+
+	putch 'C'
+
+	mv tos, t1
+
         call comma
+
+	mv tos, t0
 
         j warp
 
@@ -567,6 +550,10 @@ execute:
         la ipt, _warp
 
 	mv nos, tos
+
+	putch 'E'
+
+	mv tos, t0
 
         j pick
 
@@ -672,23 +659,7 @@ seek:
 
         srli trd, trd, 1
 
-	mv t2, tos
-
-	mv tos, trd
-
-	call tohex
-
-	putch '='
-
-	mv tos, fth
-
-	call tohex
-
-	putch '\n'
-
-	mv tos, t2
-
-        # compare trd equ hash
+        # compare trd == hash
 
         bne trd, fth, 100b
         

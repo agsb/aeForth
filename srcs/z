@@ -1,0 +1,12 @@
+rm -f test.out test.map test.lst  \
+      test.elf test.dmp test.bin  \
+      test.hex test.sec test.elfs \
+      err out
+/usr/bin/riscv64-linux-gnu-gcc -nostartfiles -nodefaultlibs -static -Oz -march=rv32gc -mabi=ilp32   -Wa,-alms=test.lst  -o test.elf test.S 2> err | tee out
+/usr/bin/riscv64-linux-gnu-objdump -hdta test.elf > test.dmp
+/usr/bin/riscv64-linux-gnu-readelf -a test.elf > test.map
+/usr/bin/riscv64-linux-gnu-objcopy --dump-section .text=test.sec test.elf
+/usr/bin/riscv64-linux-gnu-objcopy test.elf -O binary test.bin
+od --endian=little -A x -t x1 -v test.sec > test.hex
+QEMU init
+0123WEQEMU exit

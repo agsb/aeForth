@@ -560,6 +560,9 @@ def_word "douse" hash_UAT
 # ( -- ) #; ( : ) colon for hash and seek
 .equ hash_COLON, 0x0002B59F #; ( : )
 def_word "colon" hash_COLON
+
+	push tos spt
+
 # save here, panic if semis not follow elsewhere
 
         lw nos, HEAP * CELL (usr)
@@ -577,26 +580,21 @@ header:
 
 # copy last into (here)
 
-        lw nos, LAST * CELL (usr)
+        lw tos, LAST * CELL (usr)
+
         call comma
 
 # get a hash of the next token
 
-	# safe tos
-	mv nth, tos
-
         call hash
 
-	# safe tos
-	mv tos, nth
-
 # copy hash into (here)
-
-        mv nos, fth
 
 docomma:
 
         call comma
+
+	pull tos spt
 
         j next
 
@@ -604,6 +602,8 @@ docomma:
 .equ hash_SEMIS, 0x0002B59E #; ( ; )
 # update last, panic if colon not lead elsewhere
 def_word "semis" hash_SEMIS
+
+	push tos spt
 
         lw nos, PIKE * CELL (usr)
         sw nos, LAST * CELL (usr)
@@ -615,7 +615,8 @@ def_word "semis" hash_SEMIS
 
 # compound words must ends with exit
 
-        la nos, xt_exit
+        la tos, xt_exit
+
         j docomma
 
 # ( -- ) #; ( ', ) I call donut, is postpone 
@@ -624,9 +625,9 @@ def_word "donut" hash_DONUT
 	push tos spt
 	call hash
 	call seek
-	pull tos spt
-	beqz nos, miss 
+	beqz tos, miss 
 	call comma
+	pull tos spt
         j next 
 
 # skip till end-of-line (\n)
@@ -634,7 +635,7 @@ def_word "donut" hash_DONUT
 # ( --  ) #; ( \ ) 
 def_word "backslashr" hash_BACKSLASH
 	push tos spt
-	li nth, 10
+	li nth, 0x0A 
 100:
 	call _getc
 	bne tos, nth, 100b
