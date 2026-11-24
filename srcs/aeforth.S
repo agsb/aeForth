@@ -116,11 +116,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # forth fourth on stack, not reserved
 #define fth a3
 
-# forth instruction pointer, reserved
-#define ipt a4
-
 # forth user array pointer, reserved
-#define usr a5
+#define usr a4
+
+# forth instruction pointer, reserved
+#define ipt a5
 
 # never overwrited in ecalls
 #define nth a6
@@ -136,6 +136,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 # used to count forth word executions
+
+# s4, s5, s6, s7, s8 free
 
 #define cn0 s9
 
@@ -287,9 +289,23 @@ xt_\label:
 
 #----------------------------------------------------------------------
 
+.macro putchr
+	mv s7, nos
+	mv s8, trd
+        call _putc
+	mv nos, s7
+	mv trd, s8
+.endm
+
 .macro putch cc
+	mv s6, tos
+	mv s7, nos
+	mv s8, trd
         li tos, \cc
         call _putc
+	mv tos, s6
+	mv nos, s7
+	mv trd, s8
 .endm
 
 .macro spush reg
@@ -486,27 +502,40 @@ nack:
 # 
 # run baby ! run baby !
 warp:
-        
-        mv t0, tos
-
-	mv t2, tos
-
+        putch '\n'
+ 
 	putch 'W'
 
-	mv tos, t2
+        mv t0, tos
+
+	putch 'H'
 
         call hash
 
+	/*
+	mv t1, tos
+
+	call tohex
+
+	mv tos, t1
+	*/
+
+	putch 'S'
+
         call seek
 
-        j eval
+	/*
+	mv t1, tos
+
+	call tohex
+
+	mv tos, t1
+	*/
 
 #---------------------------------------------------------------------
-# Eval What Do
-# input: tos have the xt, fth have the flag
-# output: none
-# trd scratch 
+# Eval What Do ( xt -- )
 eval:
+	putch 'V'
 
         # what to do ?
 
@@ -531,11 +560,7 @@ eval:
 # compiling
 compile:
 	
-	mv t1, tos
-
 	putch 'C'
-
-	mv tos, t1
 
         call comma
 
@@ -583,6 +608,7 @@ hash:
 
         # skip spaces and controls, not handle EOF or error
 100:
+	# uses tos, nos, trd, tmp
         call _getc
 
         ble tos, nth, 100b
@@ -599,8 +625,15 @@ hash:
 
         # scan spaces and controls, not handle EOF or error
 300:
+	# uses tos, nos, trd, tmp
         call _getc
 	
+	mv s5, tos
+	
+	putchr
+	
+	mv tos, s5
+
 	# less than space ?
         blt tos, nth, 300b
 
@@ -613,6 +646,7 @@ hash:
 
         srli fth, fth, 1
 
+	# return hash
 	mv tos, fth
 
         # loads
@@ -679,7 +713,8 @@ seek:
 # input: tos with the xt
 # output: tos with the xt
 comma:
-        
+	putch 'C'        
+
         lw nos, HEAP * CELL (usr)
 
         sw tos, 0 (nos)
@@ -705,6 +740,9 @@ comma:
 #---------------------------------------------------------------------- 
 # aka EXIT
 unnest: 
+
+	putch 'U'
+	
         lw ipt, 0 (rpt)
         addi rpt, rpt, CELL
 	andi rpt, rpt, stack_deep 
@@ -716,6 +754,9 @@ nest:
 .ifdef beats
         addi cn2, cn2, 1
 .endif
+
+	putch 'N' 
+
         addi rpt, rpt, -1*CELL
 	andi rpt, rpt, stack_deep 
 	sw ipt, 0 (rpt)
@@ -728,6 +769,9 @@ next:
 .ifdef beats
         addi cn0, cn0, 1
 .endif
+
+	putch 'X' 
+
         # no round-robin limit
         lw nos, 0 (ipt)
         addi ipt, ipt, CELL
@@ -736,6 +780,9 @@ next:
 # this is the tipping point, above nib only compiled words 
 # when (nos > nib) goto nest
 pick: 
+
+	putch 'P'
+
         bge nos, nib, nest 
  
 #---------------------------------------------------------------------- 
@@ -744,6 +791,8 @@ jump:
 .ifdef beats
         addi cn1, cn1, 1
 .endif
+	putch 'J' 
+
         jalr ra, 0 (nos) 
  
 #======================================================================

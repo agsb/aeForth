@@ -1,1 +1,1 @@
-cat compiled.fs | sh doit.sh | tee z 
+cat test.fs | sh doit.sh | tee z 

@@ -753,7 +753,7 @@ tohex:
 
 	# saves
 
-	mv rax, ra
+	spush ra
 
 	mv nth, tos
 
@@ -771,9 +771,9 @@ tohex:
 
 # mask
 
-	li tmp, 10
+	li nos, 10
 
-        blt tos, tmp, 200f
+        blt tos, nos, 200f
 
         addi tos, tos, 7
 
@@ -786,7 +786,7 @@ tohex:
 300:
 	# load ra
 
-	mv ra, rax
+	spull rax
 
         ret
 

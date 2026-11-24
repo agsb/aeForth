@@ -6,7 +6,7 @@ make clean
 
 make
 
-echo "QEMU init"
+echo "\n QEMU init \n"
 
 # system and application
 QEMU=qemu-system-riscv64
@@ -19,4 +19,4 @@ ${QEMU} test.elf \
 
 # -g 1234 \
 
-echo "QEMU exit"
+echo "\n QEMU exit \n"

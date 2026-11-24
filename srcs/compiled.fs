@@ -160,6 +160,11 @@
     CELL + @ NAN AND 0# 
     ; 
  
+\ ( a -- a F ) ( EXECUTE? ) verify if executing ANSI EXECUTE is FALSE  
+: EXECUTE? 
+    STATE @ FALSE =  
+    ; 
+ 
 \ ( -- ) ( LITERAL ) compiles the value at top of stack 
 : LITERAL 
     LIT LIT , ,
