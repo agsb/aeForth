@@ -122,55 +122,55 @@ def_word "dovar" hash_DOVAR
         j next 
 
 #---------------------------------------------------------------------- 
-# moves return stack 
+# moves return stack >R R> R@
  
 # ( w -- ; -- w ) #; ( >R ) 
-.equ hash_TOR, 0x0B88004C #; ( >R ) 
+.equ hash_TOR, 0x005968A9 #; ( >R )
 def_word "tor" hash_TOR 
 	push tos rpt 
 	pull tos spt 
         j next 
  
 # ( -- w ; w -- ) #; ( R> ) 
-.equ hash_RTO, 0x0B8804AC #; ( R> ) 
+.equ hash_RTO, 0x005974E9 #; ( R> )
 def_word "rto" hash_RTO 
 	push tos spt 
 	pull tos rpt 
         j next 
  
 # ( -- w ; w -- w ) #; ( R@ ) 
-.equ hash_RAT, 0x0B880702 #; ( R@ ) 
+.equ hash_RAT, 0x00597497 #; ( R@ )
 def_word "rat" hash_RAT 
 	push tos spt 
 	lw tos, 0 (rpt) 
         j next 
  
 #---------------------------------------------------------------------- 
-# moves stack pointers 
+# moves stack pointers RP@ RP! SP@ SP!
 
 # ( -- rpt ) #; ( RP@ ) 
-.equ hash_RPAT, 0x7C88A9B2 #; ( RP@ ) 
+.equ hash_RPAT, 0x0B880527 #; ( RP@ )
 def_word "rpat" hash_RPAT 
 	push tos spt 
 	mv tos, rpt 
         j next 
  
 # ( -- spt ) #; ( SP@ ) 
-.equ hash_SPAT, 0x7C8A4E93 #; ( SP@ ) 
+.equ hash_SPAT, 0x0B8811E6 #; ( SP@ )
 def_word "spat" hash_SPAT 
 	push tos spt 
 	mv tos, spt 
         j next 
  
 # ( rpt -- ) #; ( RP! ) 
-.equ hash_RPTO, 0x7C88ABDC #; ( RP! ) 
+.equ hash_RPTO, 0x0B880546 #; ( RP! )
 def_word "rpto" hash_RPTO 
 	mv rpt, tos 
 	pull tos spt 
         j next 
  
 # ( spt -- ) #; ( SP! ) 
-.equ hash_SPTO, 0x7C8A507D #; ( SP! ) 
+.equ hash_SPTO, 0x0B881187 #; ( SP! )
 def_word "spto" hash_SPTO 
 	mv spt, tos 
 	pull tos spt 
@@ -220,13 +220,13 @@ def_word "rot" hash_ROT
 # access memory 
 
 # ( a -- w ) #; ( @ ) 
-.equ hash_FETCH, 0x0C3E96F9 #; ( @ ) 
+.equ hash_FETCH, 0x0002B5E5 #; ( @ )
 def_word "fetch" hash_FETCH 
 	lw tos, 0 (tos) 
         j next 
  
 # ( w a -- ) #; ( ! ) 
-.equ hash_STORE, 0x0DD22B7A #; ( ! ) 
+.equ hash_STORE, 0x0002B584 #; ( ! )
 def_word "store" hash_STORE 
 	pull nos spt 
 	sw nos, 0 (tos) 
@@ -234,13 +234,13 @@ def_word "store" hash_STORE
         j next 
  
 # ( a -- c ) #; ( C@ ) 
-.equ hash_CFETCH, 0x2376B3FA #; ( C@ ) 
+.equ hash_CFETCH, 0x005972E6 #; ( C@ )
 def_word "cfetch" hash_CFETCH 
 	lb tos, 0 (tos) 
         j next 
- 
+
 # ( c a -- ) #; ( C! ) 
-.equ hash_CSTORE, 0x252B26F9 #; ( C! ) 
+.equ hash_CSTORE, 0x00597287 #; ( C! )
 def_word "cstore" hash_CSTORE 
 	pull nos spt 
 	sb nos, 0 (tos) 
@@ -304,8 +304,8 @@ def_word "and" hash_AND
         j next 
  
 # ( w1 w2 -- w3 ) #; ( OR ) w1 OR w2
-.equ hash_ORR, 0x0B87E22A #; ( OR ) 
-def_word "orr" hash_ORR 
+.equ hash_OR, 0x00597378 #; ( OR )
+def_word "or" hash_OR 
 	pull nos spt 
 	or tos, nos, tos 
         j next 
@@ -387,7 +387,7 @@ istrue:
  
 # ( -- 0x00000000 ) #; ( FALSE ) 
 .equ hash_FALSE, 0x0C3C6778 #; ( FALSE ) 
-def_word "false" hash_TRUE 
+def_word "false" hash_FALSE 
 	push tos spt 
 isfalse: 
 	addi tos, zero, FALSE	 
@@ -412,7 +412,7 @@ def_word "char" hash_CHAR
 	li tos, 1
         j next 
  
-# ( w -- w ) #; ( CHAR ) #; sized to CHAR 
+# ( w -- w ) #; ( CHARS ) #; sized to CHAR 
 .equ hash_CHARS, 0x0CBFC26E #; ( CHARS ) 
 def_word "chars" hash_CHARS
 	# slli tos, tos, 0
@@ -434,7 +434,6 @@ def_word "cells" hash_CELLS
 # -------------------------------------------------------------------- 
 # variables 
  
-
 # ( w -- usr[w] )  ( USER ) start of user array 
 .equ hash_USER, 0x7C84F154 #; ( USER )
 def_word "user" hash_USER 
@@ -536,7 +535,7 @@ def_word "ticks" hash_TIMES
 
 #----------------------------------------------------------------------
 
-# ( 0 -- FALSE) | ( n -- TRUE), not zero at top ?
+# ( 0 -- FALSE | TRUE), not zero at top ?
 .equ hash_NILQ, 0x00596816 #; ( 0# )
 def_word "nilq", hash_NILQ
         beqz tos, isfalse
@@ -589,15 +588,15 @@ header:
 
         call hash
 
-        mv t1, tos
+     #   mv t1, tos
 
-        putch '('
+     #   putch '('
 
-        call tohex
+     #   call tohex
 
-        putch ')'
+     #   putch ')'
 
-        mv tos, t1
+     #   mv tos, t1
   
 # copy hash into (here)
 

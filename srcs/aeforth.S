@@ -222,7 +222,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #----------------------------------------------------------------------
 
-# allow more (32 - 8) 24 cells for extras scratch
+# allow more (32 - 8) 24 cells for extras 
 
 .equ params, 32
 
@@ -243,12 +243,6 @@ ht_\label:
 9999:
 xt_\label:
 
-	mv t4, tos
-	putch '['
-	la tos, \hash
-	call tohex
-	putch ']' 
-	mv tos, t4
 .endm
 
 #
@@ -341,13 +335,13 @@ xt_\label:
 .p2align 4, 0x0
 
 the_ok:
-.ascii "OK"
+.ascii " OK\n"
 
-the_nok:
-.ascii "??"
+the_miss:
+ .asciz " undefined word\n"
 
 the_st:
-.ascii "aeForth 0.63 2026/11"
+.ascii "aeForth 0.63 2026/11\n"
 
 #include "throwmsg.S"
 
@@ -435,8 +429,6 @@ main:
 
         call _init
 
-	putch '0'
-
 #----------------------------------------------------------------------
 # do what need be only once
 
@@ -460,8 +452,6 @@ setup:
         # tack, count compiled executions
         li cn2, 0
 .endif
-
-	putch '1'
 
 # using tos just could be any, no RVC 
 
@@ -493,7 +483,6 @@ setup:
         li tos, 0x10
         sw tos, BASE * CELL (usr) 
 
-	putch '2'
 abort:
 # reset data stack
         lw tos, SPTR * CELL (usr)  
@@ -514,8 +503,6 @@ mode:
         # EXECUTE is 0
         sw tos, STAT * CELL (usr) 
 
-	putch '3'
-
 #----------------------------------------------------------------------
 # missed a word ?
 miss:
@@ -526,21 +513,32 @@ miss:
         lw nos, PIKE * CELL (usr)
         sw nos, HEAP * CELL (usr)
 nack:
-#        .ascii " ~missed~ "
 
 #----------------------------------------------------------------------
 # Outer Loop Interpreter
 # 
 # run baby ! run baby !
 warp:
-        putch '\n'
-
         mv t0, tos
 
+100:
         call hash
 
         call seek
 
+	bne tos, zero, eval
+
+
+	mv tos, fth
+
+	call tohex
+
+	la tos, the_miss
+
+	call _puts
+
+	j 100b
+	
 #---------------------------------------------------------------------
 # Eval What Do ( xt -- )
 eval:
@@ -668,7 +666,7 @@ seek:
  100:
         # verify end of dictionary
 
-        beqz tos, 200
+        beqz tos, 300
 
         # backward linked list
 
@@ -705,13 +703,25 @@ seek:
 
         ret
 
+300:
+	# miss ?
+
+	mv t4, tos
+	putch '?'
+	mv tos, fth
+	call tohex
+	putch '?' 
+	mv tos, t4
+
+	j 200b
+	
 #---------------------------------------------------------------------
 # Comma ( xt -- xt )
 # input: tos with the xt
 # output: tos with the xt
 comma:
 
-	spush ra
+	# spush ra
 
         lw nos, HEAP * CELL (usr)
 
@@ -721,7 +731,7 @@ comma:
 
         sw nos, HEAP * CELL (usr)
 
-	spull ra
+	# spull ra
 
         ret
         

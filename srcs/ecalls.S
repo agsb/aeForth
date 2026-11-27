@@ -107,11 +107,17 @@ _getc:
         lb tos, 0 (a1)
 
 
+.ifndef echoo
+
 	# ret
+.endif
 
 # linux ecall for putc
 _putc:
+
+.ifdef echoo
 	mv s8, tos
+.endif
 
         la a1, _char
 
@@ -126,9 +132,31 @@ _putc:
 
 	mv tos, a0
 
+.ifdef echoo
 	mv tos, s8
+.endif
 
         ret
+
+# linux ecall for puts .asciiz
+_puts:
+        mv a1, a0
+	li a2, 0
+
+100:    add  t0, a1, a2           # Address of current character
+        lbu  t1, 0(t0)            # Load unsigned byte
+        beqz t1, 200f             # If byte == 0 (null terminator), exit loop
+        addi a2, a2, 1            # Increment length
+        j    100b   
+
+200:    li   a0, _STDOUT          # File descriptor 1 (stdout)
+    	# a1 already holds the buffer pointer
+    	# a2 already holds the string length
+    	li   a7, _PUTC            # Linux RISC-V syscall 64 (sys_write)
+    	
+	ecall
+    	
+	ret
 
 #---------------------------------------------------------------------
 

@@ -1,72 +1,70 @@
-7c7cc745 , hash_EXIT
-1e6c4191 , hash_BRANCH
-7d28616b , hash_ZBRANCH
-0c67f9ac , hash_DOCON
-0c682a6b , hash_DOVAR
-0b88004c , hash_TOR
-0b8804ac , hash_RTO
-0b880702 , hash_RAT
-7c88a9b2 , hash_RPAT
-7c8a4e93 , hash_SPAT
-7c88abdc , hash_RPTO
-7c8a507d , hash_SPTO
-7c7f5c2c , hash_DROP
-0b87bc84 , hash_DUP
-7c84398b , hash_OVER
-7c8a3910 , hash_SWAP
-0b8807cc , hash_ROT
-0c3e96f9 , hash_FETCH
-0dd22b7a , hash_STORE
-2376b3fa , hash_CFETCH
-252b26f9 , hash_CSTORE
-0b87b6b5 , hash_ABS
-0002b58e , hash_PLUS
-0002b588 , hash_MINUS
-005972c2 , hash_BYMUL
-7c4d1c6c , hash_BYMOD
-0b87b72e , hash_AND
-0b87e22a , hash_ORR
-0b883040 , hash_XOR
-2d6aa2b5 , hash_INVERSE
-26b37a79 , hash_NEGATE
-2c5784c9 , hash_LSHIFT
-416e6b97 , hash_RSHIFT
-0002b598 , hash_EQU
-0002b599 , hash_LESS
-005973cc , hash_ULESS
-7c879bf3 , hash_TRUE
-0c3c6778 , hash_FALSE
-0b87d404 , hash_NAN
-7c81ee9d , hash_CHAR
-0cbfc26e , hash_CHARS
-7c81b0a3 , hash_CELL
-0cb7c550 , hash_CELLS
-7c84f154 , hash_USER
-0b881196 , hash_SP0
-0b880557 , hash_RP0
-7c8a12b2 , hash_PIKE
-2adaafbe , hash_LATEST
-00597251 , hash_DP
-0dd1f032 , hash_STATE
-7c8025f0 , hash_BASE
-0b87c61b , hash_BYE
-0b87f112 , hash_KEY
-7c7c87d0 , hash_EMIT
-0d841fa3 , hash_TIMES
-00596816 , hash_NILQ
-7c8254c0 , hash_NAND
-005973b0 , hash_UAT
-0002b59f , hash_COLON
-0002b59e , hash_SEMIS
-005965ee , hash_DONUT
-0002b5f9 , hash_BACKSLASH
-0002b581 , hash_DOLLAR
-0002b58b , hash_DOT
-689e2db6 , hash_GBRANCH
-1cd31c18 , hash_BEHAVE
-19337d2c , hash_FDOPEN
-3ff2400e , hash_FDCLOSE
-192ed68a , hash_FDREAD
-3f24dde5 , hash_FDWRITE
-192d39a0 , hash_FDSEEK
-
+ 0x7C7CC745, ( EXIT ) 
+ 0x1E6C4191, ( BRANCH ) 
+ 0x7D28616B, ( ZBRANCH ) 
+ 0x0C67F9AC, ( DOCON ) 
+ 0x0C682A6B, ( DOVAR ) 
+ 0x005968A9, ( >R ) 
+ 0x005974E9, ( R> ) 
+ 0x00597497, ( R@ ) 
+ 0x0B880527, ( RP@ ) 
+ 0x0B8811E6, ( SP@ ) 
+ 0x0B880546, ( RP! ) 
+ 0x0B881187, ( SP! ) 
+ 0x7C7F5C2C, ( DROP ) 
+ 0x0B87BC84, ( DUP ) 
+ 0x7C84398B, ( OVER ) 
+ 0x7C8A3910, ( SWAP ) 
+ 0x0B8807CC, ( ROT ) 
+ 0x0002B5E5, ( @ ) 
+ 0x0002B584, ( ! ) 
+ 0x005972E6, ( C@ ) 
+ 0x00597287, ( C! ) 
+ 0x0B87B6B5, ( ABS ) 
+ 0x0002B58E, ( + ) 
+ 0x0002B588, ( - ) 
+ 0x005972C2, ( M* ) 
+ 0x7C4D1C6C, ( /MOD ) 
+ 0x0B87B72E, ( AND ) 
+ 0x00597378, ( OR ) 
+ 0x0B883040, ( XOR ) 
+ 0x2D6AA2B5, ( INVERSE ) 
+ 0x26B37A79, ( NEGATE ) 
+ 0x2C5784C9, ( LSHIFT ) 
+ 0x416E6B97, ( RSHIFT ) 
+ 0x0002B598, ( = ) 
+ 0x0002B599, ( < ) 
+ 0x005973CC, ( U< ) 
+ 0x7C879BF3, ( TRUE ) 
+ 0x0C3C6778, ( FALSE ) 
+ 0x0B87D404, ( NAN ) 
+ 0x7C81EE9D, ( CHAR ) 
+ 0x0CBFC26E, ( CHARS ) 
+ 0x7C81B0A3, ( CELL ) 
+ 0x0CB7C550, ( CELLS ) 
+ 0x7C84F154, ( USER ) 
+ 0x0B881196, ( SP0 ) 
+ 0x0B880557, ( RP0 ) 
+ 0x7C8A12B2, ( PIKE ) 
+ 0x2ADAAFBE, ( LATEST ) 
+ 0x00597251, ( DP ) 
+ 0x0DD1F032, ( STATE ) 
+ 0x7C8025F0, ( BASE ) 
+ 0x0B87C61B, ( BYE ) 
+ 0x0B87F112, ( KEY ) 
+ 0x7C7C87D0, ( EMIT ) 
+ 0x0D841FA3, ( TIMES ) 
+ 0x00596816, ( 0# ) 
+ 0x7C8254C0, ( NAND ) 
+ 0x005973B0, ( U@ ) 
+ 0x0002B59F, ( : ) 
+ 0x0002B59E, ( ; ) 
+ 0x005965EE, ( ', ) 
+ 0x0002B5F9, ( \ ) 
+ 0x0002B581, ( $ ) 
+ 0x0002B58B, ( . ) 
+ 0x689E2DB6, ( GBRANCH ) 
+ 0x1CD31C18, ( BEHAVE ) 
+ 0x6BC0B39A, ( >BEATS ) 
+ 0x1CCFA27A, ( BEATS> ) 
+ 0x554440FE, ( ZBEATS ) 
+ 0x00001505, (  ) 
