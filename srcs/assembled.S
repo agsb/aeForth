@@ -572,6 +572,7 @@ def_word "colon" hash_COLON
 # stat is 'compile' == 1
 
         li nos, COMPILE
+
         sw nos, STAT * CELL (usr)
 
 # make a header
@@ -588,6 +589,16 @@ header:
 
         call hash
 
+        mv t1, tos
+
+        putch '('
+
+        call tohex
+
+        putch ')'
+
+        mv tos, t1
+  
 # copy hash into (here)
 
 docomma:
@@ -601,7 +612,7 @@ docomma:
 # ( -- ) #; ( ; ) semis for hash and seek
 .equ hash_SEMIS, 0x0002B59E #; ( ; )
 # update last, panic if colon not lead elsewhere
-def_word "semis" hash_SEMIS
+def_word "semis" hash_SEMIS IMMEDIATE
 
 	push tos spt
 
@@ -642,19 +653,19 @@ def_word "backslashr" hash_BACKSLASH
 	pull tos spt
 	j next
 
-# code a ASCII $0-9A-F to value, hexadecimal
+# code a hexadecimal to a value
 .equ hash_dollar, 0x0002B581 #; ( $ )
 # (  -- w ) #; ( $ ) 
-def_word "dollar" hash_dollar
+def_word "dollar" hash_dollar IMMEDIATE
 	push tos spt
-	call tohex
+	call hexto
 	j next
 
-# code a 32-bit value into $0-9A-F ASCII, hexadecimal
+# code a value into hexadecimal
 # ( w -- ) #; ( . ) 
 .equ hash_DOT, 0x0002B58B #; ( . )
 def_word "dot" hash_DOT
-	call hexto
+	call tohex
 	pull tos spt
 	j next
 
@@ -674,67 +685,71 @@ hexto:
 # strict to use a0, a1, a2, a7 in getc 
 # using a3 a6 a7 as extras for easy
 
-	# save ra
-	mv rax, ra
+	# saves
+	spush ra
 
 	# prepare space
-	li nth, 32
+	li nth, BL
 
         # clear result
-        mv trd, zero
+        mv fth, zero
 
 	# skip spaces
 100:
         call _getc
 
-	# while space or controls
+	# controls ?
         ble tos, nth, 100b
 
 	# verify ASCII valid digit and convert it
 200:
 
-        # valid digit, 0-9 and A-Z
+        # valid digit, 0-9 and A-F
         addi tos, tos, -48
+
+	blt tos, zero, 700f
 
         # 0-9 ?
         li nos, 10
 
-	# A-Z ?
         blt tos, nos, 300f
 
-        #; normalize gap ascii 9 to A
+	# lower to upper
+	andi tos, tos, 0xDF
+
+        # normalize gap ascii 9 to A
         addi tos, tos, -7
 
 300:
 	# verify radix
-	li nos, 16
+	li nos, 15
 
         bgt tos, nos, 700f
 
-	# multiply by base 
+	# multiply by base :) 
 
-        slli trd, trd, 4
+        slli fth, fth, 4
 
-	# add the value
+	# add the value :)
 
-        add trd, trd, tos
+        or fth, fth, tos
 
 	# scan spaces
 400:
         call _getc
 
-	# less than space ?
-        bltu tos, nth, 400b
+	# controls ?
+        blt tos, nth, 400b
 
 	# more than space ?
-        bltu nth, tos, 200b
+        blt nth, tos, 200b
 
 	# copy value 
 500:
-	mv tos, trd
+	mv tos, fth
 
 	# load ra
-	mv ra, rax
+	spull ra
 
         ret
 
@@ -755,6 +770,8 @@ tohex:
 
 	spush ra
 
+	# prepare
+
 	mv nth, tos
 
 	li fth, CELL * 8
@@ -770,7 +787,6 @@ tohex:
         andi tos, tos, 15
 
 # mask
-
 	li nos, 10
 
         blt tos, nos, 200f
@@ -784,9 +800,9 @@ tohex:
 
         j 100b
 300:
-	# load ra
+	# loads
 
-	spull rax
+	spull ra
 
         ret
 

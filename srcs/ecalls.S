@@ -106,10 +106,13 @@ _getc:
 	# load the char
         lb tos, 0 (a1)
 
-        ret
+
+	# ret
 
 # linux ecall for putc
 _putc:
+	mv s8, tos
+
         la a1, _char
 
 	# save the char
@@ -122,6 +125,8 @@ _putc:
         ecall
 
 	mv tos, a0
+
+	mv tos, s8
 
         ret
 

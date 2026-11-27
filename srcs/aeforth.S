@@ -151,11 +151,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # generics alias
 
 #----------------------------------------------------------------------
-# max size of dictionary 64k CELLS, depends on host machine
-# on ESP32 is 4 MMU pages of 64k bytes
-.equ RAM_LIMIT, 0x40000
-
-#----------------------------------------------------------------------
 
 # essential
 
@@ -247,6 +242,13 @@ ht_\label:
     .word (\hash | \flag)
 9999:
 xt_\label:
+
+	mv t4, tos
+	putch '['
+	la tos, \hash
+	call tohex
+	putch ']' 
+	mv tos, t4
 .endm
 
 #
@@ -289,23 +291,24 @@ xt_\label:
 
 #----------------------------------------------------------------------
 
-.macro putchr
-	mv s7, nos
-	mv s8, trd
-        call _putc
-	mv nos, s7
-	mv trd, s8
+.macro spushs
+	addi sp, sp, -32
+	sw tos, 0 (sp) 
+	sw nos, 4 (sp) 
+	sw trd, 8 (sp) 
+	sw fth, 12 (sp) 
+	sw nth, 16 (sp) 
+	sw tmp, 20 (sp) 
 .endm
 
-.macro putch cc
-	mv s6, tos
-	mv s7, nos
-	mv s8, trd
-        li tos, \cc
-        call _putc
-	mv tos, s6
-	mv nos, s7
-	mv trd, s8
+.macro spulls
+	lw tos, 0  (sp) 
+	lw nos, 4  (sp) 
+	lw trd, 8  (sp) 
+	lw fth, 12 (sp) 
+	lw nth, 16 (sp) 
+	lw tmp, 20 (sp) 
+	addi sp, sp, +32
 .endm
 
 .macro spush reg
@@ -318,11 +321,35 @@ xt_\label:
 	addi sp, sp, +4
 .endm
 
+.macro putchr
+	spushs	
+        call _putc
+	spulls
+.endm
+
+.macro putch cc
+	spushs
+        li tos, \cc
+        call _putc
+	spulls
+.endm
+
 #----------------------------------------------------------------------
 # Nothing here, void.
 
 .section .rodata
 .p2align 4, 0x0
+
+the_ok:
+.ascii "OK"
+
+the_nok:
+.ascii "??"
+
+the_st:
+.ascii "aeForth 0.63 2026/11"
+
+#include "throwmsg.S"
 
 #----------------------------------------------------------------------
 # Nothing here, void.
@@ -332,17 +359,19 @@ xt_\label:
 
 #----------------------------------------------------------------------
 # There is no spoon.
+
 .section .bss
+.p2align 4, 0x0
 
 #----------------------------------------------------------------------
 # Note:
 #
+# statics + user_size + sp_size + rp_size must be less than 2024 bytes
+# because code uses addi (+12bits) to setup offset address
+
 # for use of round robin, stacks must be bytes aligned to deep * CELL
 # (deep)*(CELL) is 32 * 4, 128 which is masked by 1*101111111 
 #
-# user_size + sp_size + rp_size must be less than 2024 bytes
-# because code uses addi (+12bits) to setup offset address
-
 .option push
 .option norelax 
 
@@ -368,16 +397,18 @@ _rp0:
 
 #----------------------------------------------------------------------
 # now the main forth dictionary
-# common align
-.p2align 4, 0x0
 
 #----------------------------------------------------------------------
-# use for free 
+# use for free allocation, static messages, etc 
 
 _char: # a tiny buffer of 4 bytes for getc putc use
-        .word FALSE
+.word FALSE
         
 #----------------------------------------------------------------------
+# Note:
+# max size of dictionary 64k CELLS, depends on host machine
+# on ESP32 is 4 MMU pages of 64k bytes
+.equ RAM_LIMIT, 0x40000
 
 # at start of memory
 h_where:
@@ -503,40 +534,16 @@ nack:
 # run baby ! run baby !
 warp:
         putch '\n'
- 
-	putch 'W'
 
         mv t0, tos
 
-	putch 'H'
-
         call hash
 
-	/*
-	mv t1, tos
-
-	call tohex
-
-	mv tos, t1
-	*/
-
-	putch 'S'
-
         call seek
-
-	/*
-	mv t1, tos
-
-	call tohex
-
-	mv tos, t1
-	*/
 
 #---------------------------------------------------------------------
 # Eval What Do ( xt -- )
 eval:
-	putch 'V'
-
         # what to do ?
 
         # executing ? if state == 0
@@ -560,8 +567,6 @@ eval:
 # compiling
 compile:
 	
-	putch 'C'
-
         call comma
 
 	mv tos, t0
@@ -575,8 +580,6 @@ execute:
         la ipt, _warp
 
 	mv nos, tos
-
-	putch 'E'
 
 	mv tos, t0
 
@@ -628,11 +631,7 @@ hash:
 	# uses tos, nos, trd, tmp
         call _getc
 	
-	mv s5, tos
-	
-	putchr
-	
-	mv tos, s5
+        li nth, BL
 
 	# less than space ?
         blt tos, nth, 300b
@@ -648,8 +647,6 @@ hash:
 
 	# return hash
 	mv tos, fth
-
-        # loads
 
         spull ra
 
@@ -713,7 +710,8 @@ seek:
 # input: tos with the xt
 # output: tos with the xt
 comma:
-	putch 'C'        
+
+	spush ra
 
         lw nos, HEAP * CELL (usr)
 
@@ -722,6 +720,8 @@ comma:
         addi nos, nos, CELL
 
         sw nos, HEAP * CELL (usr)
+
+	spull ra
 
         ret
         
@@ -780,9 +780,6 @@ next:
 # this is the tipping point, above nib only compiled words 
 # when (nos > nib) goto nest
 pick: 
-
-	putch 'P'
-
         bge nos, nib, nest 
  
 #---------------------------------------------------------------------- 
@@ -791,8 +788,6 @@ jump:
 .ifdef beats
         addi cn1, cn1, 1
 .endif
-	putch 'J' 
-
         jalr ra, 0 (nos) 
  
 #======================================================================

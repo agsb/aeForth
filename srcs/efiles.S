@@ -96,6 +96,21 @@ fs_write:
 # those words do not clean the stack, return results in tos (a0)
 # minimal file support for emulate a tape/disk inside a file :)  
 
+/*
+# proposed new names: open, seek, save, load, shut, void
+FD_OPEN
+.equ hash_FD_OPEN, 0x19337D2C #; ( FD_OPEN )
+FD_LOAD
+.equ hash_FD_LOAD, 0x19324B5E #; ( FD_LOAD )
+FD_SAVE
+.equ hash_FD_SAVE, 0x192D2BD9 #; ( FD_SAVE )
+FD_SEEK
+.equ hash_FD_SEEK, 0x192D39A0 #; ( FD_SEEK )
+FD_SHUT
+.equ hash_FD_SHUT, 0x192D0DA2 #; ( FD_SHUT )
+FD_VOID
+.equ hash_FD_VOID, 0x1930CD0C #; ( FD_VOID )
+*/
 
 # ( cname n mode fd -- fd ) #; ( FD_OPEN ), open or create
 .equ hash_FDOPEN, 0x19337D2C #; ( FD_OPEN ) 
