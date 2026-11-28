@@ -106,18 +106,18 @@ _getc:
 	# load the char
         lb tos, 0 (a1)
 
+#.ifndef echoo
 
-.ifndef echoo
+#	ret
 
-	# ret
-.endif
+#.endif
 
 # linux ecall for putc
 _putc:
 
-.ifdef echoo
+#.ifdef echoo
 	mv s8, tos
-.endif
+#.endif
 
         la a1, _char
 
@@ -132,9 +132,9 @@ _putc:
 
 	mv tos, a0
 
-.ifdef echoo
+#.ifdef echoo
 	mv tos, s8
-.endif
+#.endif
 
         ret
 

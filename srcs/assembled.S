@@ -643,7 +643,7 @@ def_word "donut" hash_DONUT
 # skip till end-of-line (\n)
 .equ hash_BACKSLASH, 0x0002B5F9 #; ( \ )
 # ( --  ) #; ( \ ) 
-def_word "backslashr" hash_BACKSLASH
+def_word "backslash" hash_BACKSLASH
 	push tos spt
 	li nth, 0x0A 
 100:
@@ -678,6 +678,22 @@ def_word "gbranch" hash_GBRANCH
 	addi ipt, ipt, CELL 
         j next 
  
+# see last word
+# ( -- ) #; ( . ) 
+.equ hash_SEE, 0x0B881316 #; ( SEE )
+def_word "see" hash_SEE
+	push tos spt
+	
+	lw fth, LAST * CELL (usr)
+	
+	lw nth, HEAP * CELL (usr)
+	
+	call dump
+	
+	pull tos spt
+	
+	j next
+	
 #----------------------------------------------------------------------
 hexto:
 # safe inside Forth words, direct use getc
@@ -804,6 +820,65 @@ tohex:
 	spull ra
 
         ret
+
+#--------------------------------------------------------------------- 
+
+dump:
+	# saves
+	spush ra
+
+	li tos, '\n'
+	call _putc
+
+	li tos, '['
+	call _putc
+	
+	mv tos, fth
+	call tohex
+
+	li tos, '~'
+	call _putc
+
+	mv tos, nth
+	call tohex
+
+	li tos, ']'
+	call _putc
+	
+	li tos, '\n'
+	call _putc
+
+100:
+	ble nth, fth, 200f
+
+	li tos, ' '
+	call _putc
+	
+	mv tos, fth
+	call tohex
+
+	li tos, ':'
+	call _putc
+
+	lw tos, 0 (fth)
+	call tohex
+
+	li tos, ' '
+	call _putc
+
+	li tos, '\n'
+	call _putc
+
+	addi fth, fth, CELL
+
+	j 100b 
+
+200:
+	# loads
+	spull ra
+
+	ret
+	
 
 #--------------------------------------------------------------------- 
 # 13/11/2026, discover that GForth 0.2 define : PERFORM @ EXECUTE ; 

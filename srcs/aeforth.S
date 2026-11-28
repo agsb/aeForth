@@ -504,15 +504,6 @@ mode:
         sw tos, STAT * CELL (usr) 
 
 #----------------------------------------------------------------------
-# missed a word ?
-miss:
-# check if compiling and move PIKE to HEAP
-        lw nos, STAT * CELL (usr)
-        # EXECUTE is FALSE
-        beqz nos, nack
-        lw nos, PIKE * CELL (usr)
-        sw nos, HEAP * CELL (usr)
-nack:
 
 #----------------------------------------------------------------------
 # Outer Loop Interpreter
@@ -521,13 +512,19 @@ nack:
 warp:
         mv t0, tos
 
+	putch '{'
+ 
 100:
         call hash
 
         call seek
 
+# missed a word ?
+miss:
+
 	bne tos, zero, eval
 
+	putch '?'
 
 	mv tos, fth
 
@@ -537,6 +534,14 @@ warp:
 
 	call _puts
 
+	# check if compiling and move PIKE to HEAP
+        lw nos, STAT * CELL (usr)
+
+        # EXECUTE is FALSE
+        beqz nos, 200
+        lw nos, PIKE * CELL (usr)
+        sw nos, HEAP * CELL (usr)
+200:
 	j 100b
 	
 #---------------------------------------------------------------------
@@ -666,7 +671,7 @@ seek:
  100:
         # verify end of dictionary
 
-        beqz tos, 300
+        beqz tos, 200
 
         # backward linked list
 
@@ -703,26 +708,11 @@ seek:
 
         ret
 
-300:
-	# miss ?
-
-	mv t4, tos
-	putch '?'
-	mv tos, fth
-	call tohex
-	putch '?' 
-	mv tos, t4
-
-	j 200b
-	
 #---------------------------------------------------------------------
 # Comma ( xt -- xt )
 # input: tos with the xt
 # output: tos with the xt
 comma:
-
-	# spush ra
-
         lw nos, HEAP * CELL (usr)
 
         sw tos, 0 (nos)
@@ -730,8 +720,6 @@ comma:
         addi nos, nos, CELL
 
         sw nos, HEAP * CELL (usr)
-
-	# spull ra
 
         ret
         
